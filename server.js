@@ -18,29 +18,33 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemi
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. Analyze this selfie photo and provide honest, numerical scores for each facial feature.
+const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. Analyze this selfie and provide detailed scores.
 
-IMPORTANT: If the image does NOT contain a clearly visible human face, return ONLY this JSON:
-{"no_face": true}
+IMPORTANT: If the image does NOT contain a clearly visible human face, return ONLY: {"no_face": true}
 
-If a face IS clearly visible, return ONLY valid JSON with this exact structure (no markdown, no explanation):
+If a face IS visible, return ONLY valid JSON (no markdown):
 {
-  "jawline": <number 1-100>,
-  "skin_quality": <number 1-100>,
-  "eyes": <number 1-100>,
-  "lips": <number 1-100>,
-  "facial_symmetry": <number 1-100>,
-  "hair_quality": <number 1-100>,
   "overall": <number 1-100>,
-  "potential": <number 1-50>,
-  "tips": ["<tip1>", "<tip2>", "<tip3>"]
+  "overall_rating": "<Gigachad|Chad|Above Average|Average|Below Average>",
+  "description": "<2-3 sentence overall assessment>",
+  "potential": <number 1-100>,
+  "traits": {
+    "jawline": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "skin": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "eyes": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "cheekbones": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "lips": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "hair": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "symmetry": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" }
+  },
+  "recommendations": ["<tip1>", "<tip2>", "<tip3>", "<tip4>", "<tip5>"]
 }
 
 Rules:
-- Be realistic and honest with scoring. Most people score 40-80.
-- "potential" is how many points they could gain with improvements.
-- "tips" should be 3 short, actionable improvement tips.
-- Return ONLY the JSON object, nothing else.`;
+- Be realistic: most people score 40-75 overall.
+- overall_rating tiers: 90+ Gigachad, 80-89 Chad, 65-79 Above Average, 50-64 Average, <50 Below Average
+- Each trait needs specific, honest holding_back and fix_it advice.
+- Return ONLY JSON.`;
 
 // ════════════════════════════════════
 //  API ROUTES
@@ -84,7 +88,7 @@ app.post('/api/analyze-face', async function (req, res) {
             { inline_data: { mime_type: mimeType, data: image } },
           ],
         }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 500 },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
       }),
     });
 
@@ -113,17 +117,48 @@ app.post('/api/analyze-face', async function (req, res) {
 
     function clamp(v, min, max) { return Math.max(min, Math.min(max, Math.round(v))); }
 
-    res.json({
-      jawline: clamp(scores.jawline, 1, 100),
-      skin_quality: clamp(scores.skin_quality, 1, 100),
-      eyes: clamp(scores.eyes, 1, 100),
-      lips: clamp(scores.lips, 1, 100),
-      facial_symmetry: clamp(scores.facial_symmetry, 1, 100),
-      hair_quality: clamp(scores.hair_quality, 1, 100),
+    // Build response — support both new rich format and legacy flat format
+    var responseData = {
       overall: clamp(scores.overall, 1, 100),
-      potential: clamp(scores.potential, 1, 50),
-      tips: scores.tips || [],
-    });
+      overall_rating: scores.overall_rating || 'Average',
+      description: scores.description || '',
+      potential: clamp(scores.potential, 1, 100),
+      traits: {},
+      recommendations: scores.recommendations || scores.tips || [],
+      // Legacy flat fields for backward compat
+      jawline: 0, skin_quality: 0, eyes: 0, lips: 0, facial_symmetry: 0, hair_quality: 0,
+      tips: scores.recommendations || scores.tips || [],
+    };
+
+    if (scores.traits) {
+      var traitNames = ['jawline', 'skin', 'eyes', 'cheekbones', 'lips', 'hair', 'symmetry'];
+      traitNames.forEach(function(name) {
+        var t = scores.traits[name] || {};
+        responseData.traits[name] = {
+          score: clamp(t.score || 50, 1, 100),
+          rating: t.rating || 'Average',
+          holding_back: t.holding_back || '',
+          fix_it: t.fix_it || '',
+        };
+      });
+      // Fill legacy flat fields
+      responseData.jawline = responseData.traits.jawline?.score || 50;
+      responseData.skin_quality = responseData.traits.skin?.score || 50;
+      responseData.eyes = responseData.traits.eyes?.score || 50;
+      responseData.lips = responseData.traits.lips?.score || 50;
+      responseData.facial_symmetry = responseData.traits.symmetry?.score || 50;
+      responseData.hair_quality = responseData.traits.hair?.score || 50;
+    } else {
+      // Legacy format fallback
+      responseData.jawline = clamp(scores.jawline || 50, 1, 100);
+      responseData.skin_quality = clamp(scores.skin_quality || 50, 1, 100);
+      responseData.eyes = clamp(scores.eyes || 50, 1, 100);
+      responseData.lips = clamp(scores.lips || 50, 1, 100);
+      responseData.facial_symmetry = clamp(scores.facial_symmetry || 50, 1, 100);
+      responseData.hair_quality = clamp(scores.hair_quality || 50, 1, 100);
+    }
+
+    res.json(responseData);
   } catch (err) {
     console.error('Analysis error:', err);
     res.status(500).json({ error: 'Internal server error' });

@@ -15,6 +15,13 @@ const LS_SCORES = 'lynx_latest_scores';
 const LS_HISTORY = 'lynx_scan_history';
 const LS_FACE_URL = 'lynx_face_url';
 
+export interface TraitDetail {
+  score: number;
+  rating: string;
+  holding_back: string;
+  fix_it: string;
+}
+
 export interface FaceScores {
   jawline: number;
   skin_quality: number;
@@ -25,7 +32,12 @@ export interface FaceScores {
   overall: number;
   potential: number;
   tips: string[];
-  face_image?: string; // public URL of the face photo
+  face_image?: string;
+  // Rich report fields
+  overall_rating?: string;
+  description?: string;
+  traits?: Record<string, TraitDetail>;
+  recommendations?: string[];
 }
 
 export interface ScanRecord {

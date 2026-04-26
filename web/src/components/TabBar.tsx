@@ -42,9 +42,9 @@ export function LynxBubbleIcon({ size = 34, animated = false }: { size?: number;
       <rect className={eyeClass} x="21.5" y="13" width={eyeW} height={eyeH} rx={eyeRx} fill="white" />
       <defs>
         <linearGradient id="bubbleGrad" x1="2" y1="4" x2="38" y2="36" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#60A5FA" />
-          <stop offset="0.5" stopColor="#3B82F6" />
-          <stop offset="1" stopColor="#2563EB" />
+          <stop offset="0" stopColor="#D4B04A" />
+          <stop offset="0.5" stopColor="#C8A84E" />
+          <stop offset="1" stopColor="#A08030" />
         </linearGradient>
       </defs>
     </svg>

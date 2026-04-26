@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ScanLine, Clock, Check, Plus } from 'lucide-react';
+import { ScanLine, ChevronRight, Sparkles, RefreshCw, Dumbbell, Smile, Triangle } from 'lucide-react';
 import type { FaceScores } from '../lib/api';
 
 interface DashboardProps {
@@ -8,267 +8,243 @@ interface DashboardProps {
   faceImage?: string | null;
 }
 
-// ─── SVG Ring constants ───
-const RING_SIZE = 160;
-const STROKE = 10;
-const RADIUS = (RING_SIZE - STROKE) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-type TimeFilter = 'Morning' | 'Afternoon' | 'Night';
-
-interface Task {
-  id: string;
-  title: string;
-  duration: string;
-  xp: number;
+// ─── Score tier helpers ───
+function getTier(s: number) {
+  if (s >= 90) return { label: 'Gigachad', color: '#C8A84E' };
+  if (s >= 80) return { label: 'Chad', color: '#22C55E' };
+  if (s >= 65) return { label: 'Above Average', color: '#22C55E' };
+  if (s >= 50) return { label: 'Average', color: '#F59E0B' };
+  return { label: 'Below Average', color: '#EF4444' };
 }
 
-const TASKS: Record<TimeFilter, Task[]> = {
-  Morning: [
-    { id: 'm1', title: 'Rice Water Face Mask', duration: '10 mins', xp: 15 },
-    { id: 'm2', title: 'Brush Lips (Exfoliate)', duration: '3 mins', xp: 10 },
-    { id: 'm3', title: 'Morning Skincare Routine', duration: '8 mins', xp: 20 },
-    { id: 'm4', title: 'Cold Water Splash (Face)', duration: '2 mins', xp: 10 },
-    { id: 'm5', title: 'Drink Lemon Water', duration: '1 min', xp: 5 },
-  ],
-  Afternoon: [
-    { id: 'a1', title: 'Posture Check & Correct', duration: '5 mins', xp: 10 },
-    { id: 'a2', title: 'Jawline Exercises', duration: '10 mins', xp: 20 },
-    { id: 'a3', title: 'Mewing Practice', duration: '5 mins', xp: 15 },
-    { id: 'a4', title: 'Hydrate (2L Target)', duration: '—', xp: 10 },
-  ],
-  Night: [
-    { id: 'n1', title: 'Night Skincare Routine', duration: '10 mins', xp: 20 },
-    { id: 'n2', title: 'Apply Under-Eye Cream', duration: '2 mins', xp: 10 },
-    { id: 'n3', title: 'Face Massage (Gua Sha)', duration: '8 mins', xp: 15 },
-    { id: 'n4', title: 'Sleep 8 Hours', duration: '8 hrs', xp: 25 },
-  ],
-};
-
-const METRICS = [
-  { key: 'jawline', label: 'Jawline', color: '#8ea1bc' },
-  { key: 'skin_quality', label: 'Skin', color: '#7B2CBF' },
-  { key: 'eyes', label: 'Eyes', color: '#5CE1E6' },
-  { key: 'facial_symmetry', label: 'Symmetry', color: '#22C55E' },
-  { key: 'lips', label: 'Lips', color: '#F59E0B' },
-  { key: 'hair_quality', label: 'Hair', color: '#EF4444' },
-];
+function getBarColor(s: number) {
+  if (s >= 85) return '#22C55E';
+  if (s >= 70) return '#C8A84E';
+  if (s >= 50) return '#F59E0B';
+  return '#EF4444';
+}
 
 export default function Dashboard({ onScan, scores, faceImage }: DashboardProps) {
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => {
-    const h = new Date().getHours();
-    return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Night';
-  });
-  const [completed, setCompleted] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem('lynx_tasks');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch { return new Set(); }
-  });
-  const [ringOffset, setRingOffset] = useState(CIRCUMFERENCE);
   const [animatedScore, setAnimatedScore] = useState(0);
 
-  const currentTasks = TASKS[timeFilter];
-  const doneTasks = currentTasks.filter(t => completed.has(t.id)).length;
-  const routinePct = currentTasks.length > 0 ? Math.round((doneTasks / currentTasks.length) * 100) : 0;
-  const totalXP = currentTasks.filter(t => completed.has(t.id)).reduce((s, t) => s + t.xp, 0);
-  const lynxScore = scores?.overall || 0;
-
-  // Persist tasks
   useEffect(() => {
-    localStorage.setItem('lynx_tasks', JSON.stringify([...completed]));
-  }, [completed]);
-
-  // Animate ring for Lynx Score
-  useEffect(() => {
-    const pct = lynxScore; // 0-100 score
-    const target = CIRCUMFERENCE - (pct / 100) * CIRCUMFERENCE;
-    setRingOffset(target);
-    // Animate number
-    let frame: number;
-    let current = 0;
+    if (!scores) return;
+    let frame = 0;
+    const target = scores.overall;
     const step = () => {
-      const diff = lynxScore - current;
-      if (Math.abs(diff) < 0.5) { setAnimatedScore(lynxScore); return; }
-      current += diff * 0.06;
-      setAnimatedScore(Math.round(current));
-      frame = requestAnimationFrame(step);
+      frame++;
+      const progress = Math.min(frame / 40, 1);
+      setAnimatedScore(Math.round(target * progress));
+      if (progress < 1) requestAnimationFrame(step);
     };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [lynxScore]);
+    requestAnimationFrame(step);
+  }, [scores]);
 
-  const toggleTask = (id: string) => {
-    setCompleted(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
+  const tier = scores ? getTier(scores.overall) : null;
 
-  const filterIcons: Record<TimeFilter, string> = {
-    Morning: '☀️', Afternoon: '🌤️', Night: '🌙',
-  };
+  const TRAIT_LIST = scores?.traits ? Object.entries(scores.traits).map(([key, t]) => ({
+    key, label: key.charAt(0).toUpperCase() + key.slice(1), ...t,
+  })) : [];
 
   return (
-    <div className="page">
-
+    <div className="page" style={{ paddingBottom: 100 }}>
       {/* ═══ HEADER ═══ */}
-      <div className="dash-header">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <div className="dash-title">Dashboard</div>
-          <div className="dash-subtitle">Track your glow-up progress</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5, marginBottom: 4 }}>LYNX AI</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Welcome back</div>
         </div>
-        <div className="dash-streak">
-          <span>🔥</span>
-          <span>12 Day Streak</span>
-        </div>
-      </div>
-
-      {/* ═══ SECTION 1: LYNX SCORE RING ═══ */}
-      <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <ScanLine size={14} color="#8ea1bc" />
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>Lynx Score</span>
-          <div style={{ flex: 1 }} />
-          <button className="btn btn-primary" onClick={onScan} style={{ fontSize: 10, padding: '5px 12px' }}>
-            <Plus size={12} /> {scores ? 'RESCAN' : 'SCAN'}
-          </button>
-        </div>
-
-        {scores ? (
-          <>
-            {/* Big Score Ring + Morphing Blob */}
-            <div className="ring-section">
-              <div className="ring-wrap">
-                {/* Morphing blob behind the ring */}
-                <div className="blob-container">
-                  <div
-                    className="morph-blob"
-                    style={faceImage ? {
-                      backgroundImage: `url(${faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`})`,
-                    } : undefined}
-                  />
-                </div>
-                {/* SVG progress ring */}
-                <svg width={RING_SIZE} height={RING_SIZE} className="ring-svg">
-                  {/* Track */}
-                  <circle
-                    cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
-                    fill="transparent" stroke="rgba(142,161,188,0.12)" strokeWidth={STROKE}
-                  />
-                  {/* Progress fill */}
-                  <circle
-                    cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
-                    fill="transparent" stroke="#8ea1bc" strokeWidth={STROKE}
-                    strokeLinecap="round"
-                    strokeDasharray={CIRCUMFERENCE}
-                    strokeDashoffset={ringOffset}
-                    style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.25,0.46,0.45,0.94)', filter: 'drop-shadow(0 0 8px rgba(142,161,188,0.5))' }}
-                    transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
-                  />
-                </svg>
-                {/* Score text */}
-                <div className="ring-center">
-                  <div className="ring-pct">{animatedScore}</div>
-                  <div className="ring-label">LYNX SCORE</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Individual Metrics */}
-            <div style={{ marginTop: 4 }}>
-              {METRICS.map(m => (
-                <div className="metric-row" key={m.key}>
-                  <span className="metric-label">{m.label}</span>
-                  <div className="metric-track">
-                    <div className="metric-fill" style={{ width: `${(scores as any)[m.key] || 0}%`, background: m.color }} />
-                  </div>
-                  <span className="metric-score" style={{ color: m.color }}>{(scores as any)[m.key] || '—'}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Tip */}
-            {scores.tips && scores.tips.length > 0 && (
-              <div style={{ marginTop: 14, padding: '10px 12px', background: 'rgba(92,225,230,0.06)', borderRadius: 10, border: '1px solid rgba(92,225,230,0.12)' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#5CE1E6', marginBottom: 5, letterSpacing: 0.5 }}>💡 TOP TIP</div>
-                <div style={{ fontSize: 12, color: '#D0D6E0', lineHeight: 1.5 }}>{scores.tips[0]}</div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-            <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.3 }}>📷</div>
-            Tap <strong>+ SCAN</strong> to get your AI face analysis
+        {scores && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px' }}>
+            <Sparkles size={14} color="var(--primary)" />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>⚡ {scores.potential || 0} XP</span>
           </div>
         )}
       </div>
 
-      {/* ═══ SECTION 2: TODAY'S ROUTINE ═══ */}
-      <div className="glass-card" style={{ padding: 16, marginBottom: 20 }}>
-        {/* Routine Header + Progress Bar */}
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>Today's Routine</span>
+      {/* ═══ SECTION 1: GET RATED / LYNX REPORT ═══ */}
+      {!scores ? (
+        /* ── No scan yet: Hero CTA ── */
+        <div className="glass-card" style={{ padding: 24, marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 1.5, marginBottom: 8 }}>FIRST SCAN</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>Get rated</div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ScanLine size={22} color="#000" />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{doneTasks}/{currentTasks.length}</span>
-              <span className="routine-xp earned" style={{ fontSize: 9, padding: '2px 6px' }}>+{totalXP} XP</span>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
+            Take your first face scan to unlock your personalized Lynx Report and improvement roadmap.
+          </p>
+          <button className="btn btn-primary" onClick={onScan} style={{ width: '100%', padding: '14px 0', fontSize: 14, fontWeight: 700, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <ScanLine size={16} /> Start Face Scan
+          </button>
+        </div>
+      ) : (
+        /* ── Has scores: Lynx Report Summary ── */
+        <div className="glass-card" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
+          {/* B&W face photo */}
+          {faceImage && (
+            <div style={{ width: '100%', height: 220, overflow: 'hidden', position: 'relative' }}>
+              <img
+                src={faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`}
+                alt="Face scan"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)', display: 'block' }}
+              />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(transparent, #111)' }} />
+            </div>
+          )}
+
+          <div style={{ padding: '20px 24px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5 }}>OVERALL LYNX SCORE</div>
+              <button onClick={onScan} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                <RefreshCw size={16} color="var(--text-muted)" />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+              <span style={{ fontSize: 52, fontWeight: 900, color: tier!.color, lineHeight: 1 }}>{animatedScore}</span>
+              <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-muted)' }}>/100</span>
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: tier!.color, marginBottom: 12 }}>
+              {scores.overall_rating || tier!.label}
+            </div>
+
+            {scores.description && (
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }}>
+                {scores.description}
+              </p>
+            )}
+
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)' }}>
+              Potential: {scores.potential}/100
             </div>
           </div>
 
-          {/* Horizontal Progress Bar */}
-          <div className="routine-progress-track">
-            <div
-              className="routine-progress-fill"
-              style={{ width: `${routinePct}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Time Filter Pills */}
-        <div className="filter-row" style={{ marginBottom: 14 }}>
-          {(['Morning', 'Afternoon', 'Night'] as TimeFilter[]).map(f => (
-            <button
-              key={f}
-              className={`filter-pill ${f === timeFilter ? 'active' : ''}`}
-              onClick={() => setTimeFilter(f)}
-            >
-              <span>{filterIcons[f]}</span>
-              <span>{f}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Task Cards */}
-        <div className="task-list">
-          {currentTasks.map(task => {
-            const done = completed.has(task.id);
-            return (
-              <div className={`routine-card ${done ? 'completed' : ''}`} key={task.id}>
-                <button
-                  className={`routine-check ${done ? 'checked' : ''}`}
-                  onClick={() => toggleTask(task.id)}
-                >
-                  {done && <Check size={14} strokeWidth={3} />}
-                </button>
-                <div className="routine-body">
-                  <div className={`routine-title ${done ? 'done' : ''}`}>{task.title}</div>
-                  <div className="routine-duration">
-                    <Clock size={10} /> {task.duration}
+          {/* ── Trait Breakdown ── */}
+          {TRAIT_LIST.length > 0 && (
+            <div style={{ padding: '0 24px 24px' }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 20 }}>Trait Breakdown</div>
+              {TRAIT_LIST.map(t => (
+                <div key={t.key} style={{ marginBottom: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{t.label}</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: getBarColor(t.score) }}>{t.score}</span>
                   </div>
+                  <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', marginBottom: 6 }}>
+                    <div style={{ height: '100%', borderRadius: 2, width: `${t.score}%`, background: getBarColor(t.score), transition: 'width 1s ease' }} />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: getBarColor(t.score), marginBottom: 8 }}>{t.rating}</div>
+                  {t.holding_back && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>What's holding you back</div>
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.5 }}>{t.holding_back}</p>
+                    </>
+                  )}
+                  {t.fix_it && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>Fix it</div>
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.fix_it}</p>
+                    </>
+                  )}
                 </div>
-                <div className={`routine-xp ${done ? 'earned' : ''}`}>
-                  +{task.xp} XP
+              ))}
+            </div>
+          )}
+
+          {/* ── Top Recommendations ── */}
+          {(scores.recommendations || scores.tips)?.length > 0 && (
+            <div style={{ padding: '0 24px 24px' }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 16 }}>Top Recommendations</div>
+              {(scores.recommendations || scores.tips).map((tip, i) => (
+                <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 14, paddingLeft: 12, borderLeft: '3px solid var(--primary)' }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-muted)', minWidth: 18 }}>{i + 1}</span>
+                  <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>{tip}</p>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ GENERATE REPORT CTA ═══ */}
+      {!scores && (
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', marginBottom: 24, cursor: 'pointer' }} onClick={onScan}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <ScanLine size={20} color="#000" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Generate Your First Report</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Scan your face to unlock</div>
+          </div>
+          <ChevronRight size={18} color="var(--text-muted)" />
+        </div>
+      )}
+
+      {/* ═══ ROADMAP SECTION ═══ */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Roadmap</div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
+        </div>
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', cursor: 'pointer' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surface-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 20 }}>🏔️</span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Your Looksmax Journey</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Step-by-step path to Lynx Mode</div>
+          </div>
+          <ChevronRight size={18} color="var(--text-muted)" />
         </div>
       </div>
 
+      {/* ═══ EXERCISES SECTION ═══ */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Exercises</div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {[
+            { icon: <Dumbbell size={24} color="var(--primary)" />, label: 'Jawline' },
+            { icon: <Smile size={24} color="var(--primary)" />, label: 'Facial' },
+            { icon: <Triangle size={24} color="var(--primary)" />, label: 'Nose' },
+          ].map(ex => (
+            <div key={ex.label} className="glass-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '20px 12px', cursor: 'pointer' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(200,168,78,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {ex.icon}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{ex.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ LYNXMAXING COURSES ═══ */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Lynxmaxing Courses</div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
+        </div>
+        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+          {[
+            { title: 'Skincare Ascension', emoji: '🧴' },
+            { title: 'Hairstyle', emoji: '💇' },
+            { title: 'Posture Fix', emoji: '🧍' },
+          ].map(c => (
+            <div key={c.title} className="glass-card" style={{ minWidth: 150, padding: 0, overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+              <div style={{ width: '100%', height: 110, background: 'var(--surface-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 40 }}>{c.emoji}</span>
+              </div>
+              <div style={{ padding: '12px 14px' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{c.title}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
