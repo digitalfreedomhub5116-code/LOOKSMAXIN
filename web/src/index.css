@@ -333,49 +333,44 @@ html, body, #root {
   text-shadow: 0 1px 6px rgba(0,0,0,0.4);
 }
 
-/* Blob container — centered inside ring */
+/* Blob container — fills the ring area, NO circular clip */
 .blob-container {
   position: absolute;
-  inset: 8px;
+  inset: 0;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  border-radius: 50%;
 }
 
-/* The morphing blob */
+/* The morphing blob — shape-shifts continuously */
 .morph-blob {
-  width: 110%;
-  height: 110%;
-  background: linear-gradient(135deg, rgba(142,161,188,0.25) 0%, rgba(123,44,191,0.15) 40%, rgba(92,225,230,0.12) 70%, rgba(142,161,188,0.2) 100%);
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, rgba(142,161,188,0.3) 0%, rgba(123,44,191,0.2) 40%, rgba(92,225,230,0.15) 70%, rgba(142,161,188,0.25) 100%);
   background-size: cover;
   background-position: center;
   border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%;
-  animation: blobMorph 8s ease-in-out infinite, blobRotate 12s linear infinite;
-  filter: blur(1px);
+  animation: blobMorph 8s ease-in-out infinite;
+  filter: blur(2px);
 }
 
 /* When face image is set, overlay translucent glass on top */
 .morph-blob[style*="background-image"] {
   background-blend-mode: overlay;
-  background-color: rgba(5, 10, 31, 0.45);
+  background-color: rgba(5, 10, 31, 0.5);
+  filter: blur(1px);
 }
 
 @keyframes blobMorph {
-  0%   { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; }
-  15%  { border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
-  30%  { border-radius: 55% 45% 40% 60% / 45% 55% 50% 50%; }
-  45%  { border-radius: 45% 55% 60% 40% / 60% 45% 45% 55%; }
-  60%  { border-radius: 50% 50% 45% 55% / 40% 60% 55% 45%; }
-  75%  { border-radius: 40% 60% 50% 50% / 55% 45% 55% 45%; }
-  100% { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; }
-}
-
-@keyframes blobRotate {
-  from { transform: rotate(0deg) scale(1.05); }
-  to   { transform: rotate(360deg) scale(1.05); }
+  0%   { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; transform: scale(1); }
+  14%  { border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; transform: scale(1.04); }
+  28%  { border-radius: 55% 45% 40% 60% / 45% 55% 50% 50%; transform: scale(0.98); }
+  42%  { border-radius: 45% 55% 60% 40% / 60% 45% 45% 55%; transform: scale(1.03); }
+  57%  { border-radius: 50% 50% 45% 55% / 40% 60% 55% 45%; transform: scale(0.97); }
+  71%  { border-radius: 40% 60% 50% 50% / 55% 45% 55% 45%; transform: scale(1.05); }
+  85%  { border-radius: 55% 45% 55% 45% / 45% 55% 45% 55%; transform: scale(1); }
+  100% { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; transform: scale(1); }
 }
 
 /* ─── Filter Pills ─── */
