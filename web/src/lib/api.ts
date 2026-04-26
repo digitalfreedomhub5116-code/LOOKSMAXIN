@@ -5,7 +5,7 @@ const url = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.s
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_g2L0rujZkZS_mpbC3BhSQA_-Kns1bc0';
 
 export const supabase = createClient(url, key, {
-  auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+  auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
 });
 
 const API = import.meta.env.VITE_API_URL || '';
