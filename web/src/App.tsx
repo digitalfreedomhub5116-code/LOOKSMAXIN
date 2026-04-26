@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Dashboard from './pages/Dashboard';
 import FaceScan from './pages/FaceScan';
 import Roadmap from './pages/Roadmap';
@@ -16,10 +16,12 @@ export type Tab = 'dashboard' | 'roadmap' | 'exercises' | 'vault' | 'profile';
 export default function App() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [scanning, setScanning] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  // Chat states: 'closed' | 'opening' | 'open' | 'closing'
+  const [chatState, setChatState] = useState<'closed' | 'opening' | 'open' | 'closing'>('closed');
   const [latestScores, setLatestScores] = useState<FaceScores | null>(() => loadLatestScores());
   const [faceImage, setFaceImage] = useState<string | null>(() => loadFaceImage());
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const chatTimerRef = useRef<number>(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -43,6 +45,18 @@ export default function App() {
     setTab('dashboard');
   };
 
+  const openChat = () => {
+    clearTimeout(chatTimerRef.current);
+    setChatState('opening');
+    chatTimerRef.current = window.setTimeout(() => setChatState('open'), 20);
+  };
+
+  const closeChat = () => {
+    clearTimeout(chatTimerRef.current);
+    setChatState('closing');
+    chatTimerRef.current = window.setTimeout(() => setChatState('closed'), 350);
+  };
+
   if (authed === null) {
     return (
       <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh' }}>
@@ -58,8 +72,10 @@ export default function App() {
     return <AuthPage onAuth={() => setAuthed(true)} />;
   }
 
+  const chatVisible = chatState !== 'closed';
+  const chatAnimClass = chatState === 'open' ? 'chat-panel-open' : chatState === 'closing' ? 'chat-panel-closing' : 'chat-panel-opening';
+
   const renderPage = () => {
-    if (chatOpen) return <LynxChat scores={latestScores} />;
     switch (tab) {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
       case 'roadmap': return <Roadmap />;
@@ -74,29 +90,28 @@ export default function App() {
     <div className="app">
       {renderPage()}
 
-      {/* Tab bar — hidden during scan */}
-      {!scanning && <TabBar active={chatOpen ? null : tab} onChange={(t) => { setChatOpen(false); setTab(t); }} />}
-
-      {/* Floating Lynx AI FAB — bottom right */}
-      {!scanning && !chatOpen && (
-        <button
-          className="lynx-fab"
-          onClick={() => setChatOpen(true)}
-          aria-label="Open Lynx AI Chat"
-        >
-          <LynxBubbleIcon size={32} animated />
-        </button>
+      {/* ═══ Chat overlay — animated ═══ */}
+      {chatVisible && (
+        <div className={`chat-overlay ${chatAnimClass}`}>
+          <LynxChat scores={latestScores} />
+        </div>
       )}
 
-      {/* Close chat button when chat is open */}
-      {chatOpen && !scanning && (
+      {/* Tab bar */}
+      {!scanning && <TabBar active={chatVisible ? null : tab} onChange={(t) => { if (chatVisible) closeChat(); setTab(t); }} />}
+
+      {/* Floating Lynx AI FAB */}
+      {!scanning && (
         <button
-          className="lynx-fab"
-          onClick={() => setChatOpen(false)}
-          aria-label="Close Lynx AI Chat"
-          style={{ background: 'var(--surface)', border: '2px solid var(--border)' }}
+          className={`lynx-fab ${chatVisible ? 'lynx-fab-active' : ''}`}
+          onClick={() => chatVisible ? closeChat() : openChat()}
+          aria-label={chatVisible ? 'Close Lynx AI Chat' : 'Open Lynx AI Chat'}
         >
-          <span style={{ fontSize: 20, color: '#fff' }}>✕</span>
+          {chatVisible ? (
+            <span style={{ fontSize: 18, color: '#fff', lineHeight: 1 }}>✕</span>
+          ) : (
+            <LynxBubbleIcon size={32} animated />
+          )}
         </button>
       )}
 
