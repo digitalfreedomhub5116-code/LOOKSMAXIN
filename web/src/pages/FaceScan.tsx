@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback } from 'react';
-import { X, ArrowLeft, Lightbulb } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { X, ArrowLeft, Lightbulb, AlertTriangle } from 'lucide-react';
 import { analyzeFace } from '../lib/api';
 import type { FaceScores } from '../lib/api';
 
-type Stage = 'camera' | 'analyzing' | 'results';
+type Stage = 'camera' | 'analyzing' | 'results' | 'error';
 
 const METRICS = [
   { key: 'jawline', label: 'Jawline', color: '#8ea1bc' },
@@ -14,7 +14,12 @@ const METRICS = [
   { key: 'hair_quality', label: 'Hair', color: '#EF4444' },
 ];
 
-export default function FaceScan({ onClose }: { onClose: () => void }) {
+interface FaceScanProps {
+  onClose: () => void;
+  onResults?: (scores: FaceScores) => void;
+}
+
+export default function FaceScan({ onClose, onResults }: FaceScanProps) {
   const [stage, setStage] = useState<Stage>('camera');
   const [scores, setScores] = useState<FaceScores | null>(null);
   const [error, setError] = useState('');
@@ -22,68 +27,118 @@ export default function FaceScan({ onClose }: { onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Start camera
+  // Start camera — low constraints to avoid zoom on mobile
   const startCamera = useCallback(async () => {
+    setError('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 960 } },
+        video: {
+          facingMode: 'user',
+          width: { ideal: 480 },
+          height: { ideal: 640 },
+        },
+        audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch {
-      setError('Camera access denied. Please allow camera permissions.');
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      setError('Camera access denied. Please allow camera permissions and reload.');
     }
   }, []);
 
-  // Capture photo
+  // Initialize camera on mount
+  useEffect(() => {
+    startCamera();
+    return () => {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
+  }, [startCamera]);
+
+  // Capture photo and send to Gemini
   const capture = async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(video, 0, 0);
 
-    // Stop camera
+    // Use the actual video dimensions
+    canvas.width = video.videoWidth || 480;
+    canvas.height = video.videoHeight || 640;
+
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Stop camera stream
     streamRef.current?.getTracks().forEach(t => t.stop());
 
     setStage('analyzing');
+    setError('');
 
     try {
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      // Convert canvas to base64
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       const base64 = dataUrl.split(',')[1];
-      const result = await analyzeFace(base64);
+
+      console.log('Sending image to AI. Base64 length:', base64.length);
+
+      // Call the real Gemini API via server proxy
+      const result = await analyzeFace(base64, 'image/jpeg');
+
+      console.log('AI Result received:', result);
+
       setScores(result);
       setStage('results');
+
+      // Pass results back to parent (Dashboard)
+      if (onResults) onResults(result);
     } catch (e: any) {
-      setError(e.message || 'Analysis failed');
-      setStage('camera');
-      startCamera();
+      console.error('Analysis error:', e);
+      setError(e.message || 'AI analysis failed. Please try again.');
+      setStage('error');
     }
   };
-
-  // Initialize camera on mount
-  useState(() => { startCamera(); });
 
   const handleClose = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
     onClose();
   };
 
+  // ─── ERROR STAGE ───
+  if (stage === 'error') {
+    return (
+      <div className="analyzing-overlay">
+        <AlertTriangle size={48} color="#EF4444" />
+        <div className="h2" style={{ color: '#EF4444' }}>Analysis Failed</div>
+        <div className="label" style={{ maxWidth: 280, textAlign: 'center', lineHeight: 1.6 }}>
+          {error}
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button className="btn btn-outline" onClick={handleClose}>
+            <ArrowLeft size={14} /> Back
+          </button>
+          <button className="btn btn-primary" onClick={() => { setStage('camera'); startCamera(); }}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── ANALYZING STAGE ───
   if (stage === 'analyzing') {
     return (
       <div className="analyzing-overlay">
         <div className="pulse-ring" />
         <div className="h2">Analyzing your features...</div>
-        <div className="label">AI is scanning facial structure</div>
+        <div className="label">Lynx AI is scanning your facial structure</div>
       </div>
     );
   }
 
+  // ─── RESULTS STAGE ───
   if (stage === 'results' && scores) {
     return (
       <div className="results-page">
@@ -93,7 +148,7 @@ export default function FaceScan({ onClose }: { onClose: () => void }) {
             <span className="label">OVERALL</span>
           </div>
           <div className="h1" style={{ marginBottom: 4 }}>Analysis Complete</div>
-          <div className="label">Your personalized facial assessment</div>
+          <div className="label">Powered by Gemini AI • Personalized assessment</div>
         </div>
 
         {/* Metrics */}
@@ -150,7 +205,7 @@ export default function FaceScan({ onClose }: { onClose: () => void }) {
     );
   }
 
-  // Camera stage
+  // ─── CAMERA STAGE ───
   return (
     <div className="scanner-view">
       <video

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Flame, Plus, ScanLine, TrendingUp, Droplets, Eye, Smile } from 'lucide-react';
+import type { FaceScores } from '../lib/api';
 
 interface DashboardProps {
   onScan: () => void;
+  scores: FaceScores | null;
 }
 
 const METRICS = [
@@ -21,18 +23,15 @@ const TASKS = [
   { title: 'Eye Area Massage', time: '12:00 PM', done: false, icon: <Eye size={16} color="#F59E0B" /> },
 ];
 
-export default function Dashboard({ onScan }: DashboardProps) {
-  const [scores, setScores] = useState<Record<string, number> | null>(null);
+export default function Dashboard({ onScan, scores }: DashboardProps) {
   const [overall, setOverall] = useState(0);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _setScores = setScores; // used in future Supabase integration
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Night';
 
-  // Animate score on mount
+  // Animate score on mount or score change
   useEffect(() => {
-    if (!scores) return;
+    if (!scores) { setOverall(0); return; }
     let frame: number;
     let start = 0;
     const target = scores.overall || 0;
@@ -75,7 +74,7 @@ export default function Dashboard({ onScan }: DashboardProps) {
               <ScanLine size={14} color="#8ea1bc" /> Face Analysis
             </div>
             <div className="label" style={{ marginTop: 2 }}>
-              {scores ? 'Latest scan results' : 'Scan your face to start'}
+              {scores ? 'AI-powered scan results' : 'Scan your face to start'}
             </div>
           </div>
           <button className="btn btn-primary" onClick={onScan} style={{ fontSize: 11 }}>
@@ -99,10 +98,22 @@ export default function Dashboard({ onScan }: DashboardProps) {
                 </span>
               </div>
             ))}
+
+            {/* Tips preview */}
+            {scores.tips && scores.tips.length > 0 && (
+              <div style={{ marginTop: 12, padding: '10px 12px', background: 'rgba(92,225,230,0.06)', borderRadius: 10, border: '1px solid rgba(92,225,230,0.12)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#5CE1E6', marginBottom: 6, letterSpacing: 0.5 }}>
+                  💡 TOP TIP
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                  {scores.tips[0]}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-            Tap <strong>+ SCAN</strong> to analyze your face
+            Tap <strong>+ SCAN</strong> to analyze your face with Gemini AI
           </div>
         )}
       </div>
