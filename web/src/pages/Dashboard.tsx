@@ -138,36 +138,24 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
 
         {scores ? (
           <>
-            {/* Big Score Ring */}
+            {/* Big Score Ring + Morphing Blob */}
             <div className="ring-section">
               <div className="ring-wrap">
+                {/* Morphing blob behind the ring */}
+                <div className="blob-container">
+                  <div
+                    className="morph-blob"
+                    style={faceImage ? {
+                      backgroundImage: `url(${faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`})`,
+                    } : undefined}
+                  />
+                </div>
+                {/* SVG progress ring */}
                 <svg width={RING_SIZE} height={RING_SIZE} className="ring-svg">
-                  <defs>
-                    <clipPath id="faceClip">
-                      <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS - STROKE / 2} />
-                    </clipPath>
-                  </defs>
-                  {/* Face image inside ring */}
-                  {faceImage && (
-                    <image
-                      href={faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`}
-                      x="0" y="0"
-                      width={RING_SIZE} height={RING_SIZE}
-                      preserveAspectRatio="xMidYMid slice"
-                      clipPath="url(#faceClip)"
-                    />
-                  )}
-                  {/* Dark overlay for text readability */}
-                  {faceImage && (
-                    <circle
-                      cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS - STROKE / 2}
-                      fill="rgba(5,10,31,0.55)"
-                    />
-                  )}
                   {/* Track */}
                   <circle
                     cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
-                    fill="transparent" stroke="rgba(142,161,188,0.15)" strokeWidth={STROKE}
+                    fill="transparent" stroke="rgba(142,161,188,0.12)" strokeWidth={STROKE}
                   />
                   {/* Progress fill */}
                   <circle
@@ -176,10 +164,11 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
                     strokeLinecap="round"
                     strokeDasharray={CIRCUMFERENCE}
                     strokeDashoffset={ringOffset}
-                    style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.25,0.46,0.45,0.94)', filter: 'drop-shadow(0 0 6px rgba(142,161,188,0.5))' }}
+                    style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.25,0.46,0.45,0.94)', filter: 'drop-shadow(0 0 8px rgba(142,161,188,0.5))' }}
                     transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
                   />
                 </svg>
+                {/* Score text */}
                 <div className="ring-center">
                   <div className="ring-pct">{animatedScore}</div>
                   <div className="ring-label">LYNX SCORE</div>

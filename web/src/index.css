@@ -292,11 +292,11 @@ html, body, #root {
   white-space: nowrap;
 }
 
-/* ─── Progress Ring ─── */
+/* ─── Progress Ring + Morphing Blob ─── */
 .ring-section {
   display: flex;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .ring-wrap {
   position: relative;
@@ -305,6 +305,8 @@ html, body, #root {
 }
 .ring-svg {
   display: block;
+  position: relative;
+  z-index: 2;
 }
 .ring-center {
   position: absolute;
@@ -313,19 +315,67 @@ html, body, #root {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  z-index: 3;
 }
 .ring-pct {
-  font-size: 38px;
-  font-weight: 800;
+  font-size: 40px;
+  font-weight: 900;
   color: #fff;
   line-height: 1;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 0 20px rgba(142,161,188,0.3);
 }
 .ring-label {
-  font-size: 10px;
+  font-size: 9px;
   color: #D0D6E0;
-  letter-spacing: 1.5px;
-  font-weight: 600;
+  letter-spacing: 2px;
+  font-weight: 700;
   margin-top: 4px;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+}
+
+/* Blob container — centered inside ring */
+.blob-container {
+  position: absolute;
+  inset: 8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+/* The morphing blob */
+.morph-blob {
+  width: 110%;
+  height: 110%;
+  background: linear-gradient(135deg, rgba(142,161,188,0.25) 0%, rgba(123,44,191,0.15) 40%, rgba(92,225,230,0.12) 70%, rgba(142,161,188,0.2) 100%);
+  background-size: cover;
+  background-position: center;
+  border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%;
+  animation: blobMorph 8s ease-in-out infinite, blobRotate 12s linear infinite;
+  filter: blur(1px);
+}
+
+/* When face image is set, overlay translucent glass on top */
+.morph-blob[style*="background-image"] {
+  background-blend-mode: overlay;
+  background-color: rgba(5, 10, 31, 0.45);
+}
+
+@keyframes blobMorph {
+  0%   { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; }
+  15%  { border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
+  30%  { border-radius: 55% 45% 40% 60% / 45% 55% 50% 50%; }
+  45%  { border-radius: 45% 55% 60% 40% / 60% 45% 45% 55%; }
+  60%  { border-radius: 50% 50% 45% 55% / 40% 60% 55% 45%; }
+  75%  { border-radius: 40% 60% 50% 50% / 55% 45% 55% 45%; }
+  100% { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; }
+}
+
+@keyframes blobRotate {
+  from { transform: rotate(0deg) scale(1.05); }
+  to   { transform: rotate(360deg) scale(1.05); }
 }
 
 /* ─── Filter Pills ─── */
