@@ -1,11 +1,49 @@
-import { useState, useEffect } from 'react';
-import { Flame, Plus, ScanLine, TrendingUp, Droplets, Eye, Smile } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ScanLine, Clock, Check } from 'lucide-react';
 import type { FaceScores } from '../lib/api';
 
 interface DashboardProps {
   onScan: () => void;
   scores: FaceScores | null;
 }
+
+// ─── SVG Progress Ring ───
+const RING_SIZE = 160;
+const STROKE = 10;
+const RADIUS = (RING_SIZE - STROKE) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+// ─── Time filter types ───
+type TimeFilter = 'Morning' | 'Afternoon' | 'Night';
+
+interface Task {
+  id: string;
+  title: string;
+  duration: string;
+  xp: number;
+}
+
+const TASKS: Record<TimeFilter, Task[]> = {
+  Morning: [
+    { id: 'm1', title: 'Rice Water Face Mask', duration: '10 mins', xp: 15 },
+    { id: 'm2', title: 'Brush Lips (Exfoliate)', duration: '3 mins', xp: 10 },
+    { id: 'm3', title: 'Morning Skincare Routine', duration: '8 mins', xp: 20 },
+    { id: 'm4', title: 'Cold Water Splash (Face)', duration: '2 mins', xp: 10 },
+    { id: 'm5', title: 'Drink Lemon Water', duration: '1 min', xp: 5 },
+  ],
+  Afternoon: [
+    { id: 'a1', title: 'Posture Check & Correct', duration: '5 mins', xp: 10 },
+    { id: 'a2', title: 'Jawline Exercises', duration: '10 mins', xp: 20 },
+    { id: 'a3', title: 'Mewing Practice', duration: '5 mins', xp: 15 },
+    { id: 'a4', title: 'Hydrate (2L Target)', duration: '—', xp: 10 },
+  ],
+  Night: [
+    { id: 'n1', title: 'Night Skincare Routine', duration: '10 mins', xp: 20 },
+    { id: 'n2', title: 'Apply Under-Eye Cream', duration: '2 mins', xp: 10 },
+    { id: 'n3', title: 'Face Massage (Gua Sha)', duration: '8 mins', xp: 15 },
+    { id: 'n4', title: 'Sleep 8 Hours', duration: '8 hrs', xp: 25 },
+  ],
+};
 
 const METRICS = [
   { key: 'jawline', label: 'Jawline', color: '#8ea1bc' },
@@ -16,69 +54,163 @@ const METRICS = [
   { key: 'hair_quality', label: 'Hair', color: '#EF4444' },
 ];
 
-const TASKS = [
-  { title: 'Morning Skincare Routine', time: '7:00 AM', done: true, icon: <Droplets size={16} color="#5CE1E6" /> },
-  { title: 'Mewing Exercise (5 min)', time: '8:00 AM', done: true, icon: <Smile size={16} color="#7B2CBF" /> },
-  { title: 'Cold Water Splash', time: '9:00 AM', done: false, icon: <Droplets size={16} color="#8ea1bc" /> },
-  { title: 'Eye Area Massage', time: '12:00 PM', done: false, icon: <Eye size={16} color="#F59E0B" /> },
-];
-
 export default function Dashboard({ onScan, scores }: DashboardProps) {
-  const [overall, setOverall] = useState(0);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => {
+    const h = new Date().getHours();
+    return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Night';
+  });
+  const [completed, setCompleted] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('lynx_tasks');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [ringOffset, setRingOffset] = useState(CIRCUMFERENCE);
+  const [animatedPct, setAnimatedPct] = useState(0);
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Night';
+  const currentTasks = TASKS[timeFilter];
+  const doneTasks = currentTasks.filter(t => completed.has(t.id)).length;
+  const pct = currentTasks.length > 0 ? Math.round((doneTasks / currentTasks.length) * 100) : 0;
+  const totalXP = currentTasks.filter(t => completed.has(t.id)).reduce((s, t) => s + t.xp, 0);
 
-  // Animate score on mount or score change
+  // Save to localStorage
   useEffect(() => {
-    if (!scores) { setOverall(0); return; }
+    localStorage.setItem('lynx_tasks', JSON.stringify([...completed]));
+  }, [completed]);
+
+  // Animate ring
+  useEffect(() => {
+    const target = CIRCUMFERENCE - (pct / 100) * CIRCUMFERENCE;
+    setRingOffset(target);
+    // Animate percentage number
     let frame: number;
-    let start = 0;
-    const target = scores.overall || 0;
+    let current = animatedPct;
     const step = () => {
-      start += 1.5;
-      if (start >= target) { setOverall(target); return; }
-      setOverall(Math.round(start));
+      const diff = pct - current;
+      if (Math.abs(diff) < 1) { setAnimatedPct(pct); return; }
+      current += diff * 0.08;
+      setAnimatedPct(Math.round(current));
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [scores]);
+  }, [pct]);
+
+  const toggleTask = (id: string) => {
+    setCompleted(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const filterIcons: Record<TimeFilter, string> = {
+    Morning: '☀️',
+    Afternoon: '🌤️',
+    Night: '🌙',
+  };
 
   return (
     <div className="page">
+
       {/* ─── Header ─── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div className="dash-header">
         <div>
-          <div className="label-xs" style={{ marginBottom: 4 }}>GOOD {greeting.toUpperCase()}</div>
-          <div className="h1">Champion</div>
+          <div className="dash-title">Today's Routine</div>
+          <div className="dash-subtitle">{doneTasks}/{currentTasks.length} completed · {totalXP} XP earned</div>
         </div>
-        <div className="streak-badge">
-          <Flame size={14} /> 3
+        <div className="dash-streak">
+          <span>🔥</span>
+          <span>12 Day Streak</span>
         </div>
       </div>
 
-      {/* ─── Lynx Score Ring ─── */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
-        <div className="score-ring">
-          <span className="value">{overall || '—'}</span>
-          <span className="label">LYNX SCORE</span>
+      {/* ─── Progress Ring ─── */}
+      <div className="ring-section">
+        <div className="ring-wrap">
+          <svg width={RING_SIZE} height={RING_SIZE} className="ring-svg">
+            {/* Track */}
+            <circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RADIUS}
+              fill="transparent"
+              stroke="rgba(142,161,188,0.1)"
+              strokeWidth={STROKE}
+            />
+            {/* Progress */}
+            <circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RADIUS}
+              fill="transparent"
+              stroke="#8ea1bc"
+              strokeWidth={STROKE}
+              strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE}
+              strokeDashoffset={ringOffset}
+              style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.25,0.46,0.45,0.94)', filter: 'drop-shadow(0 0 6px rgba(142,161,188,0.5))' }}
+              transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
+            />
+          </svg>
+          <div className="ring-center">
+            <div className="ring-pct">{animatedPct}%</div>
+            <div className="ring-label">Daily Goals</div>
+          </div>
         </div>
+      </div>
+
+      {/* ─── Time Filter Pills ─── */}
+      <div className="filter-row">
+        {(['Morning', 'Afternoon', 'Night'] as TimeFilter[]).map(f => (
+          <button
+            key={f}
+            className={`filter-pill ${f === timeFilter ? 'active' : ''}`}
+            onClick={() => setTimeFilter(f)}
+          >
+            <span>{filterIcons[f]}</span>
+            <span>{f}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ─── Task Cards ─── */}
+      <div className="task-list">
+        {currentTasks.map(task => {
+          const done = completed.has(task.id);
+          return (
+            <div className={`routine-card ${done ? 'completed' : ''}`} key={task.id}>
+              <button
+                className={`routine-check ${done ? 'checked' : ''}`}
+                onClick={() => toggleTask(task.id)}
+              >
+                {done && <Check size={14} strokeWidth={3} />}
+              </button>
+              <div className="routine-body">
+                <div className={`routine-title ${done ? 'done' : ''}`}>{task.title}</div>
+                <div className="routine-duration">
+                  <Clock size={10} /> {task.duration}
+                </div>
+              </div>
+              <div className={`routine-xp ${done ? 'earned' : ''}`}>
+                +{task.xp} XP
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ─── Face Analysis Card ─── */}
-      <div className="glass-card" style={{ padding: 18, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <div className="h3" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <ScanLine size={14} color="#8ea1bc" /> Face Analysis
-            </div>
-            <div className="label" style={{ marginTop: 2 }}>
-              {scores ? 'AI-powered scan results' : 'Scan your face to start'}
-            </div>
+      <div className="glass-card" style={{ padding: 16, marginTop: 8, marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: scores ? 14 : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ScanLine size={14} color="#8ea1bc" />
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', letterSpacing: 0.3 }}>
+              {scores ? `Lynx Score: ${scores.overall}` : 'Face Analysis'}
+            </span>
           </div>
-          <button className="btn btn-primary" onClick={onScan} style={{ fontSize: 11 }}>
-            <Plus size={14} /> SCAN
+          <button className="btn btn-primary" onClick={onScan} style={{ fontSize: 10, padding: '6px 12px' }}>
+            {scores ? 'RESCAN' : '+ SCAN'}
           </button>
         </div>
 
@@ -88,56 +220,17 @@ export default function Dashboard({ onScan, scores }: DashboardProps) {
               <div className="metric-row" key={m.key}>
                 <span className="metric-label">{m.label}</span>
                 <div className="metric-track">
-                  <div
-                    className="metric-fill"
-                    style={{ width: `${(scores as any)[m.key] || 0}%`, background: m.color }}
-                  />
+                  <div className="metric-fill" style={{ width: `${(scores as any)[m.key] || 0}%`, background: m.color }} />
                 </div>
-                <span className="metric-score" style={{ color: m.color }}>
-                  {(scores as any)[m.key] || '—'}
-                </span>
+                <span className="metric-score" style={{ color: m.color }}>{(scores as any)[m.key] || '—'}</span>
               </div>
             ))}
-
-            {/* Tips preview */}
-            {scores.tips && scores.tips.length > 0 && (
-              <div style={{ marginTop: 12, padding: '10px 12px', background: 'rgba(92,225,230,0.06)', borderRadius: 10, border: '1px solid rgba(92,225,230,0.12)' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#5CE1E6', marginBottom: 6, letterSpacing: 0.5 }}>
-                  💡 TOP TIP
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                  {scores.tips[0]}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-            Tap <strong>+ SCAN</strong> to analyze your face with Gemini AI
+          <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-muted)', fontSize: 12 }}>
+            Tap <strong>+ SCAN</strong> to analyze your face with AI
           </div>
         )}
-      </div>
-
-      {/* ─── Daily Routine ─── */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div className="h3" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <TrendingUp size={14} color="#8ea1bc" /> Daily Routine
-          </div>
-          <span className="label">{TASKS.filter(t => t.done).length}/{TASKS.length}</span>
-        </div>
-
-        {TASKS.map((t, i) => (
-          <div className="glass task-card" key={i}>
-            <div className={`task-icon ${t.done ? 'done' : ''}`}>
-              {t.done ? <span style={{ color: '#22C55E', fontSize: 16 }}>✓</span> : t.icon}
-            </div>
-            <div className="task-content">
-              <div className={`task-title ${t.done ? 'done' : ''}`}>{t.title}</div>
-              <div className="task-time">{t.time}</div>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
