@@ -3,6 +3,7 @@ import Dashboard from './pages/Dashboard';
 import FaceScan from './pages/FaceScan';
 import Roadmap from './pages/Roadmap';
 import Exercises from './pages/Exercises';
+import Courses from './pages/Courses';
 import LynxChat from './pages/LynxChat';
 import Profile from './pages/Profile';
 import AuthPage from './pages/AuthPage';
@@ -63,6 +64,7 @@ export default function App() {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
       case 'roadmap': return <Roadmap />;
       case 'exercises': return <Exercises />;
+      case 'vault': return <Courses />;
       case 'profile': return <Profile onLogout={handleLogout} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
     }
