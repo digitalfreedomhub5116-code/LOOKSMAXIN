@@ -123,13 +123,13 @@ function OptionButton({
       Animated.timing(scaleAnim, {
         toValue: 0.95,
         duration: 80,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 4,
         tension: 100,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
     onPress();
@@ -219,7 +219,7 @@ export default function CalibrationScreen() {
     Animated.timing(headerFade, {
       toValue: 1,
       duration: 600,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, []);
 
@@ -228,14 +228,14 @@ export default function CalibrationScreen() {
     const slideIn = direction === 'next' ? 40 : -40;
 
     Animated.parallel([
-      Animated.timing(cardFade, { toValue: 0, duration: 150, useNativeDriver: true }),
-      Animated.timing(cardSlide, { toValue: slideOut, duration: 150, useNativeDriver: true }),
+      Animated.timing(cardFade, { toValue: 0, duration: 150, useNativeDriver: false }),
+      Animated.timing(cardSlide, { toValue: slideOut, duration: 150, useNativeDriver: false }),
     ]).start(() => {
       callback();
       cardSlide.setValue(slideIn);
       Animated.parallel([
-        Animated.timing(cardFade, { toValue: 1, duration: 250, useNativeDriver: true }),
-        Animated.timing(cardSlide, { toValue: 0, duration: 250, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(cardFade, { toValue: 1, duration: 250, useNativeDriver: false }),
+        Animated.timing(cardSlide, { toValue: 0, duration: 250, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
       ]).start();
     });
   };

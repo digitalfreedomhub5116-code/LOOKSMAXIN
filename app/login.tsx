@@ -47,19 +47,19 @@ export default function LoginScreen() {
         toValue: 1,
         duration: 700,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(cardSlide, {
         toValue: 0,
         duration: 700,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(headerSlide, {
         toValue: 0,
         duration: 600,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -70,13 +70,13 @@ export default function LoginScreen() {
           toValue: -12,
           duration: 3000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(orbFloat, {
           toValue: 12,
           duration: 3000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();
@@ -88,13 +88,13 @@ export default function LoginScreen() {
           toValue: 1,
           duration: 2000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(orbPulse, {
           toValue: 0.6,
           duration: 2000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();

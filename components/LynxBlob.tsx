@@ -3,6 +3,7 @@ import { View, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/Theme';
+import { Platform } from 'react-native';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -37,13 +38,13 @@ export default function LynxBlob({ size = 150 }: LynxBlobProps) {
           toValue: -10,
           duration: 3200,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(floatY, {
           toValue: 10,
           duration: 3200,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ).start();
@@ -55,13 +56,13 @@ export default function LynxBlob({ size = 150 }: LynxBlobProps) {
           toValue: 1.05,
           duration: 2800,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(breathe, {
           toValue: 0.95,
           duration: 2800,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ).start();
@@ -73,13 +74,13 @@ export default function LynxBlob({ size = 150 }: LynxBlobProps) {
           toValue: 0.65,
           duration: 2500,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(haloOpacity, {
           toValue: 0.25,
           duration: 2500,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ).start();
@@ -91,13 +92,13 @@ export default function LynxBlob({ size = 150 }: LynxBlobProps) {
           toValue: 0.35,
           duration: 4000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(outerGlowOpacity, {
           toValue: 0.1,
           duration: 4000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ).start();
@@ -108,7 +109,7 @@ export default function LynxBlob({ size = 150 }: LynxBlobProps) {
         toValue: 1,
         duration: 20000,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ).start();
   }, []);
@@ -216,11 +217,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(142, 161, 188, 0.25)',
     // Purple glow shadow
-    shadowColor: '#7B2CBF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
-    shadowRadius: 28,
-    elevation: 16,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 0 28px rgba(123, 44, 191, 0.55)' }
+      : { shadowColor: '#7B2CBF', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 28, elevation: 16 }),
     overflow: 'hidden',
   },
   innerShine: {

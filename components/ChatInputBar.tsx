@@ -166,15 +166,12 @@ const styles = StyleSheet.create({
     width: MIC_SIZE,
     height: MIC_SIZE,
     borderRadius: MIC_SIZE / 2,
-    backgroundColor: Colors.primary, // Solid Lynx Blue
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    // Subtle glow
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 8,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 0 12px rgba(142, 161, 188, 0.45)' }
+      : { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.45, shadowRadius: 12, elevation: 8 }),
   },
   sendButton: {
     width: MIC_SIZE,
@@ -183,10 +180,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 8,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 0 12px rgba(142, 161, 188, 0.45)' }
+      : { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.45, shadowRadius: 12, elevation: 8 }),
   },
 });

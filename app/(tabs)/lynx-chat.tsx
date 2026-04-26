@@ -6,6 +6,7 @@ import {
   Animated,
   Easing,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '@/constants/Theme';
@@ -44,41 +45,41 @@ export default function LynxChatScreen() {
       // 1. Header slides down & fades in
       Animated.parallel([
         Animated.timing(headerFade, {
-          toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+          toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false,
         }),
         Animated.timing(headerSlideY, {
-          toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+          toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false,
         }),
       ]),
       // 2. Blob pops in
       Animated.parallel([
         Animated.timing(blobFade, {
-          toValue: 1, duration: 500, useNativeDriver: true,
+          toValue: 1, duration: 500, useNativeDriver: false,
         }),
         Animated.spring(blobScale, {
-          toValue: 1, friction: 6, tension: 50, useNativeDriver: true,
+          toValue: 1, friction: 6, tension: 50, useNativeDriver: false,
         }),
       ]),
       // 3. Status text
       Animated.timing(statusFade, {
-        toValue: 1, duration: 400, useNativeDriver: true,
+        toValue: 1, duration: 400, useNativeDriver: false,
       }),
       // 4. Quick actions grid
       Animated.parallel([
         Animated.timing(gridFade, {
-          toValue: 1, duration: 500, useNativeDriver: true,
+          toValue: 1, duration: 500, useNativeDriver: false,
         }),
         Animated.timing(gridSlideY, {
-          toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+          toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: false,
         }),
       ]),
       // 5. Input bar
       Animated.parallel([
         Animated.timing(inputFade, {
-          toValue: 1, duration: 400, useNativeDriver: true,
+          toValue: 1, duration: 400, useNativeDriver: false,
         }),
         Animated.timing(inputSlideY, {
-          toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+          toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -87,10 +88,10 @@ export default function LynxChatScreen() {
     Animated.loop(
       Animated.sequence([
         Animated.timing(radialPulse, {
-          toValue: 0.45, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: true,
+          toValue: 0.45, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: false,
         }),
         Animated.timing(radialPulse, {
-          toValue: 0.15, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: true,
+          toValue: 0.15, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: false,
         }),
       ]),
     ).start();
@@ -299,12 +300,9 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 3.5,
     backgroundColor: Colors.success,
-    // Green glow
-    shadowColor: Colors.success,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-    elevation: 4,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 0 6px rgba(34, 197, 94, 0.7)' }
+      : { shadowColor: Colors.success, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 6, elevation: 4 }),
   },
   statusText: {
     fontSize: Typography.sizes.xs,

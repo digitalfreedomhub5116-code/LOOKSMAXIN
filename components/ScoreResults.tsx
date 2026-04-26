@@ -83,13 +83,13 @@ function ScoreRing({ score, size = 180 }: ScoreRingProps) {
         friction: 6,
         tension: 40,
         delay: 400,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(opacityAnim, {
         toValue: 1,
         duration: 600,
         delay: 400,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, []);

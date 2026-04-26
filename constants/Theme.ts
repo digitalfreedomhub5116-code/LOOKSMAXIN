@@ -131,26 +131,37 @@ export const Glass = {
   },
 } as const;
 
+import { Platform } from 'react-native';
+
 export const Shadows = {
-  glow: {
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  glowPurple: {
-    shadowColor: Colors.secondary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  subtle: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
+  glow: Platform.select({
+    web: { boxShadow: '0 0 16px rgba(142, 161, 188, 0.4)' },
+    default: {
+      shadowColor: Colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 16,
+      elevation: 12,
+    },
+  }),
+  glowPurple: Platform.select({
+    web: { boxShadow: '0 0 16px rgba(123, 44, 191, 0.4)' },
+    default: {
+      shadowColor: Colors.secondary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 16,
+      elevation: 12,
+    },
+  }),
+  subtle: Platform.select({
+    web: { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)' },
+    default: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+  }),
 } as const;

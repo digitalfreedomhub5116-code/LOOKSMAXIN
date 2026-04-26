@@ -40,8 +40,8 @@ export default function FaceScanScreen() {
 
     // Shutter press animation
     Animated.sequence([
-      Animated.timing(shutterScale, { toValue: 0.85, duration: 80, useNativeDriver: true }),
-      Animated.spring(shutterScale, { toValue: 1, friction: 4, tension: 100, useNativeDriver: true }),
+      Animated.timing(shutterScale, { toValue: 0.85, duration: 80, useNativeDriver: false }),
+      Animated.spring(shutterScale, { toValue: 1, friction: 4, tension: 100, useNativeDriver: false }),
     ]).start();
 
     let base64Data: string | undefined;
@@ -91,11 +91,11 @@ export default function FaceScanScreen() {
     // Transition to analyzing
     setScreenState('analyzing');
     analyzeOpacity.setValue(0);
-    Animated.timing(analyzeOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+    Animated.timing(analyzeOpacity, { toValue: 1, duration: 400, useNativeDriver: false }).start();
     Animated.loop(
       Animated.sequence([
-        Animated.timing(analyzePulse, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(analyzePulse, { toValue: 0.4, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(analyzePulse, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
+        Animated.timing(analyzePulse, { toValue: 0.4, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
       ])
     ).start();
 
@@ -112,8 +112,8 @@ export default function FaceScanScreen() {
       // Transition to results
       setScreenState('results');
       Animated.parallel([
-        Animated.timing(resultsOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(resultsSlide, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(resultsOpacity, { toValue: 1, duration: 500, useNativeDriver: false }),
+        Animated.timing(resultsSlide, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
       ]).start();
     } catch (e: any) {
       setErrorMsg(e.message || 'Analysis failed. Please try again.');

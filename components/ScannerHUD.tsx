@@ -28,13 +28,13 @@ export default function ScannerHUD() {
           toValue: FRAME_H - 4,
           duration: 2200,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(scanLineY, {
           toValue: 0,
           duration: 2200,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();
@@ -46,13 +46,13 @@ export default function ScannerHUD() {
           toValue: 1,
           duration: 1500,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(bracketPulse, {
           toValue: 0.5,
           duration: 1500,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();

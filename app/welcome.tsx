@@ -36,7 +36,7 @@ export default function WelcomeScreen() {
     Animated.timing(particleOpacity, {
       toValue: 1,
       duration: 2000,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // Logo entrance
@@ -47,13 +47,13 @@ export default function WelcomeScreen() {
           toValue: 1,
           friction: 6,
           tension: 40,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(fadeIn, {
           toValue: 1,
           duration: 800,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -65,13 +65,13 @@ export default function WelcomeScreen() {
           toValue: 1,
           duration: 2000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(logoGlow, {
           toValue: 0.3,
           duration: 2000,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();
@@ -82,7 +82,7 @@ export default function WelcomeScreen() {
         toValue: 1,
         duration: 12000,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       })
     ).start();
 
@@ -91,7 +91,7 @@ export default function WelcomeScreen() {
         toValue: 1,
         duration: 8000,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       })
     ).start();
 
@@ -102,13 +102,13 @@ export default function WelcomeScreen() {
           toValue: height * 0.15,
           duration: 2500,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(scanLine, {
           toValue: -height * 0.15,
           duration: 2500,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();
@@ -120,13 +120,13 @@ export default function WelcomeScreen() {
         Animated.timing(subtitleFade, {
           toValue: 1,
           duration: 600,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(slideUp, {
           toValue: 0,
           duration: 600,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -138,13 +138,13 @@ export default function WelcomeScreen() {
         Animated.timing(buttonFade, {
           toValue: 1,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(buttonSlide, {
           toValue: 0,
           duration: 500,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
