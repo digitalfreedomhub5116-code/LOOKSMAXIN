@@ -104,31 +104,30 @@ html, body, #root {
   box-shadow: 0 0 8px var(--primary-glow);
 }
 
-/* Center tab — Lynx AI bubble */
-.tab-center {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: -28px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.2s;
-}
-.tab-center:active { transform: scale(0.9); }
-
-.lynx-icon-wrap {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ─── Floating Lynx AI FAB ─── */
+.lynx-fab {
+  position: fixed;
+  bottom: 90px;
+  right: max(calc((100% - 430px) / 2 + 16px), 16px);
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: #111;
   border: 2.5px solid rgba(200, 168, 78, 0.5);
-  box-shadow: 0 4px 20px rgba(200, 168, 78, 0.25), inset 0 1px 8px rgba(200, 168, 78, 0.1);
+  box-shadow: 0 4px 24px rgba(200, 168, 78, 0.3), 0 2px 8px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 99;
+  animation: fabFloat 3s ease-in-out infinite;
+  transition: transform 0.2s;
+}
+.lynx-fab:active { transform: scale(0.9); animation: none; }
+
+@keyframes fabFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 /* Reusable mini icon for chat header */
