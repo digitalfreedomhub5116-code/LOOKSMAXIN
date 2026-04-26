@@ -101,6 +101,8 @@ export default function LynxChat({ scores }: LynxChatProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [userContext, setUserContext] = useState('');
+  const [typingText, setTypingText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -116,16 +118,49 @@ export default function LynxChat({ scores }: LynxChatProps) {
     }
   }, [messages]);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, loading]);
+  }, [messages, loading, typingText]);
+
+  // Typewriter effect
+  const typewriterRef = useRef<number | null>(null);
+
+  const startTypewriter = (fullText: string) => {
+    setIsTyping(true);
+    setTypingText('');
+    let i = 0;
+
+    const tick = () => {
+      i++;
+      setTypingText(fullText.slice(0, i));
+      if (i < fullText.length) {
+        // Variable speed: faster for spaces/punctuation
+        const ch = fullText[i];
+        const delay = ch === ' ' ? 8 : ch === '\n' ? 30 : 18;
+        typewriterRef.current = window.setTimeout(tick, delay);
+      } else {
+        // Done typing — commit to messages
+        setIsTyping(false);
+        setTypingText('');
+        setMessages(prev => [...prev, { role: 'assistant', content: fullText }]);
+      }
+    };
+    tick();
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typewriterRef.current) clearTimeout(typewriterRef.current);
+    };
+  }, []);
 
   const sendMessage = async (text: string) => {
     const msg = text.trim();
-    if (!msg || loading) return;
+    if (!msg || loading || isTyping) return;
 
     const userMsg: Message = { role: 'user', content: msg };
     setMessages(prev => [...prev, userMsg]);
@@ -146,14 +181,15 @@ export default function LynxChat({ scores }: LynxChatProps) {
       if (!res.ok) throw new Error('Failed');
 
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      setLoading(false);
+      startTypewriter(data.reply);
     } catch {
+      setLoading(false);
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: "Sorry, I couldn't process that right now. Try again in a moment! 🔄",
       }]);
     } finally {
-      setLoading(false);
       inputRef.current?.focus();
     }
   };
@@ -165,10 +201,22 @@ export default function LynxChat({ scores }: LynxChatProps) {
 
   const clearChat = () => {
     setMessages([]);
+    setTypingText('');
+    setIsTyping(false);
+    if (typewriterRef.current) clearTimeout(typewriterRef.current);
     localStorage.removeItem(LS_CHAT);
   };
 
-  const hasMessages = messages.length > 0;
+  const hasMessages = messages.length > 0 || isTyping;
+
+  // Helper to render message text with line breaks
+  const renderText = (text: string) =>
+    text.split('\n').map((line, j, arr) => (
+      <span key={j}>
+        {line}
+        {j < arr.length - 1 && <br />}
+      </span>
+    ));
 
   return (
     <div className="chat-page">
@@ -232,17 +280,25 @@ export default function LynxChat({ scores }: LynxChatProps) {
                   </div>
                 )}
                 <div className={`chat-bubble ${msg.role}`}>
-                  {msg.content.split('\n').map((line, j) => (
-                    <span key={j}>
-                      {line}
-                      {j < msg.content.split('\n').length - 1 && <br />}
-                    </span>
-                  ))}
+                  {renderText(msg.content)}
                 </div>
               </div>
             ))}
 
-            {/* Typing indicator */}
+            {/* Typewriter — current reply being typed */}
+            {isTyping && typingText && (
+              <div className="chat-bubble-row assistant">
+                <div className="chat-bubble-avatar">
+                  <LynxBubbleIcon size={16} />
+                </div>
+                <div className="chat-bubble assistant">
+                  {renderText(typingText)}
+                  <span className="typewriter-cursor" />
+                </div>
+              </div>
+            )}
+
+            {/* Typing dots — waiting for API response */}
             {loading && (
               <div className="chat-bubble-row assistant">
                 <div className="chat-bubble-avatar">
