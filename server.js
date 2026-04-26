@@ -123,7 +123,7 @@ app.post('/api/analyze-face', async function (req, res) {
 // ════════════════════════════════════
 //  SERVE STATIC WEB BUILD
 // ════════════════════════════════════
-var distPath = path.join(__dirname, 'dist');
+var distPath = path.join(__dirname, 'web', 'dist');
 app.use(express.static(distPath));
 
 // SPA fallback
