@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Public client keys — safe for browser
-const url = import.meta.env.VITE_SUPABASE_URL || 'https://xdhajxmvmrtajoffzmkm.supabase.co';
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkaGFqeG12bXJ0YWpvZmZ6bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzI3MzYsImV4cCI6MjA4ODcwODczNn0.3CX2jVMFEj7Oqk13mMCLbadTZa7uM6m5pz2uD5Ndta0';
+const url = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0Y3F5eHJidnhyaHp6Z3Jtc29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MTg3MDgsImV4cCI6MjA1OTE5NDcwOH0.9MxV_EgpKLmVIABHgaLH98I2C4IVjFnOGmcAqVIaYMw';
 
 export const supabase = createClient(url, key, {
   auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
