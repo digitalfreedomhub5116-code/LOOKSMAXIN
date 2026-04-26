@@ -75,21 +75,22 @@ html, body, #root {
   width: 100%;
   max-width: 430px;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 10px 0 max(env(safe-area-inset-bottom, 8px), 8px);
+  align-items: flex-end;
+  justify-content: center;
+  padding: 8px 0 max(env(safe-area-inset-bottom, 8px), 8px);
   background: rgba(5, 10, 31, 0.94);
   border-top: 1px solid rgba(142, 161, 188, 0.12);
   z-index: 100;
 }
 
 .tab-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   cursor: pointer;
-  padding: 4px 12px;
+  padding: 4px 0;
   border: none;
   background: none;
   color: var(--text-disabled);
@@ -106,21 +107,37 @@ html, body, #root {
   box-shadow: 0 0 8px var(--primary-glow);
 }
 
-/* Center tab blob */
+/* Center tab — Lynx AI bubble */
 .tab-center {
-  margin-top: -24px;
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid rgba(142, 161, 188, 0.3);
-  box-shadow: 0 0 20px var(--primary-glow);
+  margin-top: -28px;
+  border: none;
+  background: none;
   cursor: pointer;
+  padding: 0;
   transition: transform 0.2s;
 }
-.tab-center:active { transform: scale(0.92); }
+.tab-center:active { transform: scale(0.9); }
+
+.lynx-icon-wrap {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #5BA3F5, #3B6FD4);
+  box-shadow: 0 4px 20px rgba(74, 143, 239, 0.45), 0 0 0 3px rgba(5, 10, 31, 0.94);
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0); box-shadow: 0 4px 20px rgba(74,143,239,0.45), 0 0 0 3px rgba(5,10,31,0.94); }
+  50% { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(74,143,239,0.55), 0 0 0 3px rgba(5,10,31,0.94); }
+}
 
 /* ─── Page container ─── */
 .page {
