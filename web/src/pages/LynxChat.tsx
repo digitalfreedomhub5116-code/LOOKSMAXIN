@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Zap, Shield, Brain, RotateCcw } from 'lucide-react';
+import { Send, Zap, Shield, Brain, RotateCcw } from 'lucide-react';
+import { LynxBubbleIcon } from '../components/TabBar';
 import { supabase, getScanHistory, getScanCount } from '../lib/api';
 import type { FaceScores } from '../lib/api';
 
@@ -174,8 +175,8 @@ export default function LynxChat({ scores }: LynxChatProps) {
       {/* Header */}
       <div className="chat-header">
         <div className="chat-header-left">
-          <div className="chat-avatar">
-            <Sparkles size={18} />
+          <div className="lynx-icon-sm">
+            <LynxBubbleIcon size={22} />
           </div>
           <div>
             <div className="chat-title">Lynx AI</div>
@@ -197,8 +198,8 @@ export default function LynxChat({ scores }: LynxChatProps) {
         {!hasMessages ? (
           /* Empty state */
           <div className="chat-empty">
-            <div className="chat-empty-blob">
-              <Sparkles size={36} color="rgba(255,255,255,0.9)" />
+            <div className="lynx-icon-lg">
+              <LynxBubbleIcon size={48} />
             </div>
             <div className="chat-empty-title">Hey! I'm Lynx 👋</div>
             <div className="chat-empty-sub">
@@ -227,7 +228,7 @@ export default function LynxChat({ scores }: LynxChatProps) {
               <div key={i} className={`chat-bubble-row ${msg.role}`}>
                 {msg.role === 'assistant' && (
                   <div className="chat-bubble-avatar">
-                    <Sparkles size={12} />
+                    <LynxBubbleIcon size={16} />
                   </div>
                 )}
                 <div className={`chat-bubble ${msg.role}`}>
@@ -245,7 +246,7 @@ export default function LynxChat({ scores }: LynxChatProps) {
             {loading && (
               <div className="chat-bubble-row assistant">
                 <div className="chat-bubble-avatar">
-                  <Sparkles size={12} />
+                    <LynxBubbleIcon size={16} />
                 </div>
                 <div className="chat-bubble assistant">
                   <div className="chat-typing">

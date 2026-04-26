@@ -129,14 +129,53 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #5BA3F5, #3B6FD4);
-  box-shadow: 0 4px 20px rgba(74, 143, 239, 0.45), 0 0 0 3px rgba(5, 10, 31, 0.94);
+  background: #0B1433;
+  border: 2.5px solid rgba(200, 210, 230, 0.45);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35), inset 0 1px 8px rgba(59, 130, 246, 0.1);
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+/* Reusable mini icon for chat header */
+.lynx-icon-sm {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0B1433;
+  border: 2px solid rgba(200, 210, 230, 0.35);
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* Large icon for empty state */
+.lynx-icon-lg {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0B1433;
+  border: 2.5px solid rgba(200, 210, 230, 0.3);
+  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.3);
   animation: iconFloat 3s ease-in-out infinite;
 }
 
 @keyframes iconFloat {
-  0%, 100% { transform: translateY(0); box-shadow: 0 4px 20px rgba(74,143,239,0.45), 0 0 0 3px rgba(5,10,31,0.94); }
-  50% { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(74,143,239,0.55), 0 0 0 3px rgba(5,10,31,0.94); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Blinking eyes animation */
+.lynx-eye {
+  animation: blink 4s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+@keyframes blink {
+  0%, 38%, 42%, 100% { transform: scaleY(1); }
+  40% { transform: scaleY(0.08); }
 }
 
 /* ─── Page container ─── */
@@ -869,11 +908,13 @@ html, body, #root {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: #0B1433;
+  border: 1.5px solid rgba(200, 210, 230, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .chat-bubble {
