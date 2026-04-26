@@ -393,7 +393,7 @@ html, body, #root {
 /* When face image is set, overlay translucent glass on top */
 .morph-blob[style*="background-image"] {
   background-blend-mode: overlay;
-  background-color: rgba(5, 10, 31, 0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   filter: blur(1px);
 }
 
@@ -941,7 +941,7 @@ html, body, #root {
   justify-content: space-between;
   padding: 14px 20px;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(5, 10, 31, 0.85);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   flex-shrink: 0;
@@ -1176,7 +1176,7 @@ html, body, #root {
   gap: 10px;
   padding: 12px 16px max(env(safe-area-inset-bottom, 14px), 14px);
   border-top: 1px solid var(--border-subtle);
-  background: rgba(5, 10, 31, 0.92);
+  background: rgba(0, 0, 0, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   flex-shrink: 0;
