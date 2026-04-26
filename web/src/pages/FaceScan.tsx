@@ -16,7 +16,7 @@ const METRICS = [
 
 interface FaceScanProps {
   onClose: () => void;
-  onResults?: (scores: FaceScores) => void;
+  onResults?: (scores: FaceScores, faceImage: string) => void;
 }
 
 export default function FaceScan({ onClose, onResults }: FaceScanProps) {
@@ -92,8 +92,8 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
       setScores(result);
       setStage('results');
 
-      // Pass results back to parent (Dashboard)
-      if (onResults) onResults(result);
+      // Pass results + face image back to parent (Dashboard)
+      if (onResults) onResults(result, base64);
     } catch (e: any) {
       console.error('Analysis error:', e);
       if (e.message?.includes('No face detected')) {

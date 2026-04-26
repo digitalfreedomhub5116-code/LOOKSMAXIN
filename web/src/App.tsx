@@ -6,7 +6,7 @@ import LynxChat from './pages/LynxChat';
 import Profile from './pages/Profile';
 import AuthPage from './pages/AuthPage';
 import TabBar from './components/TabBar';
-import { supabase, saveScores, loadLatestScores } from './lib/api';
+import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'roadmap' | 'lynx' | 'vault' | 'profile';
@@ -15,6 +15,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [scanning, setScanning] = useState(false);
   const [latestScores, setLatestScores] = useState<FaceScores | null>(() => loadLatestScores());
+  const [faceImage, setFaceImage] = useState<string | null>(() => loadFaceImage());
   const [authed, setAuthed] = useState<boolean | null>(null); // null = loading
 
   // Check auth state on mount + listen for changes
@@ -32,9 +33,10 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleScanResults = (scores: FaceScores) => {
+  const handleScanResults = (scores: FaceScores, base64Image: string) => {
     setLatestScores(scores);
-    saveScores(scores);
+    setFaceImage(base64Image);
+    saveScores(scores, base64Image);
   };
 
   const handleLogout = () => {
@@ -63,11 +65,11 @@ export default function App() {
   // ─── Main app ───
   const renderPage = () => {
     switch (tab) {
-      case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} />;
+      case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
       case 'roadmap': return <Roadmap />;
       case 'lynx': return <LynxChat scores={latestScores} />;
       case 'profile': return <Profile onLogout={handleLogout} />;
-      default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} />;
+      default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
     }
   };
 

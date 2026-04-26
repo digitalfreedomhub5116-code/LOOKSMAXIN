@@ -24,6 +24,7 @@ export interface FaceScores {
   overall: number;
   potential: number;
   tips: string[];
+  face_image?: string; // base64 jpeg of the scanned face
 }
 
 export interface ScanRecord {
@@ -46,22 +47,47 @@ export async function analyzeFace(base64: string, mime = 'image/jpeg'): Promise<
 }
 
 // ─── Save scan (localStorage + Supabase) ───
-export function saveScores(scores: FaceScores) {
-  try {
-    // Save latest
-    localStorage.setItem(LS_SCORES, JSON.stringify(scores));
+export function saveScores(scores: FaceScores, faceImage?: string) {
+  // Attach face image to scores
+  const scoresWithImage = faceImage ? { ...scores, face_image: faceImage } : scores;
 
-    // Append to history
+  try {
+    // Save latest (with image)
+    localStorage.setItem(LS_SCORES, JSON.stringify(scoresWithImage));
+
+    // Save face image separately for quick access
+    if (faceImage) {
+      localStorage.setItem('lynx_face_image', faceImage);
+    }
+
+    // Append to history (without image to save space)
+    const historyEntry = { ...scores };
+    delete (historyEntry as any).face_image;
     const history = getScanHistory();
-    history.unshift({ scores, timestamp: new Date().toISOString() });
-    // Keep last 50 scans
+    history.unshift({ scores: historyEntry, timestamp: new Date().toISOString() });
     localStorage.setItem(LS_HISTORY, JSON.stringify(history.slice(0, 50)));
   } catch (e) {
     console.error('localStorage save failed:', e);
   }
 
-  // Also save to Supabase (fire-and-forget)
-  saveToSupabase(scores).catch(() => {});
+  // Also save to Supabase with face image (fire-and-forget)
+  saveToSupabase(scores, faceImage).catch(() => {});
+}
+
+// ─── Load latest face image ───
+export function loadFaceImage(): string | null {
+  try {
+    // Try from latest scores first
+    const raw = localStorage.getItem(LS_SCORES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.face_image) return parsed.face_image;
+    }
+    // Fallback to dedicated key
+    return localStorage.getItem('lynx_face_image');
+  } catch {
+    return null;
+  }
 }
 
 // ─── Load latest scores (localStorage) ───
@@ -92,7 +118,7 @@ export function getScanCount(): number {
 }
 
 // ─── Supabase save (best-effort) ───
-async function saveToSupabase(scores: FaceScores) {
+async function saveToSupabase(scores: FaceScores, faceImage?: string) {
   try {
     let userId: string | null = null;
 
@@ -106,7 +132,7 @@ async function saveToSupabase(scores: FaceScores) {
 
     if (!userId) return;
 
-    await supabase.from('face_scans').insert({
+    const insertData: any = {
       user_id: userId,
       overall_score: scores.overall,
       analysis: {
@@ -115,7 +141,14 @@ async function saveToSupabase(scores: FaceScores) {
         facial_symmetry: scores.facial_symmetry, hair_quality: scores.hair_quality,
         potential: scores.potential, tips: scores.tips,
       },
-    });
+    };
+
+    // Store face image as base64 in the image_url column
+    if (faceImage) {
+      insertData.image_url = faceImage;
+    }
+
+    await supabase.from('face_scans').insert(insertData);
   } catch (e) {
     console.warn('Supabase save failed (non-critical):', e);
   }

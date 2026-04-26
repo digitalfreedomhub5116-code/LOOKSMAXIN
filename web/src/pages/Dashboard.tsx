@@ -5,6 +5,7 @@ import type { FaceScores } from '../lib/api';
 interface DashboardProps {
   onScan: () => void;
   scores: FaceScores | null;
+  faceImage?: string | null;
 }
 
 // ─── SVG Ring constants ───
@@ -53,7 +54,7 @@ const METRICS = [
   { key: 'hair_quality', label: 'Hair', color: '#EF4444' },
 ];
 
-export default function Dashboard({ onScan, scores }: DashboardProps) {
+export default function Dashboard({ onScan, scores, faceImage }: DashboardProps) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => {
     const h = new Date().getHours();
     return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Night';
@@ -141,10 +142,34 @@ export default function Dashboard({ onScan, scores }: DashboardProps) {
             <div className="ring-section">
               <div className="ring-wrap">
                 <svg width={RING_SIZE} height={RING_SIZE} className="ring-svg">
+                  <defs>
+                    <clipPath id="faceClip">
+                      <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS - STROKE / 2} />
+                    </clipPath>
+                  </defs>
+                  {/* Face image inside ring */}
+                  {faceImage && (
+                    <image
+                      href={`data:image/jpeg;base64,${faceImage}`}
+                      x="0" y="0"
+                      width={RING_SIZE} height={RING_SIZE}
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath="url(#faceClip)"
+                    />
+                  )}
+                  {/* Dark overlay for text readability */}
+                  {faceImage && (
+                    <circle
+                      cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS - STROKE / 2}
+                      fill="rgba(5,10,31,0.55)"
+                    />
+                  )}
+                  {/* Track */}
                   <circle
                     cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
-                    fill="transparent" stroke="rgba(142,161,188,0.1)" strokeWidth={STROKE}
+                    fill="transparent" stroke="rgba(142,161,188,0.15)" strokeWidth={STROKE}
                   />
+                  {/* Progress fill */}
                   <circle
                     cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
                     fill="transparent" stroke="#8ea1bc" strokeWidth={STROKE}
