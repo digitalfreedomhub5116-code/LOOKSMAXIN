@@ -150,7 +150,7 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
                   {/* Face image inside ring */}
                   {faceImage && (
                     <image
-                      href={`data:image/jpeg;base64,${faceImage}`}
+                      href={faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`}
                       x="0" y="0"
                       width={RING_SIZE} height={RING_SIZE}
                       preserveAspectRatio="xMidYMid slice"

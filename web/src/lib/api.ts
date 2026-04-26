@@ -13,6 +13,7 @@ const API = import.meta.env.VITE_API_URL || '';
 // ─── Local Storage Keys ───
 const LS_SCORES = 'lynx_latest_scores';
 const LS_HISTORY = 'lynx_scan_history';
+const LS_FACE_URL = 'lynx_face_url';
 
 export interface FaceScores {
   jawline: number;
@@ -24,7 +25,7 @@ export interface FaceScores {
   overall: number;
   potential: number;
   tips: string[];
-  face_image?: string; // base64 jpeg of the scanned face
+  face_image?: string; // public URL of the face photo
 }
 
 export interface ScanRecord {
@@ -46,21 +47,53 @@ export async function analyzeFace(base64: string, mime = 'image/jpeg'): Promise<
   return res.json();
 }
 
-// ─── Save scan (localStorage + Supabase) ───
-export function saveScores(scores: FaceScores, faceImage?: string) {
-  // Attach face image to scores
-  const scoresWithImage = faceImage ? { ...scores, face_image: faceImage } : scores;
-
+// ─── Upload face image to Supabase Storage ───
+async function uploadFaceImage(userId: string, base64: string): Promise<string | null> {
   try {
-    // Save latest (with image)
-    localStorage.setItem(LS_SCORES, JSON.stringify(scoresWithImage));
+    // Convert base64 to Blob
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: 'image/jpeg' });
 
-    // Save face image separately for quick access
-    if (faceImage) {
-      localStorage.setItem('lynx_face_image', faceImage);
+    // Create unique filename: userId/timestamp.jpg
+    const filename = `${userId}/${Date.now()}.jpg`;
+
+    // Upload to face-scans bucket
+    const { error } = await supabase.storage
+      .from('face-scans')
+      .upload(filename, blob, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      });
+
+    if (error) {
+      console.warn('Storage upload error:', error.message);
+      return null;
     }
 
-    // Append to history (without image to save space)
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('face-scans')
+      .getPublicUrl(filename);
+
+    return urlData.publicUrl || null;
+  } catch (e) {
+    console.warn('Face image upload failed:', e);
+    return null;
+  }
+}
+
+// ─── Save scan (localStorage + Supabase Storage) ───
+export function saveScores(scores: FaceScores, faceBase64?: string) {
+  try {
+    // Save scores (without base64 — we'll update with URL after upload)
+    localStorage.setItem(LS_SCORES, JSON.stringify(scores));
+
+    // Append to history
     const historyEntry = { ...scores };
     delete (historyEntry as any).face_image;
     const history = getScanHistory();
@@ -70,21 +103,23 @@ export function saveScores(scores: FaceScores, faceImage?: string) {
     console.error('localStorage save failed:', e);
   }
 
-  // Also save to Supabase with face image (fire-and-forget)
-  saveToSupabase(scores, faceImage).catch(() => {});
+  // Upload to Supabase Storage + save scan record (fire-and-forget)
+  saveToSupabase(scores, faceBase64).catch(() => {});
 }
 
-// ─── Load latest face image ───
+// ─── Load latest face image URL ───
 export function loadFaceImage(): string | null {
   try {
-    // Try from latest scores first
+    // Try from saved URL
+    const savedUrl = localStorage.getItem(LS_FACE_URL);
+    if (savedUrl) return savedUrl;
+    // Fallback: check scores object
     const raw = localStorage.getItem(LS_SCORES);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.face_image) return parsed.face_image;
     }
-    // Fallback to dedicated key
-    return localStorage.getItem('lynx_face_image');
+    return null;
   } catch {
     return null;
   }
@@ -117,8 +152,8 @@ export function getScanCount(): number {
   return getScanHistory().length;
 }
 
-// ─── Supabase save (best-effort) ───
-async function saveToSupabase(scores: FaceScores, faceImage?: string) {
+// ─── Supabase save (Storage upload + DB insert) ───
+async function saveToSupabase(scores: FaceScores, faceBase64?: string) {
   try {
     let userId: string | null = null;
 
@@ -132,7 +167,29 @@ async function saveToSupabase(scores: FaceScores, faceImage?: string) {
 
     if (!userId) return;
 
-    const insertData: any = {
+    // Upload face image to Storage bucket and get public URL
+    let imageUrl: string | null = null;
+    if (faceBase64) {
+      imageUrl = await uploadFaceImage(userId, faceBase64);
+
+      // Save URL to localStorage for instant dashboard load
+      if (imageUrl) {
+        localStorage.setItem(LS_FACE_URL, imageUrl);
+
+        // Also update saved scores with the URL
+        try {
+          const raw = localStorage.getItem(LS_SCORES);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            parsed.face_image = imageUrl;
+            localStorage.setItem(LS_SCORES, JSON.stringify(parsed));
+          }
+        } catch {}
+      }
+    }
+
+    // Insert scan record with image URL
+    await supabase.from('face_scans').insert({
       user_id: userId,
       overall_score: scores.overall,
       analysis: {
@@ -141,14 +198,8 @@ async function saveToSupabase(scores: FaceScores, faceImage?: string) {
         facial_symmetry: scores.facial_symmetry, hair_quality: scores.hair_quality,
         potential: scores.potential, tips: scores.tips,
       },
-    };
-
-    // Store face image as base64 in the image_url column
-    if (faceImage) {
-      insertData.image_url = faceImage;
-    }
-
-    await supabase.from('face_scans').insert(insertData);
+      image_url: imageUrl,
+    });
   } catch (e) {
     console.warn('Supabase save failed (non-critical):', e);
   }
