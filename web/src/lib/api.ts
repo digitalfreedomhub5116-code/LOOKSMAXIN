@@ -23,6 +23,27 @@ export interface FaceScores {
   tips: string[];
 }
 
+// ─── Auth: get or create anonymous user ───
+export async function getOrCreateUser(): Promise<string | null> {
+  try {
+    // Check existing session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) return session.user.id;
+
+    // Sign in anonymously
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      console.error('Anonymous sign-in failed:', error.message);
+      return null;
+    }
+    return data.user?.id || null;
+  } catch (e) {
+    console.error('Auth error:', e);
+    return null;
+  }
+}
+
+// ─── Gemini AI analysis ───
 export async function analyzeFace(base64: string, mime = 'image/jpeg'): Promise<FaceScores> {
   const res = await fetch(`${API}/api/analyze-face`, {
     method: 'POST',
@@ -36,8 +57,9 @@ export async function analyzeFace(base64: string, mime = 'image/jpeg'): Promise<
   return res.json();
 }
 
+// ─── Save scan to Supabase ───
 export async function saveScan(userId: string, scores: FaceScores) {
-  await supabase.from('face_scans').insert({
+  const { error } = await supabase.from('face_scans').insert({
     user_id: userId,
     overall_score: scores.overall,
     analysis: {
@@ -47,17 +69,20 @@ export async function saveScan(userId: string, scores: FaceScores) {
       potential: scores.potential, tips: scores.tips,
     },
   });
+  if (error) console.error('Save scan error:', error.message);
+  return !error;
 }
 
+// ─── Load latest scan from Supabase ───
 export async function getLatestScan(userId: string): Promise<FaceScores | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('face_scans')
     .select('overall_score, analysis')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .single();
-  if (!data) return null;
+  if (error || !data) return null;
   const a = data.analysis as any;
   return {
     jawline: a.jawline, skin_quality: a.skin_quality,
@@ -67,6 +92,7 @@ export async function getLatestScan(userId: string): Promise<FaceScores | null> 
   };
 }
 
+// ─── Get scan count ───
 export async function getScanCount(userId: string): Promise<number> {
   const { count } = await supabase
     .from('face_scans')
