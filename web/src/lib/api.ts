@@ -1,11 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL || '';
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Public client keys — safe for browser (anon key only, not service key)
+const url = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_g2L0rujZkZS_mpbC3BhSQA_-Kns1bc0';
 
 export const supabase = createClient(url, key, {
   auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
 });
+
+// API URL: empty in production (same origin), override in .env for local dev
+const API = import.meta.env.VITE_API_URL || '';
 
 export interface FaceScores {
   jawline: number;
@@ -18,8 +22,6 @@ export interface FaceScores {
   potential: number;
   tips: string[];
 }
-
-const API = import.meta.env.VITE_API_URL || '';
 
 export async function analyzeFace(base64: string, mime = 'image/jpeg'): Promise<FaceScores> {
   const res = await fetch(`${API}/api/analyze-face`, {
