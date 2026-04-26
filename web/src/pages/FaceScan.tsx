@@ -3,7 +3,7 @@ import { X, ArrowLeft, Lightbulb, AlertTriangle } from 'lucide-react';
 import { analyzeFace } from '../lib/api';
 import type { FaceScores } from '../lib/api';
 
-type Stage = 'camera' | 'analyzing' | 'results' | 'error';
+type Stage = 'camera' | 'analyzing' | 'results' | 'error' | 'no_face';
 
 const METRICS = [
   { key: 'jawline', label: 'Jawline', color: '#8ea1bc' },
@@ -96,8 +96,12 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
       if (onResults) onResults(result);
     } catch (e: any) {
       console.error('Analysis error:', e);
-      setError(e.message || 'AI analysis failed. Please try again.');
-      setStage('error');
+      if (e.message?.includes('No face detected')) {
+        setStage('no_face');
+      } else {
+        setError(e.message || 'AI analysis failed. Please try again.');
+        setStage('error');
+      }
     }
   };
 
@@ -105,6 +109,39 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
     streamRef.current?.getTracks().forEach(t => t.stop());
     onClose();
   };
+
+  // ─── NO FACE DETECTED STAGE ───
+  if (stage === 'no_face') {
+    return (
+      <div className="analyzing-overlay">
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          background: 'rgba(245, 158, 11, 0.1)',
+          border: '2px solid rgba(245, 158, 11, 0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 20,
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="5" />
+            <path d="M20 21a8 8 0 0 0-16 0" />
+            <line x1="4" y1="4" x2="20" y2="20" stroke="#EF4444" strokeWidth="2" />
+          </svg>
+        </div>
+        <div className="h2" style={{ color: '#F59E0B', marginBottom: 6 }}>No Face Detected</div>
+        <div className="label" style={{ maxWidth: 260, textAlign: 'center', lineHeight: 1.6 }}>
+          We couldn't find a face in the image. Make sure your face is clearly visible, well-lit, and centered in the frame.
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <button className="btn btn-outline" onClick={handleClose}>
+            <ArrowLeft size={14} /> Back
+          </button>
+          <button className="btn btn-primary" onClick={() => { setStage('camera'); startCamera(); }}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ─── ERROR STAGE ───
   if (stage === 'error') {

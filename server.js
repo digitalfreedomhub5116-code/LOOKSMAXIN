@@ -18,7 +18,10 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemi
 
 const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. Analyze this selfie photo and provide honest, numerical scores for each facial feature.
 
-Return ONLY valid JSON with this exact structure (no markdown, no explanation):
+IMPORTANT: If the image does NOT contain a clearly visible human face, return ONLY this JSON:
+{"no_face": true}
+
+If a face IS clearly visible, return ONLY valid JSON with this exact structure (no markdown, no explanation):
 {
   "jawline": <number 1-100>,
   "skin_quality": <number 1-100>,
@@ -100,6 +103,11 @@ app.post('/api/analyze-face', async function (req, res) {
 
     var cleaned = textContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     var scores = JSON.parse(cleaned);
+
+    // Check if Gemini detected no face
+    if (scores.no_face) {
+      return res.status(422).json({ error: 'No face detected', code: 'NO_FACE' });
+    }
 
     function clamp(v, min, max) { return Math.max(min, Math.min(max, Math.round(v))); }
 
