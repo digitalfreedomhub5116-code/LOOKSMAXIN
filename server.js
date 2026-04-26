@@ -15,6 +15,8 @@ app.use(express.json({ limit: '15mb' }));
 // ─── Server-side secrets ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. Analyze this selfie photo and provide honest, numerical scores for each facial feature.
 
@@ -51,7 +53,7 @@ app.get('/api/health', function (req, res) {
     service: 'lynx-ai-server',
     timestamp: new Date().toISOString(),
     geminiConfigured: !!GEMINI_API_KEY,
-    keyPrefix: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 8) + '...' : 'NOT SET',
+    groqConfigured: !!GROQ_API_KEY,
   });
 });
 
@@ -128,9 +130,7 @@ app.post('/api/analyze-face', async function (req, res) {
   }
 });
 
-// Chat endpoint — powered by Groq (Llama 3.1 70B) for ultra-fast responses
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+// Chat endpoint — powered by Groq (Llama 3.3 70B) for ultra-fast responses
 
 const CHAT_SYSTEM_PROMPT = `You are Lynx, a friendly and knowledgeable AI assistant specialized in looksmaxing, facial aesthetics, skincare, grooming, fitness, and overall self-improvement. 
 
@@ -185,7 +185,7 @@ app.post('/api/chat', async function (req, res) {
         'Authorization': 'Bearer ' + GROQ_API_KEY,
       },
       body: JSON.stringify({
-        model: 'llama-3.1-70b-versatile',
+        model: 'llama-3.3-70b-versatile',
         messages: chatMessages,
         temperature: 0.7,
         max_tokens: 800,
