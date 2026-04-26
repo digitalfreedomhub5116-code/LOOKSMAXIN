@@ -165,55 +165,88 @@ app.post('/api/chat', async function (req, res) {
       return res.status(400).json({ error: 'No message provided' });
     }
 
-    if (!GROQ_API_KEY) {
-      return res.status(500).json({ error: 'AI not configured' });
-    }
-
     // Build system prompt with user context
     var systemPrompt = CHAT_SYSTEM_PROMPT;
     if (userContext) {
       systemPrompt += '\n\n--- USER DATA (use this to personalize your responses) ---\n' + userContext;
     }
 
-    // Build messages array (OpenAI-compatible format)
-    var chatMessages = [{ role: 'system', content: systemPrompt }];
+    var reply = null;
 
-    // Add conversation history
-    for (var i = 0; i < prevMessages.length; i++) {
-      chatMessages.push({
-        role: prevMessages[i].role === 'user' ? 'user' : 'assistant',
-        content: prevMessages[i].content
+    // ── Try Groq first (fast) ──
+    if (GROQ_API_KEY) {
+      try {
+        var groqMessages = [{ role: 'system', content: systemPrompt }];
+        for (var i = 0; i < prevMessages.length; i++) {
+          groqMessages.push({
+            role: prevMessages[i].role === 'user' ? 'user' : 'assistant',
+            content: prevMessages[i].content
+          });
+        }
+        groqMessages.push({ role: 'user', content: userMessage });
+
+        var groqRes = await fetch(GROQ_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + GROQ_API_KEY,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: groqMessages,
+            temperature: 0.7,
+            max_tokens: 800,
+          }),
+        });
+
+        if (groqRes.ok) {
+          var groqResult = await groqRes.json();
+          reply = groqResult.choices && groqResult.choices[0] && groqResult.choices[0].message && groqResult.choices[0].message.content;
+        } else {
+          console.log('Groq rate-limited (' + groqRes.status + '), falling back to Gemini...');
+        }
+      } catch (groqErr) {
+        console.log('Groq failed, falling back to Gemini:', groqErr.message);
+      }
+    }
+
+    // ── Fallback to Gemini ──
+    if (!reply && GEMINI_API_KEY) {
+      var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY;
+      var contents = [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'model', parts: [{ text: "Understood! I'm Lynx, your AI glow-up companion. Ready to help! 💪" }] }
+      ];
+      for (var j = 0; j < prevMessages.length; j++) {
+        contents.push({
+          role: prevMessages[j].role === 'user' ? 'user' : 'model',
+          parts: [{ text: prevMessages[j].content }]
+        });
+      }
+      contents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+      var geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: contents,
+          generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+        }),
       });
+
+      if (geminiRes.ok) {
+        var geminiResult = await geminiRes.json();
+        reply = geminiResult.candidates && geminiResult.candidates[0] &&
+          geminiResult.candidates[0].content && geminiResult.candidates[0].content.parts &&
+          geminiResult.candidates[0].content.parts[0] && geminiResult.candidates[0].content.parts[0].text;
+      } else {
+        var errText = await geminiRes.text();
+        console.error('Gemini also failed:', geminiRes.status, errText);
+      }
     }
-
-    // Add current message
-    chatMessages.push({ role: 'user', content: userMessage });
-
-    var response = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + GROQ_API_KEY,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: chatMessages,
-        temperature: 0.7,
-        max_tokens: 800,
-      }),
-    });
-
-    if (!response.ok) {
-      var errText = await response.text();
-      console.error('Groq chat error:', response.status, errText);
-      return res.status(502).json({ error: 'AI response failed' });
-    }
-
-    var result = await response.json();
-    var reply = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
 
     if (!reply) {
-      return res.status(500).json({ error: 'No response from AI' });
+      return res.status(502).json({ error: 'AI response failed' });
     }
 
     res.json({ reply: reply.trim() });
