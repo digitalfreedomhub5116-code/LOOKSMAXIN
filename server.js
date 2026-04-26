@@ -47,6 +47,8 @@ app.get('/api/health', function (req, res) {
     status: 'ok',
     service: 'lynx-ai-server',
     timestamp: new Date().toISOString(),
+    geminiConfigured: !!GEMINI_API_KEY,
+    keyPrefix: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 8) + '...' : 'NOT SET',
   });
 });
 
@@ -56,6 +58,8 @@ app.post('/api/analyze-face', async function (req, res) {
     var body = req.body || {};
     var image = body.image;
     var mimeType = body.mimeType || 'image/jpeg';
+
+    console.log('Analyze request received. Image length:', image ? image.length : 0, 'Key set:', !!GEMINI_API_KEY);
 
     if (!image) {
       return res.status(400).json({ error: 'No image provided' });
@@ -82,7 +86,7 @@ app.post('/api/analyze-face', async function (req, res) {
     if (!response.ok) {
       var errText = await response.text();
       console.error('Gemini API error:', response.status, errText);
-      return res.status(502).json({ error: 'AI analysis failed' });
+      return res.status(502).json({ error: 'AI analysis failed', detail: errText.substring(0, 200), geminiStatus: response.status });
     }
 
     var result = await response.json();
