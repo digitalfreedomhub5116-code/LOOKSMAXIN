@@ -51,9 +51,32 @@ export default function FaceScanScreen() {
       try {
         const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, base64: true });
         if (photo) {
-          base64Data = photo.base64 ?? undefined;
           photoUri = photo.uri;
           setCapturedUri(photo.uri);
+
+          // Use base64 from camera if available (native), otherwise convert blob (web)
+          if (photo.base64) {
+            base64Data = photo.base64;
+          } else if (photo.uri) {
+            // Web fallback: fetch the blob and convert to base64
+            try {
+              const resp = await fetch(photo.uri);
+              const blob = await resp.blob();
+              base64Data = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const result = reader.result as string;
+                  // Strip data:image/...;base64, prefix
+                  const b64 = result.split(',')[1];
+                  resolve(b64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            } catch (convErr) {
+              console.warn('Base64 conversion error:', convErr);
+            }
+          }
         }
       } catch (e) {
         console.warn('Camera capture error:', e);
