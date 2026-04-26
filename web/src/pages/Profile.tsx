@@ -1,31 +1,74 @@
-import { User, Settings, ChevronRight, Star, BarChart3, Shield, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Settings, ChevronRight, Star, BarChart3, Shield, LogOut, Mail } from 'lucide-react';
+import { supabase, getScanCount } from '../lib/api';
 
 const MENU = [
   { icon: <BarChart3 size={18} />, label: 'Advanced Stats', sub: 'Detailed analytics' },
-  { icon: <Star size={18} />, label: 'Achievements', sub: '4 badges earned' },
+  { icon: <Star size={18} />, label: 'Achievements', sub: 'Badges earned' },
   { icon: <Shield size={18} />, label: 'Privacy & Security', sub: 'Manage your data' },
   { icon: <Settings size={18} />, label: 'Preferences', sub: 'Theme, notifications' },
 ];
 
-export default function Profile() {
+interface UserInfo {
+  email: string;
+  name: string;
+  avatar?: string;
+}
+
+export default function Profile({ onLogout }: { onLogout: () => void }) {
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [scanCount, setScanCount] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (u) {
+        setUser({
+          email: u.email || '',
+          name: u.user_metadata?.display_name || u.user_metadata?.full_name || u.email?.split('@')[0] || 'Champion',
+          avatar: u.user_metadata?.avatar_url,
+        });
+      }
+      setScanCount(getScanCount());
+    })();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    localStorage.clear();
+    onLogout();
+  };
+
   return (
     <div className="page">
       {/* Avatar */}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{
-          width: 80, height: 80, borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 14px', border: '2px solid rgba(142,161,188,0.3)',
-          boxShadow: '0 0 20px var(--primary-glow)',
-        }}>
-          <User size={32} color="#fff" />
+        {user?.avatar ? (
+          <img src={user.avatar} alt="Avatar" style={{
+            width: 80, height: 80, borderRadius: '50%',
+            border: '2px solid rgba(142,161,188,0.3)',
+            boxShadow: '0 0 20px var(--primary-glow)',
+            margin: '0 auto 14px', display: 'block', objectFit: 'cover',
+          }} />
+        ) : (
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 14px', border: '2px solid rgba(142,161,188,0.3)',
+            boxShadow: '0 0 20px var(--primary-glow)',
+          }}>
+            <User size={32} color="#fff" />
+          </div>
+        )}
+        <div className="h1" style={{ marginBottom: 2 }}>{user?.name || 'Champion'}</div>
+        <div className="label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <Mail size={12} /> {user?.email || '...'}
         </div>
-        <div className="h1" style={{ marginBottom: 2 }}>Champion</div>
-        <div className="label">Level 3 • 125 XP</div>
+
         <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 16 }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>12</div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>{scanCount}</div>
             <div className="label">Scans</div>
           </div>
           <div style={{ width: 1, background: 'var(--border-subtle)', height: 32 }} />
@@ -58,7 +101,7 @@ export default function Profile() {
       </div>
 
       {/* Logout */}
-      <button className="btn btn-outline" style={{
+      <button className="btn btn-outline" onClick={handleLogout} style={{
         width: '100%', justifyContent: 'center', marginTop: 24, color: 'var(--error)',
         borderColor: 'rgba(239,68,68,0.2)',
       }}>
