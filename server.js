@@ -128,8 +128,11 @@ app.post('/api/analyze-face', async function (req, res) {
   }
 });
 
-// Chat endpoint
-const CHAT_PROMPT = `You are Lynx, a friendly and knowledgeable AI assistant specialized in looksmaxing, facial aesthetics, skincare, grooming, fitness, and overall self-improvement. 
+// Chat endpoint — powered by Groq (Llama 3.1 70B) for ultra-fast responses
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+const CHAT_SYSTEM_PROMPT = `You are Lynx, a friendly and knowledgeable AI assistant specialized in looksmaxing, facial aesthetics, skincare, grooming, fitness, and overall self-improvement. 
 
 Personality:
 - Supportive, encouraging, but honest
@@ -148,54 +151,55 @@ Your knowledge covers:
 - Style & grooming
 - Confidence & mindset`;
 
-const GEMINI_CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 app.post('/api/chat', async function (req, res) {
   try {
-    var messages = req.body.messages || [];
+    var prevMessages = req.body.messages || [];
     var userMessage = req.body.message || '';
 
     if (!userMessage.trim()) {
       return res.status(400).json({ error: 'No message provided' });
     }
 
-    if (!GEMINI_API_KEY) {
+    if (!GROQ_API_KEY) {
       return res.status(500).json({ error: 'AI not configured' });
     }
 
-    // Build conversation history for Gemini
-    var contents = [{ role: 'user', parts: [{ text: CHAT_PROMPT }] }, { role: 'model', parts: [{ text: 'Understood! I\'m Lynx, your AI glow-up companion. Ready to help with anything related to self-improvement. What\'s on your mind? 💪' }] }];
+    // Build messages array (OpenAI-compatible format)
+    var chatMessages = [{ role: 'system', content: CHAT_SYSTEM_PROMPT }];
 
-    // Add previous messages
-    for (var i = 0; i < messages.length; i++) {
-      contents.push({
-        role: messages[i].role === 'user' ? 'user' : 'model',
-        parts: [{ text: messages[i].content }]
+    // Add conversation history
+    for (var i = 0; i < prevMessages.length; i++) {
+      chatMessages.push({
+        role: prevMessages[i].role === 'user' ? 'user' : 'assistant',
+        content: prevMessages[i].content
       });
     }
 
     // Add current message
-    contents.push({ role: 'user', parts: [{ text: userMessage }] });
+    chatMessages.push({ role: 'user', content: userMessage });
 
-    var response = await fetch(GEMINI_CHAT_URL, {
+    var response = await fetch(GROQ_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + GROQ_API_KEY,
+      },
       body: JSON.stringify({
-        contents: contents,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+        model: 'llama-3.1-70b-versatile',
+        messages: chatMessages,
+        temperature: 0.7,
+        max_tokens: 800,
       }),
     });
 
     if (!response.ok) {
       var errText = await response.text();
-      console.error('Gemini chat error:', response.status, errText);
+      console.error('Groq chat error:', response.status, errText);
       return res.status(502).json({ error: 'AI response failed' });
     }
 
     var result = await response.json();
-    var reply = result.candidates && result.candidates[0] &&
-      result.candidates[0].content && result.candidates[0].content.parts &&
-      result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
+    var reply = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
 
     if (!reply) {
       return res.status(500).json({ error: 'No response from AI' });
