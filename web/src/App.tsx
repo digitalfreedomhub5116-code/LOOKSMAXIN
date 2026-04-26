@@ -54,7 +54,7 @@ export default function App() {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} />;
       case 'roadmap': return <Roadmap />;
       case 'lynx': return <LynxChat />;
-      case 'profile': return <Profile scanCount={0} />;
+      case 'profile': return <Profile />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} />;
     }
   };
