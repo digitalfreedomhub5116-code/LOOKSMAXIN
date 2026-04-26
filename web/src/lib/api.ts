@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Public client keys — safe for browser (anon key only, not service key)
+// Public client keys — safe for browser
 const url = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_g2L0rujZkZS_mpbC3BhSQA_-Kns1bc0';
 
@@ -8,8 +8,11 @@ export const supabase = createClient(url, key, {
   auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
 });
 
-// API URL: empty in production (same origin), override in .env for local dev
 const API = import.meta.env.VITE_API_URL || '';
+
+// ─── Local Storage Keys ───
+const LS_SCORES = 'lynx_latest_scores';
+const LS_HISTORY = 'lynx_scan_history';
 
 export interface FaceScores {
   jawline: number;
@@ -23,24 +26,9 @@ export interface FaceScores {
   tips: string[];
 }
 
-// ─── Auth: get or create anonymous user ───
-export async function getOrCreateUser(): Promise<string | null> {
-  try {
-    // Check existing session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user?.id) return session.user.id;
-
-    // Sign in anonymously
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      console.error('Anonymous sign-in failed:', error.message);
-      return null;
-    }
-    return data.user?.id || null;
-  } catch (e) {
-    console.error('Auth error:', e);
-    return null;
-  }
+export interface ScanRecord {
+  scores: FaceScores;
+  timestamp: string;
 }
 
 // ─── Gemini AI analysis ───
@@ -57,46 +45,78 @@ export async function analyzeFace(base64: string, mime = 'image/jpeg'): Promise<
   return res.json();
 }
 
-// ─── Save scan to Supabase ───
-export async function saveScan(userId: string, scores: FaceScores) {
-  const { error } = await supabase.from('face_scans').insert({
-    user_id: userId,
-    overall_score: scores.overall,
-    analysis: {
-      jawline: scores.jawline, skin_quality: scores.skin_quality,
-      eyes: scores.eyes, lips: scores.lips,
-      facial_symmetry: scores.facial_symmetry, hair_quality: scores.hair_quality,
-      potential: scores.potential, tips: scores.tips,
-    },
-  });
-  if (error) console.error('Save scan error:', error.message);
-  return !error;
+// ─── Save scan (localStorage + Supabase) ───
+export function saveScores(scores: FaceScores) {
+  try {
+    // Save latest
+    localStorage.setItem(LS_SCORES, JSON.stringify(scores));
+
+    // Append to history
+    const history = getScanHistory();
+    history.unshift({ scores, timestamp: new Date().toISOString() });
+    // Keep last 50 scans
+    localStorage.setItem(LS_HISTORY, JSON.stringify(history.slice(0, 50)));
+  } catch (e) {
+    console.error('localStorage save failed:', e);
+  }
+
+  // Also save to Supabase (fire-and-forget)
+  saveToSupabase(scores).catch(() => {});
 }
 
-// ─── Load latest scan from Supabase ───
-export async function getLatestScan(userId: string): Promise<FaceScores | null> {
-  const { data, error } = await supabase
-    .from('face_scans')
-    .select('overall_score, analysis')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-  if (error || !data) return null;
-  const a = data.analysis as any;
-  return {
-    jawline: a.jawline, skin_quality: a.skin_quality,
-    eyes: a.eyes, lips: a.lips,
-    facial_symmetry: a.facial_symmetry, hair_quality: a.hair_quality,
-    overall: data.overall_score, potential: a.potential, tips: a.tips || [],
-  };
+// ─── Load latest scores (localStorage) ───
+export function loadLatestScores(): FaceScores | null {
+  try {
+    const raw = localStorage.getItem(LS_SCORES);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+// ─── Get scan history ───
+export function getScanHistory(): ScanRecord[] {
+  try {
+    const raw = localStorage.getItem(LS_HISTORY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
 }
 
 // ─── Get scan count ───
-export async function getScanCount(userId: string): Promise<number> {
-  const { count } = await supabase
-    .from('face_scans')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId);
-  return count || 0;
+export function getScanCount(): number {
+  return getScanHistory().length;
+}
+
+// ─── Supabase save (best-effort) ───
+async function saveToSupabase(scores: FaceScores) {
+  try {
+    let userId: string | null = null;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      userId = session.user.id;
+    } else {
+      const { data } = await supabase.auth.signInAnonymously();
+      userId = data.user?.id || null;
+    }
+
+    if (!userId) return;
+
+    await supabase.from('face_scans').insert({
+      user_id: userId,
+      overall_score: scores.overall,
+      analysis: {
+        jawline: scores.jawline, skin_quality: scores.skin_quality,
+        eyes: scores.eyes, lips: scores.lips,
+        facial_symmetry: scores.facial_symmetry, hair_quality: scores.hair_quality,
+        potential: scores.potential, tips: scores.tips,
+      },
+    });
+  } catch (e) {
+    console.warn('Supabase save failed (non-critical):', e);
+  }
 }
