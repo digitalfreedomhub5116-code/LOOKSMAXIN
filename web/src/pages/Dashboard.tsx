@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ScanLine, ChevronRight, Sparkles, RefreshCw, Dumbbell, Smile, Triangle } from 'lucide-react';
+import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Smile, Triangle } from 'lucide-react';
 import type { FaceScores } from '../lib/api';
 
 interface DashboardProps {
@@ -8,7 +8,6 @@ interface DashboardProps {
   faceImage?: string | null;
 }
 
-// ─── Score tier helpers ───
 function getTier(s: number) {
   if (s >= 90) return { label: 'Gigachad', color: '#C8A84E' };
   if (s >= 80) return { label: 'Chad', color: '#22C55E' };
@@ -26,6 +25,7 @@ function getBarColor(s: number) {
 
 export default function Dashboard({ onScan, scores, faceImage }: DashboardProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!scores) return;
@@ -41,10 +41,14 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
   }, [scores]);
 
   const tier = scores ? getTier(scores.overall) : null;
-
   const TRAIT_LIST = scores?.traits ? Object.entries(scores.traits).map(([key, t]) => ({
     key, label: key.charAt(0).toUpperCase() + key.slice(1), ...t,
   })) : [];
+
+  // Determine face image src — handles both base64 and URL
+  const faceImgSrc = faceImage
+    ? (faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`)
+    : null;
 
   return (
     <div className="page" style={{ paddingBottom: 100 }}>
@@ -64,7 +68,6 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
 
       {/* ═══ SECTION 1: GET RATED / LYNX REPORT ═══ */}
       {!scores ? (
-        /* ── No scan yet: Hero CTA ── */
         <div className="glass-card" style={{ padding: 24, marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 1.5, marginBottom: 8 }}>FIRST SCAN</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -81,90 +84,116 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
           </button>
         </div>
       ) : (
-        /* ── Has scores: Lynx Report Summary ── */
         <div className="glass-card" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
-          {/* B&W face photo */}
-          {faceImage && (
-            <div style={{ width: '100%', height: 220, overflow: 'hidden', position: 'relative' }}>
+          {/* B&W face photo — compact */}
+          {faceImgSrc && (
+            <div style={{ width: '100%', height: 180, overflow: 'hidden', position: 'relative' }}>
               <img
-                src={faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`}
+                src={faceImgSrc}
                 alt="Face scan"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)', display: 'block' }}
               />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(transparent, #111)' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(transparent, #111)' }} />
             </div>
           )}
 
-          <div style={{ padding: '20px 24px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5 }}>OVERALL LYNX SCORE</div>
+          <div style={{ padding: '16px 20px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5 }}>OVERALL LYNX SCORE</div>
               <button onClick={onScan} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <RefreshCw size={16} color="var(--text-muted)" />
+                <RefreshCw size={14} color="var(--text-muted)" />
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-              <span style={{ fontSize: 52, fontWeight: 900, color: tier!.color, lineHeight: 1 }}>{animatedScore}</span>
-              <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-muted)' }}>/100</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 2 }}>
+              <span style={{ fontSize: 44, fontWeight: 900, color: tier!.color, lineHeight: 1 }}>{animatedScore}</span>
+              <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-muted)' }}>/100</span>
             </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: tier!.color, marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: tier!.color, marginBottom: 8 }}>
               {scores.overall_rating || tier!.label}
             </div>
 
             {scores.description && (
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
                 {scores.description}
               </p>
             )}
 
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary)', marginBottom: 12 }}>
               Potential: {scores.potential}/100
             </div>
+
+            {/* Read More / Read Less toggle */}
+            {!expanded ? (
+              <button
+                onClick={() => setExpanded(true)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  color: 'var(--primary)', fontSize: 13, fontWeight: 700, padding: 0,
+                }}
+              >
+                Read full report <ChevronDown size={16} />
+              </button>
+            ) : (
+              <>
+                {/* ── Trait Breakdown ── */}
+                {TRAIT_LIST.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 16 }}>Trait Breakdown</div>
+                    {TRAIT_LIST.map(t => (
+                      <div key={t.key} style={{ marginBottom: 20 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{t.label}</span>
+                          <span style={{ fontSize: 20, fontWeight: 800, color: getBarColor(t.score) }}>{t.score}</span>
+                        </div>
+                        <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', marginBottom: 4 }}>
+                          <div style={{ height: '100%', borderRadius: 2, width: `${t.score}%`, background: getBarColor(t.score), transition: 'width 1s ease' }} />
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: getBarColor(t.score), marginBottom: 6 }}>{t.rating}</div>
+                        {t.holding_back && (
+                          <>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>What's holding you back</div>
+                            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, lineHeight: 1.5 }}>{t.holding_back}</p>
+                          </>
+                        )}
+                        {t.fix_it && (
+                          <>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>Fix it</div>
+                            <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.fix_it}</p>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Top Recommendations ── */}
+                {(scores.recommendations || scores.tips)?.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 12 }}>Top Recommendations</div>
+                    {(scores.recommendations || scores.tips).map((tip, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12, paddingLeft: 10, borderLeft: '3px solid var(--primary)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-muted)', minWidth: 16 }}>{i + 1}</span>
+                        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>{tip}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setExpanded(false)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 4, marginTop: 12,
+                    color: 'var(--primary)', fontSize: 13, fontWeight: 700, padding: 0,
+                  }}
+                >
+                  Show less <ChevronUp size={16} />
+                </button>
+              </>
+            )}
           </div>
-
-          {/* ── Trait Breakdown ── */}
-          {TRAIT_LIST.length > 0 && (
-            <div style={{ padding: '0 24px 24px' }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 20 }}>Trait Breakdown</div>
-              {TRAIT_LIST.map(t => (
-                <div key={t.key} style={{ marginBottom: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{t.label}</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: getBarColor(t.score) }}>{t.score}</span>
-                  </div>
-                  <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', marginBottom: 6 }}>
-                    <div style={{ height: '100%', borderRadius: 2, width: `${t.score}%`, background: getBarColor(t.score), transition: 'width 1s ease' }} />
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: getBarColor(t.score), marginBottom: 8 }}>{t.rating}</div>
-                  {t.holding_back && (
-                    <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>What's holding you back</div>
-                      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.5 }}>{t.holding_back}</p>
-                    </>
-                  )}
-                  {t.fix_it && (
-                    <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>Fix it</div>
-                      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.fix_it}</p>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── Top Recommendations ── */}
-          {(scores.recommendations || scores.tips)?.length > 0 && (
-            <div style={{ padding: '0 24px 24px' }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 16 }}>Top Recommendations</div>
-              {(scores.recommendations || scores.tips).map((tip, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 14, paddingLeft: 12, borderLeft: '3px solid var(--primary)' }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-muted)', minWidth: 18 }}>{i + 1}</span>
-                  <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>{tip}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 

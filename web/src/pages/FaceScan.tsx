@@ -1,18 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { X, ArrowLeft, Lightbulb, AlertTriangle } from 'lucide-react';
+import { X, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { analyzeFace } from '../lib/api';
 import type { FaceScores } from '../lib/api';
 
 type Stage = 'camera' | 'analyzing' | 'results' | 'error' | 'no_face';
-
-const METRICS = [
-  { key: 'jawline', label: 'Jawline', color: '#8ea1bc' },
-  { key: 'skin_quality', label: 'Skin Quality', color: '#7B2CBF' },
-  { key: 'eyes', label: 'Eyes', color: '#5CE1E6' },
-  { key: 'facial_symmetry', label: 'Symmetry', color: '#22C55E' },
-  { key: 'lips', label: 'Lips', color: '#F59E0B' },
-  { key: 'hair_quality', label: 'Hair', color: '#EF4444' },
-];
 
 interface FaceScanProps {
   onClose: () => void;
@@ -177,65 +168,46 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
 
   // ─── RESULTS STAGE ───
   if (stage === 'results' && scores) {
+    const tier = scores.overall >= 90 ? 'Gigachad' : scores.overall >= 80 ? 'Chad' :
+      scores.overall >= 65 ? 'Above Average' : scores.overall >= 50 ? 'Average' : 'Below Average';
+    const tierColor = scores.overall >= 80 ? '#C8A84E' : scores.overall >= 65 ? '#22C55E' :
+      scores.overall >= 50 ? '#F59E0B' : '#EF4444';
+
     return (
-      <div className="results-page">
-        <div className="results-header">
-          <div className="score-ring" style={{ margin: '0 auto 20px' }}>
-            <span className="value">{scores.overall}</span>
-            <span className="label">OVERALL</span>
-          </div>
-          <div className="h1" style={{ marginBottom: 4 }}>Analysis Complete</div>
-          <div className="label">Powered by Gemini AI • Personalized assessment</div>
+      <div className="analyzing-overlay" style={{ padding: 32 }}>
+        {/* Score circle */}
+        <div style={{
+          width: 100, height: 100, borderRadius: '50%',
+          border: `3px solid ${tierColor}`,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 20, boxShadow: `0 0 30px ${tierColor}33`,
+        }}>
+          <span style={{ fontSize: 36, fontWeight: 900, color: tierColor }}>{scores.overall}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 1.5 }}>/100</span>
         </div>
 
-        {/* Metrics */}
-        <div className="glass-card" style={{ padding: 18, marginBottom: 20 }}>
-          {METRICS.map(m => (
-            <div className="metric-row" key={m.key}>
-              <span className="metric-label">{m.label}</span>
-              <div className="metric-track">
-                <div
-                  className="metric-fill"
-                  style={{ width: `${(scores as any)[m.key]}%`, background: m.color }}
-                />
-              </div>
-              <span className="metric-score" style={{ color: m.color }}>
-                {(scores as any)[m.key]}
-              </span>
-            </div>
-          ))}
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+          {scores.overall_rating || tier}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32, textAlign: 'center', maxWidth: 280, lineHeight: 1.6 }}>
+          Your Lynx Report is ready. View the full breakdown on your dashboard.
         </div>
 
-        {/* Potential */}
-        <div className="glass" style={{ padding: 16, marginBottom: 20 }}>
-          <div className="label-xs" style={{ marginBottom: 8 }}>POTENTIAL GAIN</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#22C55E' }}>
-            +{scores.potential} pts
-          </div>
-          <div className="label" style={{ marginTop: 4 }}>with consistent improvement</div>
-        </div>
-
-        {/* Tips */}
-        {scores.tips && scores.tips.length > 0 && (
-          <div className="glass-card" style={{ padding: 18, marginBottom: 20 }}>
-            <div className="h3" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Lightbulb size={14} color="#5CE1E6" /> AI Recommendations
-            </div>
-            {scores.tips.map((tip, i) => (
-              <div className="tip-row" key={i}>
-                <span className="tip-icon">→</span>
-                <span className="tip-text">{tip}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-outline" onClick={handleClose} style={{ flex: 1 }}>
-            <ArrowLeft size={14} /> Dashboard
+        {/* Two buttons */}
+        <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 320 }}>
+          <button
+            className="btn btn-outline"
+            onClick={() => { setStage('camera'); startCamera(); }}
+            style={{ flex: 1, padding: '14px 0', fontSize: 14, fontWeight: 700 }}
+          >
+            Rescan
           </button>
-          <button className="btn btn-primary" onClick={() => { setStage('camera'); startCamera(); }} style={{ flex: 1 }}>
-            Scan Again
+          <button
+            className="btn btn-primary"
+            onClick={handleClose}
+            style={{ flex: 1, padding: '14px 0', fontSize: 14, fontWeight: 700 }}
+          >
+            Continue
           </button>
         </div>
       </div>

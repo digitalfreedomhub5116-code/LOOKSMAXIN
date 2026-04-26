@@ -102,8 +102,13 @@ async function uploadFaceImage(userId: string, base64: string): Promise<string |
 // ─── Save scan (localStorage + Supabase Storage) ───
 export function saveScores(scores: FaceScores, faceBase64?: string) {
   try {
-    // Save scores (without base64 — we'll update with URL after upload)
+    // Save scores
     localStorage.setItem(LS_SCORES, JSON.stringify(scores));
+
+    // Save face image immediately (base64 as fallback — will be replaced by URL after upload)
+    if (faceBase64) {
+      localStorage.setItem(LS_FACE_URL, faceBase64);
+    }
 
     // Append to history
     const historyEntry = { ...scores };
