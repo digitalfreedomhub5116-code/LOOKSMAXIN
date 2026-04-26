@@ -132,7 +132,6 @@ html, body, #root {
   background: #0B1433;
   border: 2.5px solid rgba(200, 210, 230, 0.45);
   box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35), inset 0 1px 8px rgba(59, 130, 246, 0.1);
-  animation: iconFloat 3s ease-in-out infinite;
 }
 
 /* Reusable mini icon for chat header */
@@ -148,34 +147,39 @@ html, body, #root {
   box-shadow: 0 2px 12px rgba(59, 130, 246, 0.25);
 }
 
-/* Large icon for empty state */
+/* Large icon for empty state — clean, no border/animation */
 .lynx-icon-lg {
   width: 80px;
   height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: #0B1433;
-  border: 2.5px solid rgba(200, 210, 230, 0.3);
-  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.3);
-  animation: iconFloat 3s ease-in-out infinite;
+  margin-bottom: 16px;
 }
 
-@keyframes iconFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
-
-/* Blinking eyes animation */
-.lynx-eye {
-  animation: blink 4s ease-in-out infinite;
+/* Static eyes — no animation */
+.lynx-eye-static {
   transform-origin: center center;
 }
 
-@keyframes blink {
-  0%, 38%, 42%, 100% { transform: scaleY(1); }
-  40% { transform: scaleY(0.08); }
+/* Navbar eyes — look left → right → center → blink → center loop */
+.lynx-eye-nav {
+  transform-origin: center center;
+  animation: eyeLookBlink 5s ease-in-out infinite;
+}
+
+@keyframes eyeLookBlink {
+  0%   { transform: translateX(0) scaleY(1); }
+  8%   { transform: translateX(-2.5px) scaleY(1); }
+  20%  { transform: translateX(-2.5px) scaleY(1); }
+  30%  { transform: translateX(2.5px) scaleY(1); }
+  42%  { transform: translateX(2.5px) scaleY(1); }
+  52%  { transform: translateX(0) scaleY(1); }
+  62%  { transform: translateX(0) scaleY(1); }
+  65%  { transform: translateX(0) scaleY(0.05); }
+  68%  { transform: translateX(0) scaleY(1); }
+  78%  { transform: translateX(0) scaleY(1); }
+  100% { transform: translateX(0) scaleY(1); }
 }
 
 /* ─── Page container ─── */

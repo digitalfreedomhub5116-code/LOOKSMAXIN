@@ -9,13 +9,16 @@ const tabs: { id: Tab; icon: typeof Grid3x3; label: string; center?: boolean }[]
   { id: 'profile', icon: User, label: 'Profile' },
 ];
 
-/* Lynx chat bubble mascot — blue bubble with blinking eyes */
-export function LynxBubbleIcon({ size = 34 }: { size?: number }) {
+/* Lynx chat bubble mascot
+   animated = true  → navbar version with look-around + blink loop
+   animated = false → static version for headers/empty state/bubbles */
+export function LynxBubbleIcon({ size = 34, animated = false }: { size?: number; animated?: boolean }) {
   const s = size;
   const vb = 40;
   const eyeW = s > 30 ? 4.5 : 3.5;
   const eyeH = s > 30 ? 12 : 9;
   const eyeRx = eyeW / 2;
+  const eyeClass = animated ? 'lynx-eye-nav' : 'lynx-eye-static';
 
   return (
     <svg
@@ -34,9 +37,9 @@ export function LynxBubbleIcon({ size = 34 }: { size?: number }) {
       {/* Glossy top highlight */}
       <ellipse cx="17" cy="11" rx="11" ry="5" fill="rgba(255,255,255,0.15)" />
       {/* Left eye */}
-      <rect className="lynx-eye" x="14" y="13" width={eyeW} height={eyeH} rx={eyeRx} fill="white" />
+      <rect className={eyeClass} x="14" y="13" width={eyeW} height={eyeH} rx={eyeRx} fill="white" />
       {/* Right eye */}
-      <rect className="lynx-eye" x="21.5" y="13" width={eyeW} height={eyeH} rx={eyeRx} fill="white" />
+      <rect className={eyeClass} x="21.5" y="13" width={eyeW} height={eyeH} rx={eyeRx} fill="white" />
       <defs>
         <linearGradient id="bubbleGrad" x1="2" y1="4" x2="38" y2="36" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#60A5FA" />
@@ -55,7 +58,7 @@ export default function TabBar({ active, onChange }: { active: Tab; onChange: (t
         t.center ? (
           <button key={t.id} className="tab-center" onClick={() => onChange(t.id)}>
             <div className="lynx-icon-wrap">
-              <LynxBubbleIcon size={34} />
+              <LynxBubbleIcon size={34} animated />
             </div>
           </button>
         ) : (
