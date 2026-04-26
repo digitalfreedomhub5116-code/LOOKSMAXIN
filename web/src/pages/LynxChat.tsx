@@ -1,58 +1,185 @@
-import { Sparkles, Zap, Shield, Brain } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Sparkles, Send, Zap, Shield, Brain, RotateCcw } from 'lucide-react';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 const SUGGESTIONS = [
-  { icon: <Zap size={15} />, text: "What's my best feature?" },
-  { icon: <Shield size={15} />, text: 'Build a skincare routine' },
-  { icon: <Brain size={15} />, text: 'How to improve jawline?' },
+  { icon: <Zap size={14} />, text: "What's my best feature to highlight?" },
+  { icon: <Shield size={14} />, text: 'Build me a skincare routine' },
+  { icon: <Brain size={14} />, text: 'How do I improve my jawline?' },
 ];
 
+const API = import.meta.env.VITE_API_URL || '';
+
 export default function LynxChat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
+
+  const sendMessage = async (text: string) => {
+    const msg = text.trim();
+    if (!msg || loading) return;
+
+    const userMsg: Message = { role: 'user', content: msg };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          messages: messages.slice(-10), // Send last 10 for context
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed');
+
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "Sorry, I couldn't process that right now. Try again in a moment! 🔄",
+      }]);
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(input);
+  };
+
+  const clearChat = () => {
+    setMessages([]);
+  };
+
+  const hasMessages = messages.length > 0;
+
   return (
-    <div className="page">
-      <div className="chat-hero">
-        <div className="lynx-blob">
-          <Sparkles size={44} color="rgba(255,255,255,0.92)" />
-        </div>
-
-        <div className="h1" style={{ marginBottom: 6 }}>Meet Lynx</div>
-        <div className="label" style={{ maxWidth: 260, margin: '0 auto' }}>
-          Your AI-powered glow up companion. Ask me anything about self-improvement.
-        </div>
-
-        {/* Status dot */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
-          marginTop: 16,
-        }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: '50%', background: '#22C55E',
-            boxShadow: '0 0 6px rgba(34,197,94,0.7)',
-          }} />
-          <span className="label">Online • Ready to help</span>
-        </div>
-      </div>
-
-      {/* Suggestions */}
-      <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div className="label-xs" style={{ marginBottom: 4 }}>SUGGESTED</div>
-        {SUGGESTIONS.map((s, i) => (
-          <div className="glass suggestion-chip" key={i}>
-            <span style={{ color: 'var(--primary)', marginRight: 8 }}>{s.icon}</span>
-            {s.text}
+    <div className="chat-page">
+      {/* Header */}
+      <div className="chat-header">
+        <div className="chat-header-left">
+          <div className="chat-avatar">
+            <Sparkles size={18} />
           </div>
-        ))}
+          <div>
+            <div className="chat-title">Lynx AI</div>
+            <div className="chat-status">
+              <span className="chat-status-dot" />
+              Online
+            </div>
+          </div>
+        </div>
+        {hasMessages && (
+          <button className="chat-clear-btn" onClick={clearChat} title="Clear chat">
+            <RotateCcw size={16} />
+          </button>
+        )}
       </div>
 
-      {/* Coming Soon */}
-      <div style={{
-        marginTop: 40, textAlign: 'center',
-        padding: 20, background: 'rgba(142,161,188,0.05)', borderRadius: 16,
-        border: '1px dashed rgba(142,161,188,0.15)',
-      }}>
-        <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
-        <div className="h3" style={{ color: 'var(--text-muted)' }}>Chat coming soon</div>
-        <div className="label" style={{ marginTop: 4 }}>Full AI chat in the next update</div>
+      {/* Messages Area */}
+      <div className="chat-messages" ref={scrollRef}>
+        {!hasMessages ? (
+          /* Empty state */
+          <div className="chat-empty">
+            <div className="chat-empty-blob">
+              <Sparkles size={36} color="rgba(255,255,255,0.9)" />
+            </div>
+            <div className="chat-empty-title">Hey! I'm Lynx 👋</div>
+            <div className="chat-empty-sub">
+              Your AI glow-up companion. Ask me anything about skincare, jawline, fitness, or style.
+            </div>
+
+            <div className="chat-suggestions">
+              {SUGGESTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  className="chat-suggestion"
+                  onClick={() => sendMessage(s.text)}
+                >
+                  <span className="chat-suggestion-icon">{s.icon}</span>
+                  {s.text}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Chat messages */
+          <>
+            {messages.map((msg, i) => (
+              <div key={i} className={`chat-bubble-row ${msg.role}`}>
+                {msg.role === 'assistant' && (
+                  <div className="chat-bubble-avatar">
+                    <Sparkles size={12} />
+                  </div>
+                )}
+                <div className={`chat-bubble ${msg.role}`}>
+                  {msg.content.split('\n').map((line, j) => (
+                    <span key={j}>
+                      {line}
+                      {j < msg.content.split('\n').length - 1 && <br />}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Typing indicator */}
+            {loading && (
+              <div className="chat-bubble-row assistant">
+                <div className="chat-bubble-avatar">
+                  <Sparkles size={12} />
+                </div>
+                <div className="chat-bubble assistant">
+                  <div className="chat-typing">
+                    <span /><span /><span />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Input Bar */}
+      <form className="chat-input-bar" onSubmit={handleSubmit}>
+        <input
+          ref={inputRef}
+          className="chat-input"
+          type="text"
+          placeholder="Ask Lynx anything..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          disabled={loading}
+          autoComplete="off"
+        />
+        <button
+          className="chat-send-btn"
+          type="submit"
+          disabled={!input.trim() || loading}
+        >
+          <Send size={18} />
+        </button>
+      </form>
     </div>
   );
 }

@@ -128,6 +128,86 @@ app.post('/api/analyze-face', async function (req, res) {
   }
 });
 
+// Chat endpoint
+const CHAT_PROMPT = `You are Lynx, a friendly and knowledgeable AI assistant specialized in looksmaxing, facial aesthetics, skincare, grooming, fitness, and overall self-improvement. 
+
+Personality:
+- Supportive, encouraging, but honest
+- Give practical, actionable advice
+- Use casual, friendly language (not overly formal)
+- Keep responses concise (2-4 short paragraphs max)
+- Use relevant emojis sparingly
+- If asked about topics outside your expertise, gently redirect to self-improvement topics
+
+Your knowledge covers:
+- Facial aesthetics & bone structure
+- Skincare routines & products
+- Hair care & styling
+- Fitness & body composition
+- Mewing, jawline exercises
+- Style & grooming
+- Confidence & mindset`;
+
+const GEMINI_CHAT_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+app.post('/api/chat', async function (req, res) {
+  try {
+    var messages = req.body.messages || [];
+    var userMessage = req.body.message || '';
+
+    if (!userMessage.trim()) {
+      return res.status(400).json({ error: 'No message provided' });
+    }
+
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'AI not configured' });
+    }
+
+    // Build conversation history for Gemini
+    var contents = [{ role: 'user', parts: [{ text: CHAT_PROMPT }] }, { role: 'model', parts: [{ text: 'Understood! I\'m Lynx, your AI glow-up companion. Ready to help with anything related to self-improvement. What\'s on your mind? 💪' }] }];
+
+    // Add previous messages
+    for (var i = 0; i < messages.length; i++) {
+      contents.push({
+        role: messages[i].role === 'user' ? 'user' : 'model',
+        parts: [{ text: messages[i].content }]
+      });
+    }
+
+    // Add current message
+    contents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+    var response = await fetch(GEMINI_CHAT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+      }),
+    });
+
+    if (!response.ok) {
+      var errText = await response.text();
+      console.error('Gemini chat error:', response.status, errText);
+      return res.status(502).json({ error: 'AI response failed' });
+    }
+
+    var result = await response.json();
+    var reply = result.candidates && result.candidates[0] &&
+      result.candidates[0].content && result.candidates[0].content.parts &&
+      result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
+
+    if (!reply) {
+      return res.status(500).json({ error: 'No response from AI' });
+    }
+
+    res.json({ reply: reply.trim() });
+  } catch (err) {
+    console.error('Chat error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ════════════════════════════════════
 //  SERVE STATIC WEB BUILD
 // ════════════════════════════════════
