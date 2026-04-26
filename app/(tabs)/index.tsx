@@ -56,8 +56,8 @@ export default function DashboardScreen() {
   // Animate on mount
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(cardSlide, { toValue: 0, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(fadeIn, { toValue: 1, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+      Animated.timing(cardSlide, { toValue: 0, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
     ]).start();
   }, []);
 
