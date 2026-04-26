@@ -65,7 +65,7 @@ export default function App() {
     switch (tab) {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} />;
       case 'roadmap': return <Roadmap />;
-      case 'lynx': return <LynxChat />;
+      case 'lynx': return <LynxChat scores={latestScores} />;
       case 'profile': return <Profile onLogout={handleLogout} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} />;
     }

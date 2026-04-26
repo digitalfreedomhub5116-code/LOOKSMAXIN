@@ -136,10 +136,12 @@ const CHAT_SYSTEM_PROMPT = `You are Lynx, a friendly and knowledgeable AI assist
 
 Personality:
 - Supportive, encouraging, but honest
-- Give practical, actionable advice
+- Give practical, actionable advice based on the user's actual data
 - Use casual, friendly language (not overly formal)
 - Keep responses concise (2-4 short paragraphs max)
 - Use relevant emojis sparingly
+- Reference the user's specific scores and weak areas when giving advice
+- If the user hasn't done a scan yet, encourage them to do one
 - If asked about topics outside your expertise, gently redirect to self-improvement topics
 
 Your knowledge covers:
@@ -149,12 +151,15 @@ Your knowledge covers:
 - Fitness & body composition
 - Mewing, jawline exercises
 - Style & grooming
-- Confidence & mindset`;
+- Confidence & mindset
+
+IMPORTANT: You have access to the user's face scan data below. Use it to personalize every response. For example, if their jawline is low, recommend mewing exercises. If skin quality is low, suggest a skincare routine. Always be specific to THEIR data.`;
 
 app.post('/api/chat', async function (req, res) {
   try {
     var prevMessages = req.body.messages || [];
     var userMessage = req.body.message || '';
+    var userContext = req.body.userContext || '';
 
     if (!userMessage.trim()) {
       return res.status(400).json({ error: 'No message provided' });
@@ -164,8 +169,14 @@ app.post('/api/chat', async function (req, res) {
       return res.status(500).json({ error: 'AI not configured' });
     }
 
+    // Build system prompt with user context
+    var systemPrompt = CHAT_SYSTEM_PROMPT;
+    if (userContext) {
+      systemPrompt += '\n\n--- USER DATA (use this to personalize your responses) ---\n' + userContext;
+    }
+
     // Build messages array (OpenAI-compatible format)
-    var chatMessages = [{ role: 'system', content: CHAT_SYSTEM_PROMPT }];
+    var chatMessages = [{ role: 'system', content: systemPrompt }];
 
     // Add conversation history
     for (var i = 0; i < prevMessages.length; i++) {
