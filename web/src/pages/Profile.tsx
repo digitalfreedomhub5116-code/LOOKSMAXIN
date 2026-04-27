@@ -21,33 +21,29 @@ export default function Profile({ onLogout }: { onLogout: () => void }) {
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { data: { user: u }, error } = await supabase.auth.getUser();
-        if (error || !u) {
-          // Token is expired or invalid — user data can't be loaded
-          console.warn('Failed to get user:', error?.message);
-          // Still show what we can from the session
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            setUser({
-              email: session.user.email || '',
-              name: session.user.user_metadata?.display_name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-              avatar: session.user.user_metadata?.avatar_url,
-            });
-          }
-        } else {
-          setUser({
-            email: u.email || '',
-            name: u.user_metadata?.display_name || u.user_metadata?.full_name || u.email?.split('@')[0] || 'Champion',
-            avatar: u.user_metadata?.avatar_url,
-          });
-        }
-      } catch (e) {
-        console.warn('Auth check failed:', e);
-      }
-      setScanCount(getScanCount());
-    })();
+    // Helper to set user from a Supabase User object
+    const setFromUser = (u: any) => {
+      if (!u) return;
+      setUser({
+        email: u.email || '',
+        name: u.user_metadata?.display_name || u.user_metadata?.full_name || u.email?.split('@')[0] || 'Champion',
+        avatar: u.user_metadata?.avatar_url,
+      });
+    };
+
+    // Read session from localStorage (instant, no network call)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setFromUser(session.user);
+    });
+
+    // Subscribe to auth changes so Profile updates if token refreshes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) setFromUser(session.user);
+    });
+
+    setScanCount(getScanCount());
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
