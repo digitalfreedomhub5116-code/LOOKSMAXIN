@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { pushField } from './sync';
 
 // Public client keys — safe for browser
 const url = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
@@ -130,6 +131,14 @@ export function saveScores(scores: FaceScores, faceBase64?: string) {
     console.error('localStorage save failed:', e);
   }
 
+  // Sync to cloud (fire-and-forget)
+  try {
+    pushField('latest_scores', scores);
+    // Push history without base64 face images (too large for DB)
+    const historyForCloud = getScanHistory().map(r => ({ ...r, faceImage: undefined }));
+    pushField('scan_history', historyForCloud);
+  } catch {}
+
   // Upload to Supabase Storage + save scan record (fire-and-forget)
   saveToSupabase(scores, faceBase64).catch(() => {});
 }
@@ -179,6 +188,9 @@ export function deleteReport(timestamp: string) {
   try {
     const history = getScanHistory().filter(r => r.timestamp !== timestamp);
     localStorage.setItem(LS_HISTORY, JSON.stringify(history));
+    // Sync deletion to cloud
+    const historyForCloud = history.map(r => ({ ...r, faceImage: undefined }));
+    pushField('scan_history', historyForCloud);
   } catch {}
 }
 

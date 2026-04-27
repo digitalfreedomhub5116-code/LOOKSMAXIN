@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Bookmark, ChevronRight, Clock, Repeat, ArrowLeft, Check } from 'lucide-react';
 import { REMEDIES, CATEGORY_META, CATEGORY_ORDER, type Remedy, type RemedyCategory } from '../data/skinRemedies';
+import { pushField } from '../lib/sync';
 
 interface SectionProps {
   limit?: number; // max categories to show
@@ -18,7 +19,9 @@ export default function SkinRemediesSection({ limit, onViewAll }: SectionProps) 
     setSaved(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      localStorage.setItem('lynx_saved_remedies', JSON.stringify([...next]));
+      const arr = [...next];
+      localStorage.setItem('lynx_saved_remedies', JSON.stringify(arr));
+      pushField('saved_remedies', arr).catch(() => {});
       return next;
     });
   };

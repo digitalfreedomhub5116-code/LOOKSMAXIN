@@ -1,6 +1,8 @@
 // ═══════════════════════════════════
-//  Plan Progress — localStorage
+//  Plan Progress — localStorage + Cloud Sync
 // ═══════════════════════════════════
+
+import { pushField } from '../lib/sync';
 
 const STORAGE_KEY = 'lynx_plan_progress';
 
@@ -27,6 +29,8 @@ function load(): UserProgress {
 
 function save(data: UserProgress) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Sync to cloud (fire-and-forget)
+  pushField('plan_progress', data).catch(() => {});
 }
 
 export function getProgress(): UserProgress {

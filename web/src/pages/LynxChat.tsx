@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Zap, Shield, Brain, RotateCcw } from 'lucide-react';
 import { LynxBubbleIcon } from '../components/TabBar';
 import { supabase, getScanHistory, getScanCount } from '../lib/api';
+import { pushField } from '../lib/sync';
 import type { FaceScores } from '../lib/api';
 
 interface Message {
@@ -111,10 +112,12 @@ export default function LynxChat({ scores }: LynxChatProps) {
     buildUserContext(scores).then(setUserContext);
   }, [scores]);
 
-  // Persist chat to localStorage
+  // Persist chat to localStorage + cloud
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem(LS_CHAT, JSON.stringify(messages.slice(-50)));
+      const trimmed = messages.slice(-50);
+      localStorage.setItem(LS_CHAT, JSON.stringify(trimmed));
+      pushField('chat_history', trimmed).catch(() => {});
     }
   }, [messages]);
 
@@ -205,6 +208,7 @@ export default function LynxChat({ scores }: LynxChatProps) {
     setIsTyping(false);
     if (typewriterRef.current) clearTimeout(typewriterRef.current);
     localStorage.removeItem(LS_CHAT);
+    pushField('chat_history', []).catch(() => {});
   };
 
   const hasMessages = messages.length > 0 || isTyping;
