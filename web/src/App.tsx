@@ -38,14 +38,24 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setAuthed(!!session);
-      if (session) {
-        // Pull cloud data on startup to sync across devices
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error || !session) {
+        // No valid session — ensure clean state
+        setAuthed(false);
+        return;
+      }
+      setAuthed(true);
+      // Pull cloud data on startup to sync across devices
+      try {
         await pullFromCloud();
         setLatestScores(loadLatestScores());
         setFaceImage(loadFaceImage());
+      } catch (e) {
+        console.warn('Cloud pull failed:', e);
       }
+    }).catch(() => {
+      // If getSession itself throws, force to login
+      setAuthed(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setAuthed(!!session);
