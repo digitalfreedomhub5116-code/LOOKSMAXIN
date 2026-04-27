@@ -68,11 +68,21 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    // 1. Flush all pending data to cloud first
-    await pushToCloud();
-    // 2. Clear all local data
-    localStorage.clear();
-    // 3. Reset all React state
+    try {
+      // 1. Flush pending data to cloud while still authenticated
+      await pushToCloud();
+    } catch (e) {
+      console.warn('Cloud sync before logout failed:', e);
+    }
+
+    // 2. Sign out from Supabase (this removes auth tokens from localStorage)
+    await supabase.auth.signOut();
+
+    // 3. Clear app-specific localStorage keys (NOT Supabase auth — signOut handles that)
+    const appKeys = Object.keys(localStorage).filter(k => !k.startsWith('sb-'));
+    appKeys.forEach(k => localStorage.removeItem(k));
+
+    // 4. Reset all React state
     setAuthed(false);
     setLatestScores(null);
     setFaceImage(null);
