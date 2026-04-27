@@ -32,52 +32,88 @@ export default function App() {
 
   // Flush pending sync data before page unload (tab close, refresh, navigate away)
   useEffect(() => {
-    const handleUnload = () => { pushToCloud(); };
+    const handleUnload = () => {
+      // Fire-and-forget — browser may kill it, that's OK
+      try { pushToCloud(); } catch {}
+    };
     window.addEventListener('beforeunload', handleUnload);
     return () => window.removeEventListener('beforeunload', handleUnload);
   }, []);
 
+  // ═══ Single source of truth for auth state ═══
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error || !session) {
-        // No valid session — ensure clean state
-        setAuthed(false);
+    // Safety timeout: if auth check takes too long, force to login page
+    const safetyTimer = setTimeout(() => {
+      setAuthed(prev => {
+        if (prev === null) {
+          console.warn('[Auth] Timeout — forcing to login');
+          return false;
+        }
+        return prev;
+      });
+    }, 5000);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      clearTimeout(safetyTimer);
+
+      if (event === 'INITIAL_SESSION') {
+        // First event on page load — determines if user is logged in
+        if (session) {
+          setAuthed(true);
+          try {
+            await pullFromCloud();
+            setLatestScores(loadLatestScores());
+            setFaceImage(loadFaceImage());
+          } catch (e) {
+            console.warn('[Auth] Cloud pull failed:', e);
+          }
+        } else {
+          setAuthed(false);
+        }
         return;
       }
-      setAuthed(true);
-      // Pull cloud data on startup to sync across devices
-      try {
-        await pullFromCloud();
-        setLatestScores(loadLatestScores());
-        setFaceImage(loadFaceImage());
-      } catch (e) {
-        console.warn('Cloud pull failed:', e);
+
+      if (event === 'SIGNED_IN') {
+        setAuthed(true);
+        try {
+          await pullFromCloud();
+          setLatestScores(loadLatestScores());
+          setFaceImage(loadFaceImage());
+        } catch {}
+        return;
       }
-    }).catch(() => {
-      // If getSession itself throws, force to login
-      setAuthed(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setAuthed(!!session);
-      if (event === 'PASSWORD_RECOVERY') {
-        setShowUpdatePassword(true);
+
+      if (event === 'TOKEN_REFRESHED') {
+        // Session refreshed — keep authed state, no action needed
+        setAuthed(true);
+        return;
       }
-      if (event === 'SIGNED_IN' && session) {
-        await pullFromCloud();
-        setLatestScores(loadLatestScores());
-        setFaceImage(loadFaceImage());
-      }
+
       if (event === 'SIGNED_OUT') {
-        // Ensure clean state on any sign-out (manual, expired token, etc.)
+        setAuthed(false);
         setLatestScores(null);
         setFaceImage(null);
         setTab('dashboard');
         setChatState('closed');
         setShowRemedies(false);
         setShowReports(false);
+        setScanning(false);
+        return;
       }
+
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowUpdatePassword(true);
+        return;
+      }
+
+      // Any other event: just sync auth state
+      setAuthed(!!session);
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleScanResults = (scores: FaceScores, base64Image: string) => {
