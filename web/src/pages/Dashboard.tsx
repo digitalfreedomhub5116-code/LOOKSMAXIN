@@ -68,20 +68,39 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
 
       {/* ═══ SECTION 1: GET RATED / LYNX REPORT ═══ */}
       {!scores ? (
-        <div className="glass-card" style={{ padding: 24, marginBottom: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 1.5, marginBottom: 8 }}>FIRST SCAN</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>Get rated</div>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ScanLine size={22} color="#000" />
+        <div className="glass-card" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
+          {/* Hero Image */}
+          <div style={{ width: '100%', height: 200, overflow: 'hidden', position: 'relative' }}>
+            <img
+              src="/hero-chad.png"
+              alt="Transform your look"
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+                objectPosition: 'center top',
+                filter: 'grayscale(100%) contrast(1.1)',
+                display: 'block',
+              }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(17,17,17,0.7) 70%, #111 100%)',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: 16, left: 20, right: 20,
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5, marginBottom: 4 }}>FIRST SCAN</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Get rated</div>
             </div>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
-            Take your first face scan to unlock your personalized Lynx Report and improvement roadmap.
-          </p>
-          <button className="btn btn-primary" onClick={onScan} style={{ width: '100%', padding: '14px 0', fontSize: 14, fontWeight: 700, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <ScanLine size={16} /> Start Face Scan
-          </button>
+
+          <div style={{ padding: '16px 20px 20px' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
+              Take your first face scan to unlock your personalized Lynx Report and improvement roadmap.
+            </p>
+            <button className="btn btn-primary" onClick={onScan} style={{ width: '100%', padding: '14px 0', fontSize: 14, fontWeight: 700, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <ScanLine size={16} /> Start Face Scan
+            </button>
+          </div>
         </div>
       ) : (
         <div className="glass-card" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
