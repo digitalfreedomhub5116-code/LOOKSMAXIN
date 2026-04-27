@@ -31,10 +31,37 @@ export default function SkinRemediesSection({ limit, onViewAll }: SectionProps) 
   }));
   const grouped = limit ? allGrouped.slice(0, limit) : allGrouped;
 
+  // Saved remedies for full page
+  const savedRemedies = !limit ? REMEDIES.filter(r => saved.has(r.id)) : [];
+
   return (
     <>
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 16 }}>Skin Rituals</div>
+
+        {/* Saved section — only on full page */}
+        {savedRemedies.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{
+                width: 4, height: 18, borderRadius: 2, background: 'var(--primary)',
+              }} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>Saved</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Your bookmarked rituals</div>
+              </div>
+              <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>{savedRemedies.length}</span>
+            </div>
+            <div style={{
+              display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4,
+              scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch',
+            }}>
+              {savedRemedies.map(r => (
+                <RemedyCard key={r.id} r={r} isSaved={true} onSave={toggleSave} onView={() => setSelected(r)} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {grouped.map(({ cat, meta, items }) => (
           <div key={cat} style={{ marginBottom: 24 }}>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap } from 'lucide-react';
 import type { FaceScores } from '../lib/api';
 import { PLANS } from '../data/exercisePlans';
@@ -33,9 +33,11 @@ function getBarColor(s: number) {
 export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onViewAllRemedies, onViewAllReports }: DashboardProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const scanVersion = useRef(0);
 
   useEffect(() => {
     if (!scores) return;
+    scanVersion.current++;
     let frame = 0;
     const target = scores.overall;
     const step = () => {
@@ -238,7 +240,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
       )}
 
       {/* ═══ RECENT REPORTS ═══ */}
-      <RecentReports onViewAll={onViewAllReports || (() => {})} />
+      <RecentReports key={`reports-${scanVersion.current}`} onViewAll={onViewAllReports || (() => {})} />
 
       {/* ═══ EXERCISES SECTION ═══ */}
       <ActivePlanCard onGoPrograms={onGoPrograms} />
