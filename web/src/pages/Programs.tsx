@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Check, Lock, ChevronDown, ChevronUp, Play, Pause, RotateCcw, Star, Trophy } from 'lucide-react';
+import { Check, Lock, ChevronDown, ChevronUp, Play, Pause, RotateCcw, Trophy } from 'lucide-react';
 import { PLANS } from '../data/exercisePlans';
 import type { ExercisePlan, ExerciseItem, PlanDay } from '../data/exercisePlans';
 import * as progress from '../data/planProgress';
@@ -173,7 +173,7 @@ function PlanCarousel({ plans, activePlanId, userPlans, onSelect }: {
   );
 }
 
-/* ═══ Journey Map ═══ */
+/* ═══ Mission Map (Vertical) ═══ */
 function JourneyMap({ plan, completedDays, completedExercises, currentDay, expandedDay, onToggleDay, onStartExercise, onCompleteDay }: {
   plan: ExercisePlan;
   completedDays: number[];
@@ -184,97 +184,171 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
   onStartExercise: (ex: ExerciseItem) => void;
   onCompleteDay: (d: number, bonusXP?: number) => void;
 }) {
-  const COLS = 3;
-  const rows: PlanDay[][] = [];
-  for (let i = 0; i < plan.days.length; i += COLS) {
-    const row = plan.days.slice(i, i + COLS);
-    if (rows.length % 2 === 1) row.reverse(); // snake pattern
-    rows.push(row);
-  }
-
   return (
-    <div style={{ marginTop: 8 }}>
-      {rows.map((row, ri) => (
-        <div key={ri}>
-          {/* Node row */}
-          <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', position: 'relative' }}>
-            {row.map((dayData, ci) => {
-              const d = dayData.day;
-              const done = completedDays.includes(d);
-              const isCurrent = d === currentDay && !done;
-              const locked = d > currentDay;
-              const isMilestone = !!dayData.milestone;
+    <div style={{ position: 'relative', marginTop: 12, paddingBottom: 20 }}>
+      {/* Vertical glowing line */}
+      <div style={{
+        position: 'absolute', left: 28, top: 0, bottom: 0, width: 3,
+        background: 'linear-gradient(180deg, var(--primary) 0%, rgba(200,168,78,0.15) 100%)',
+        borderRadius: 2, zIndex: 0,
+        boxShadow: '0 0 12px rgba(200,168,78,0.2), 0 0 4px rgba(200,168,78,0.3)',
+      }} />
 
-              return (
-                <div key={d} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, position: 'relative' }}>
-                  {/* Connector line */}
-                  {ci > 0 && (
-                    <div style={{
-                      position: 'absolute', top: isMilestone ? 22 : 18, height: 2,
-                      left: ri % 2 === 0 ? '-50%' : undefined,
-                      right: ri % 2 !== 0 ? '-50%' : undefined,
-                      width: '100%',
-                      background: done ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
-                      zIndex: 0,
-                    }} />
-                  )}
+      {plan.days.map((dayData) => {
+        const d = dayData.day;
+        const done = completedDays.includes(d);
+        const isCurrent = d === currentDay && !done;
+        const locked = d > currentDay;
+        const isMilestone = !!dayData.milestone;
+        const isExpanded = expandedDay === d;
+        const nodeSize = isMilestone ? 56 : 48;
 
-                  {/* Node */}
-                  <button
-                    onClick={() => !locked && onToggleDay(d)}
-                    disabled={locked}
-                    style={{
-                      width: isMilestone ? 48 : 40, height: isMilestone ? 48 : 40,
-                      borderRadius: '50%', border: 'none', cursor: locked ? 'default' : 'pointer',
-                      background: done ? 'rgba(200,168,78,0.2)' : isCurrent ? 'rgba(200,168,78,0.12)' : 'var(--surface)',
-                      borderWidth: 2.5, borderStyle: 'solid',
-                      borderColor: done ? 'var(--primary)' : isCurrent ? 'var(--primary)' : 'rgba(255,255,255,0.08)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      position: 'relative', zIndex: 1, transition: 'all 0.2s',
-                      boxShadow: isCurrent ? '0 0 16px rgba(200,168,78,0.3)' : 'none',
-                      animation: isCurrent ? 'pulse 2s ease-in-out infinite' : 'none',
-                      opacity: locked ? 0.3 : 1,
-                    }}
-                  >
-                    {done ? <Check size={16} color="var(--primary)" /> :
-                     isMilestone ? <Star size={18} color={locked ? 'var(--text-disabled)' : 'var(--primary)'} /> :
-                     locked ? <Lock size={12} color="var(--text-disabled)" /> :
-                     <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)' }}>{d}</span>}
-                  </button>
-
-                  {/* Day label */}
+        return (
+          <div key={d} style={{ position: 'relative', marginBottom: isExpanded ? 0 : 6 }}>
+            {/* Node row */}
+            <div
+              onClick={() => !locked && onToggleDay(d)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 16,
+                cursor: locked ? 'default' : 'pointer',
+                padding: '8px 0',
+              }}
+            >
+              {/* Circle node */}
+              <div style={{
+                width: nodeSize, height: nodeSize, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', zIndex: 2,
+                background: done
+                  ? 'radial-gradient(circle, rgba(200,168,78,0.3) 0%, rgba(200,168,78,0.08) 70%)'
+                  : isCurrent
+                    ? 'radial-gradient(circle, rgba(200,168,78,0.2) 0%, rgba(200,168,78,0.05) 70%)'
+                    : 'radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 70%)',
+                border: done
+                  ? '2.5px solid var(--primary)'
+                  : isCurrent
+                    ? '2.5px solid var(--primary)'
+                    : '2px solid rgba(255,255,255,0.1)',
+                boxShadow: done
+                  ? '0 0 20px rgba(200,168,78,0.35), inset 0 0 12px rgba(200,168,78,0.1)'
+                  : isCurrent
+                    ? '0 0 24px rgba(200,168,78,0.4), 0 0 8px rgba(200,168,78,0.2), inset 0 0 12px rgba(200,168,78,0.1)'
+                    : 'none',
+                opacity: locked ? 0.35 : 1,
+                transition: 'all 0.3s ease',
+                animation: isCurrent ? 'missionPulse 2.5s ease-in-out infinite' : 'none',
+                marginLeft: nodeSize === 56 ? -4 : 0,
+              }}>
+                {done ? (
+                  <Check size={20} color="var(--primary)" strokeWidth={3} />
+                ) : isMilestone ? (
+                  <Trophy size={22} color={locked ? 'var(--text-disabled)' : 'var(--primary)'} />
+                ) : isCurrent ? (
                   <div style={{
-                    fontSize: 10, fontWeight: 600, marginTop: 4, marginBottom: 2,
-                    color: done ? 'var(--primary)' : isCurrent ? '#fff' : 'var(--text-disabled)',
-                  }}>
-                    {isMilestone ? '⭐' : `Day ${d}`}
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: 'var(--primary)',
+                    boxShadow: '0 0 10px rgba(200,168,78,0.5)',
+                  }} />
+                ) : locked ? (
+                  <Lock size={16} color="var(--text-disabled)" />
+                ) : (
+                  <Check size={18} color="var(--primary)" strokeWidth={2.5} />
+                )}
+              </div>
+
+              {/* Day info card */}
+              <div style={{
+                flex: 1, padding: '14px 16px', borderRadius: 14,
+                background: isExpanded
+                  ? 'rgba(200,168,78,0.06)'
+                  : isCurrent
+                    ? 'rgba(200,168,78,0.04)'
+                    : 'var(--surface)',
+                border: isExpanded
+                  ? '1.5px solid rgba(200,168,78,0.3)'
+                  : isCurrent
+                    ? '1.5px solid rgba(200,168,78,0.2)'
+                    : '1px solid var(--border)',
+                opacity: locked ? 0.4 : 1,
+                transition: 'all 0.25s ease',
+                boxShadow: isCurrent ? '0 0 20px rgba(200,168,78,0.08)' : 'none',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
+                      color: done ? 'var(--primary)' : 'var(--text-muted)', marginBottom: 3,
+                    }}>
+                      DAY {d} {isMilestone && '· MILESTONE'}
+                    </div>
+                    <div style={{
+                      fontSize: 16, fontWeight: 800, color: done ? 'var(--primary)' : '#fff',
+                      letterSpacing: 0.3,
+                    }}>
+                      {dayData.phase}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {done ? (
+                      <div style={{
+                        fontSize: 10, fontWeight: 700, color: '#22C55E',
+                        padding: '3px 10px', borderRadius: 20,
+                        background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
+                      }}>✓ DONE</div>
+                    ) : isCurrent ? (
+                      <div style={{
+                        fontSize: 11, fontWeight: 800, color: '#000',
+                        padding: '6px 14px', borderRadius: 8,
+                        background: 'var(--primary)',
+                        boxShadow: '0 0 12px rgba(200,168,78,0.3)',
+                        display: 'flex', alignItems: 'center', gap: 5,
+                      }}>
+                        <Play size={12} fill="#000" color="#000" />
+                        START
+                      </div>
+                    ) : locked ? (
+                      <Lock size={14} color="var(--text-disabled)" />
+                    ) : (
+                      <ChevronDown size={16} color="var(--text-muted)"
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                      />
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Expanded day detail */}
-          {row.some(dd => dd.day === expandedDay) && expandedDay !== null && (
-            <DayDetail
-              dayData={plan.days[expandedDay - 1]}
-              completedExIds={completedExercises[expandedDay] || []}
-              onStartExercise={onStartExercise}
-              onCompleteDay={() => onCompleteDay(expandedDay, plan.days[expandedDay - 1].bonusXP)}
-            />
-          )}
-
-          {/* Vertical connector between rows */}
-          {ri < rows.length - 1 && (
-            <div style={{ display: 'flex', justifyContent: ri % 2 === 0 ? 'flex-end' : 'flex-start', padding: '0 40px' }}>
-              <div style={{
-                width: 2, height: 24,
-                background: completedDays.includes(row[row.length - 1]?.day) ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
-              }} />
+                {/* Exercise count preview */}
+                {!locked && (
+                  <div style={{
+                    fontSize: 11, color: 'var(--text-muted)', marginTop: 6,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    <span>{dayData.exercises.length} exercises</span>
+                    {(completedExercises[d]?.length || 0) > 0 && !done && (
+                      <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
+                        {completedExercises[d]?.length}/{dayData.exercises.length}
+                      </span>
+                    )}
+                    {isMilestone && dayData.bonusXP && (
+                      <span style={{ color: 'var(--primary)', fontWeight: 700 }}>+{dayData.bonusXP} XP</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      ))}
+
+            {/* Expanded exercise list */}
+            {isExpanded && (
+              <div style={{ marginLeft: 64, marginBottom: 12 }}>
+                <DayDetail
+                  dayData={dayData}
+                  completedExIds={completedExercises[d] || []}
+                  onStartExercise={onStartExercise}
+                  onCompleteDay={() => onCompleteDay(d, dayData.bonusXP)}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -290,23 +364,10 @@ function DayDetail({ dayData, completedExIds, onStartExercise, onCompleteDay }: 
 
   return (
     <div style={{
-      margin: '8px 0 12px', padding: 16, borderRadius: 14,
+      padding: 14, borderRadius: 14,
       background: 'var(--surface)', border: '1px solid var(--border)',
       animation: 'fadeIn 0.3s ease-out',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Day {dayData.day}</span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, color: 'var(--primary)', marginLeft: 8,
-            padding: '2px 8px', borderRadius: 20, background: 'rgba(200,168,78,0.1)',
-          }}>{dayData.phase}</span>
-        </div>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-          {completedExIds.length}/{dayData.exercises.length}
-        </span>
-      </div>
-
       {dayData.exercises.map(ex => {
         const done = completedExIds.includes(ex.id);
         return (
