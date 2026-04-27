@@ -356,6 +356,7 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
                   : '1px solid rgba(255,255,255,0.08)',
                 opacity: locked ? 0.6 : 1,
                 backdropFilter: 'blur(8px)',
+                animation: isCurrent ? 'cardFloat 3s ease-in-out infinite' : 'none',
               }}
             >
               <div style={{

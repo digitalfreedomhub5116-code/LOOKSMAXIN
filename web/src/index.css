@@ -658,6 +658,11 @@ html, body, #root {
   50% { box-shadow: 0 0 32px rgba(200,168,78,0.5), 0 0 12px rgba(200,168,78,0.35), inset 0 0 16px rgba(200,168,78,0.12); }
 }
 
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 /* ─── Results View ─── */
 .results-page {
   padding: 48px 20px 90px;
