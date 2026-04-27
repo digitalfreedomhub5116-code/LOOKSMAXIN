@@ -55,10 +55,12 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       clearTimeout(safetyTimer);
+      console.log(`[Auth] Event: ${event}, Has session: ${!!session}, User: ${session?.user?.email || 'none'}`);
 
       if (event === 'INITIAL_SESSION') {
         // First event on page load — determines if user is logged in
         if (session) {
+          console.log('[Auth] ✅ Valid session found on load');
           setAuthed(true);
           try {
             await pullFromCloud();
@@ -68,6 +70,7 @@ export default function App() {
             console.warn('[Auth] Cloud pull failed:', e);
           }
         } else {
+          console.log('[Auth] ❌ No session on load — showing login');
           setAuthed(false);
         }
         return;
