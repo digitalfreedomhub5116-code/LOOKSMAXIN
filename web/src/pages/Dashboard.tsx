@@ -3,6 +3,7 @@ import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Du
 import type { FaceScores } from '../lib/api';
 import { PLANS } from '../data/exercisePlans';
 import * as progress from '../data/planProgress';
+import SkinRemediesSection from './SkinRemedies';
 
 interface DashboardProps {
   onScan: () => void;
@@ -253,6 +254,9 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms }: D
 
       {/* ═══ EXERCISES SECTION ═══ */}
       <ActivePlanCard onGoPrograms={onGoPrograms} />
+
+      {/* ═══ SKIN RITUALS ═══ */}
+      <SkinRemediesSection />
 
       {/* ═══ LYNXMAXING COURSES ═══ */}
       <div style={{ marginBottom: 24 }}>
