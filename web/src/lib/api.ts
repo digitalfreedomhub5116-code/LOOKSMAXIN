@@ -68,28 +68,24 @@ export async function analyzeFace(frontBase64: string, sideBase64: string, mime 
 // ─── Upload face image to Supabase Storage ───
 async function uploadFaceImage(userId: string, base64: string): Promise<string | null> {
   try {
-    // Convert base64 to Blob
-    const byteString = atob(base64);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    const blob = new Blob([ab], { type: 'image/jpeg' });
+    // Convert base64 to a real image Blob using fetch (reliable, no manual byte work)
+    const dataUrl = base64.startsWith('data:') ? base64 : `data:image/jpeg;base64,${base64}`;
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
 
-    // Create unique filename: userId/timestamp.jpg
+    console.log('[Upload] Blob created:', blob.size, 'bytes, type:', blob.type);
+
+    // Upload directly to Supabase Storage
     const filename = `${userId}/${Date.now()}.jpg`;
-
-    // Upload to face-scans bucket
     const { error } = await supabase.storage
       .from('face-scans')
       .upload(filename, blob, {
-        contentType: 'image/jpeg',
+        contentType: blob.type || 'image/jpeg',
         upsert: true,
       });
 
     if (error) {
-      console.warn('Storage upload error:', error.message);
+      console.warn('[Upload] Storage error:', error.message);
       return null;
     }
 
@@ -98,9 +94,10 @@ async function uploadFaceImage(userId: string, base64: string): Promise<string |
       .from('face-scans')
       .getPublicUrl(filename);
 
+    console.log('[Upload] ✅ Success:', urlData.publicUrl?.substring(0, 80));
     return urlData.publicUrl || null;
   } catch (e) {
-    console.warn('Face image upload failed:', e);
+    console.warn('[Upload] Failed:', e);
     return null;
   }
 }
