@@ -31,9 +31,24 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
     setError('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 640 } },
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          zoom: { ideal: 1 } as any,
+          resizeMode: 'none' as any,
+        },
         audio: false,
       });
+      // Try to set zoom to minimum if the track supports it
+      try {
+        const track = stream.getVideoTracks()[0];
+        const caps = track.getCapabilities?.() as any;
+        if (caps?.zoom) {
+          await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
+        }
+      } catch {}
+
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err: any) {
