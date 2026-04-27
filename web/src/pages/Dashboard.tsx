@@ -5,6 +5,7 @@ import { PLANS } from '../data/exercisePlans';
 import * as progress from '../data/planProgress';
 import SkinRemediesSection from './SkinRemedies';
 import RecentReports from './ReportsGrid';
+import AISuggestions from './AISuggestions';
 
 interface DashboardProps {
   onScan: () => void;
@@ -245,32 +246,11 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
       {/* ═══ EXERCISES SECTION ═══ */}
       <ActivePlanCard onGoPrograms={onGoPrograms} />
 
+      {/* ═══ AI SUGGESTIONS ═══ */}
+      {scores && <AISuggestions scores={scores} onGoPrograms={onGoPrograms} />}
+
       {/* ═══ SKIN RITUALS ═══ */}
       <SkinRemediesSection limit={2} onViewAll={onViewAllRemedies} />
-
-      {/* ═══ LYNXMAXING COURSES ═══ */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Lynxmaxing Courses</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
-        </div>
-        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-          {[
-            { title: 'Skincare Ascension', emoji: '🧴' },
-            { title: 'Hairstyle', emoji: '💇' },
-            { title: 'Posture Fix', emoji: '🧍' },
-          ].map(c => (
-            <div key={c.title} className="glass-card" style={{ minWidth: 150, padding: 0, overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
-              <div style={{ width: '100%', height: 110, background: 'var(--surface-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 40 }}>{c.emoji}</span>
-              </div>
-              <div style={{ padding: '12px 14px' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{c.title}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
