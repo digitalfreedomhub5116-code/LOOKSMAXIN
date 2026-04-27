@@ -30,6 +30,7 @@ export default function App() {
   const chatTimerRef = useRef<number>(0);
   const [showRemedies, setShowRemedies] = useState(false);
   const [showReports, setShowReports] = useState(false);
+  const accessTokenRef = useRef<string | null>(null);
 
   // Flush pending sync data before page unload (tab close, refresh, navigate away)
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function App() {
           console.log('[Auth] ✅ Valid session found on load');
           setAuthed(true);
           setSessionUser(session.user);
+          accessTokenRef.current = session.access_token;
           try {
             await pullFromCloud();
             setLatestScores(loadLatestScores());
@@ -83,6 +85,7 @@ export default function App() {
       if (event === 'SIGNED_IN') {
         setAuthed(true);
         setSessionUser(session?.user || null);
+        accessTokenRef.current = session?.access_token || null;
         try {
           await pullFromCloud();
           setLatestScores(loadLatestScores());
@@ -93,8 +96,8 @@ export default function App() {
       }
 
       if (event === 'TOKEN_REFRESHED') {
-        // Session refreshed — keep authed state, no action needed
         setAuthed(true);
+        accessTokenRef.current = session?.access_token || null;
         return;
       }
 
@@ -129,7 +132,7 @@ export default function App() {
   const handleScanResults = (scores: FaceScores, base64Image: string) => {
     setLatestScores(scores);
     setFaceImage(base64Image);
-    saveScores(scores, base64Image, sessionUser?.id);
+    saveScores(scores, base64Image, sessionUser?.id, accessTokenRef.current || undefined);
   };
 
   const handleLogout = async () => {

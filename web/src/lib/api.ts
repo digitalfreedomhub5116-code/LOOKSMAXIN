@@ -65,37 +65,41 @@ export async function analyzeFace(frontBase64: string, sideBase64: string, mime 
   return res.json();
 }
 
-// ─── Upload face image to Supabase Storage ───
-async function uploadFaceImage(userId: string, base64: string): Promise<string | null> {
+// ─── Upload face image to Supabase Storage (raw fetch — bypasses hanging getSession) ───
+async function uploadFaceImage(userId: string, base64: string, accessToken: string): Promise<string | null> {
   try {
-    // Convert base64 to a real image Blob using fetch (reliable, no manual byte work)
+    // Convert base64 to Blob
     const dataUrl = base64.startsWith('data:') ? base64 : `data:image/jpeg;base64,${base64}`;
     const response = await fetch(dataUrl);
     const blob = await response.blob();
 
-    console.log('[Upload] Blob created:', blob.size, 'bytes, type:', blob.type);
+    console.log('[Upload] Blob created:', blob.size, 'bytes');
 
-    // Upload directly to Supabase Storage
+    // Upload directly via Storage REST API (bypasses supabase client's getSession)
     const filename = `${userId}/${Date.now()}.jpg`;
-    const { error } = await supabase.storage
-      .from('face-scans')
-      .upload(filename, blob, {
-        contentType: blob.type || 'image/jpeg',
-        upsert: true,
-      });
+    const uploadUrl = `${url}/storage/v1/object/face-scans/${filename}`;
 
-    if (error) {
-      console.warn('[Upload] Storage error:', error.message);
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': key,
+        'Content-Type': blob.type || 'image/jpeg',
+        'x-upsert': 'true',
+      },
+      body: blob,
+    });
+
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text();
+      console.warn('[Upload] Storage error:', uploadRes.status, errText);
       return null;
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('face-scans')
-      .getPublicUrl(filename);
-
-    console.log('[Upload] ✅ Success:', urlData.publicUrl?.substring(0, 80));
-    return urlData.publicUrl || null;
+    // Build public URL
+    const publicUrl = `${url}/storage/v1/object/public/face-scans/${filename}`;
+    console.log('[Upload] ✅ Success:', publicUrl.substring(0, 80));
+    return publicUrl;
   } catch (e) {
     console.warn('[Upload] Failed:', e);
     return null;
@@ -103,8 +107,8 @@ async function uploadFaceImage(userId: string, base64: string): Promise<string |
 }
 
 // ─── Save scan (localStorage + Supabase Storage) ───
-export function saveScores(scores: FaceScores, faceBase64?: string, userId?: string) {
-  console.log('[SaveScores] Called. Has base64:', !!faceBase64, 'Score:', scores.overall, 'userId:', userId);
+export function saveScores(scores: FaceScores, faceBase64?: string, userId?: string, accessToken?: string) {
+  console.log('[SaveScores] Called. Has base64:', !!faceBase64, 'Score:', scores.overall, 'userId:', userId, 'hasToken:', !!accessToken);
 
   try {
     // Save scores
@@ -133,7 +137,7 @@ export function saveScores(scores: FaceScores, faceBase64?: string, userId?: str
 
   // Upload to Supabase Storage + save scan record, THEN sync to cloud immediately
   console.log('[SaveScores] Calling saveToSupabase...');
-  saveToSupabase(scores, faceBase64, userId).then(() => {
+  saveToSupabase(scores, faceBase64, userId, accessToken).then(() => {
     console.log('[SaveScores] ✅ saveToSupabase completed, pushing to cloud...');
     // After Storage upload, face_url in localStorage is now a URL (not base64)
     // Push ALL data to cloud immediately (not debounced) so other devices get it
@@ -201,12 +205,11 @@ export function getScanCount(): number {
   return getScanHistory().length;
 }
 
-// ─── Supabase save (Storage upload + DB insert) ───
-async function saveToSupabase(scores: FaceScores, faceBase64?: string, userId?: string) {
+// ─── Supabase save (Storage upload + DB insert via raw fetch) ───
+async function saveToSupabase(scores: FaceScores, faceBase64?: string, userId?: string, accessToken?: string) {
   try {
-    // Use passed userId (from onAuthStateChange) — never call getSession() (it hangs)
-    if (!userId) {
-      console.warn('[Save] No userId passed — skipping Supabase save');
+    if (!userId || !accessToken) {
+      console.warn('[Save] No userId/token — skipping Supabase save');
       return;
     }
 
@@ -216,14 +219,12 @@ async function saveToSupabase(scores: FaceScores, faceBase64?: string, userId?: 
     let imageUrl: string | null = null;
     if (faceBase64) {
       console.log('[Save] Uploading face image...', faceBase64.length, 'chars');
-      imageUrl = await uploadFaceImage(userId, faceBase64);
+      imageUrl = await uploadFaceImage(userId, faceBase64, accessToken);
 
       if (imageUrl) {
         console.log('[Save] ✅ Face uploaded:', imageUrl.substring(0, 80));
-        // Save URL to localStorage for instant dashboard load
         localStorage.setItem(LS_FACE_URL, imageUrl);
 
-        // Also update saved scores with the URL
         try {
           const raw = localStorage.getItem(LS_SCORES);
           if (raw) {
@@ -237,21 +238,33 @@ async function saveToSupabase(scores: FaceScores, faceBase64?: string, userId?: 
       }
     }
 
-    // Insert scan record with image URL
-    const { error: insertErr } = await supabase.from('face_scans').insert({
-      user_id: userId,
-      overall_score: scores.overall,
-      analysis: {
-        jawline: scores.jawline, skin_quality: scores.skin_quality,
-        eyes: scores.eyes, lips: scores.lips,
-        facial_symmetry: scores.facial_symmetry, hair_quality: scores.hair_quality,
-        potential: scores.potential, tips: scores.tips,
+    // Insert scan record via raw REST API (bypasses supabase client getSession hang)
+    const insertRes = await fetch(`${url}/rest/v1/face_scans`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': key,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
       },
-      image_url: imageUrl,
+      body: JSON.stringify({
+        user_id: userId,
+        overall_score: scores.overall,
+        analysis: {
+          jawline: scores.jawline, skin_quality: scores.skin_quality,
+          eyes: scores.eyes, lips: scores.lips,
+          facial_symmetry: scores.facial_symmetry, hair_quality: scores.hair_quality,
+          potential: scores.potential, tips: scores.tips,
+        },
+        image_url: imageUrl,
+      }),
     });
 
-    if (insertErr) console.warn('[Save] face_scans insert error:', insertErr.message);
-    else console.log('[Save] ✅ Scan record saved');
+    if (!insertRes.ok) {
+      console.warn('[Save] face_scans insert error:', insertRes.status, await insertRes.text());
+    } else {
+      console.log('[Save] ✅ Scan record saved');
+    }
   } catch (e) {
     console.warn('[Save] Supabase save failed:', e);
   }
