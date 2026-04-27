@@ -136,7 +136,7 @@ function RemedyCard({ r, isSaved, onSave, onView }: {
         {!imgLoaded && <div className="skeleton" style={{ position: 'absolute', inset: 0, borderRadius: 0 }} />}
         <img src={r.image} alt={r.name} loading="lazy" onLoad={() => setImgLoaded(true)} style={{
           width: '100%', height: '100%', objectFit: 'cover',
-          filter: 'brightness(0.5) grayscale(100%) contrast(1.1)',
+          filter: 'brightness(0.55) contrast(1.05)',
         }} />
         <div style={{
           position: 'absolute', inset: 0,
@@ -223,7 +223,7 @@ function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
           <div style={{ height: 200, position: 'relative', overflow: 'hidden' }}>
             <img src={r.image} alt={r.name} style={{
               width: '100%', height: '100%', objectFit: 'cover',
-              filter: 'brightness(0.4) grayscale(100%) contrast(1.1)',
+              filter: 'brightness(0.5) contrast(1.05)',
             }} />
             <div style={{
               position: 'absolute', inset: 0,
