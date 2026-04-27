@@ -68,11 +68,18 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    // Flush all pending data to cloud before signing out
+    // 1. Flush all pending data to cloud first
     await pushToCloud();
+    // 2. Clear all local data
+    localStorage.clear();
+    // 3. Reset all React state
     setAuthed(false);
     setLatestScores(null);
+    setFaceImage(null);
     setTab('dashboard');
+    setShowRemedies(false);
+    setShowReports(false);
+    setChatState('closed');
   };
 
   const openChat = () => {

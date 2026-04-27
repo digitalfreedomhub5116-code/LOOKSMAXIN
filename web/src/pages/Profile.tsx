@@ -35,7 +35,6 @@ export default function Profile({ onLogout }: { onLogout: () => void }) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    localStorage.clear();
     onLogout();
   };
 
