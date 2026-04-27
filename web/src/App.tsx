@@ -7,6 +7,7 @@ import Courses from './pages/Courses';
 import LynxChat from './pages/LynxChat';
 import Profile from './pages/Profile';
 import AuthPage from './pages/AuthPage';
+import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import type { FaceScores } from './lib/api';
@@ -21,14 +22,18 @@ export default function App() {
   const [latestScores, setLatestScores] = useState<FaceScores | null>(() => loadLatestScores());
   const [faceImage, setFaceImage] = useState<string | null>(() => loadFaceImage());
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [showUpdatePassword, setShowUpdatePassword] = useState(false);
   const chatTimerRef = useRef<number>(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthed(!!session);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setAuthed(!!session);
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowUpdatePassword(true);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -70,6 +75,10 @@ export default function App() {
 
   if (!authed) {
     return <AuthPage onAuth={() => setAuthed(true)} />;
+  }
+
+  if (showUpdatePassword) {
+    return <UpdatePasswordPage onComplete={() => setShowUpdatePassword(false)} />;
   }
 
   const chatVisible = chatState !== 'closed';

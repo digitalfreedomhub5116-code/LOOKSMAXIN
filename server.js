@@ -14,7 +14,7 @@ app.use(express.json({ limit: '15mb' }));
 
 // ─── Server-side secrets ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -247,7 +247,7 @@ app.post('/api/chat', async function (req, res) {
 
     // ── Fallback to Gemini ──
     if (!reply && GEMINI_API_KEY) {
-      var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY;
+      var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY;
       var contents = [
         { role: 'user', parts: [{ text: systemPrompt }] },
         { role: 'model', parts: [{ text: "Understood! I'm Lynx, your AI glow-up companion. Ready to help! 💪" }] }

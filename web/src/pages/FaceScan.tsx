@@ -269,14 +269,14 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
           <button
             className="btn btn-outline"
             onClick={() => { setStage('camera'); startCamera(); }}
-            style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700, borderRadius: 12 }}
+            style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700, borderRadius: 12, justifyContent: 'center', textAlign: 'center' }}
           >
             Rescan
           </button>
           <button
             className="btn btn-primary"
             onClick={handleClose}
-            style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700, borderRadius: 12 }}
+            style={{ flex: 1, padding: '14px 0', fontSize: 15, fontWeight: 700, borderRadius: 12, justifyContent: 'center', textAlign: 'center' }}
           >
             Continue
           </button>
