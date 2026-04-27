@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { X, ArrowLeft, AlertTriangle, RefreshCw, ChevronRight, Camera, RotateCcw } from 'lucide-react';
+import { X, ArrowLeft, AlertTriangle, RefreshCw, ChevronRight, Camera, RotateCcw, Upload, ImageIcon } from 'lucide-react';
 import { analyzeFace } from '../lib/api';
 import type { FaceScores } from '../lib/api';
 
-type Stage = 'front_camera' | 'front_review' | 'side_camera' | 'side_review' | 'analyzing' | 'results' | 'error' | 'no_face';
+type Stage = 'choose' | 'front_camera' | 'front_review' | 'side_camera' | 'side_review' | 'analyzing' | 'results' | 'error' | 'no_face';
+type SourceMode = 'camera' | 'gallery';
 
 interface FaceScanProps {
   onClose: () => void;
@@ -18,7 +19,9 @@ function getBarColor(s: number) {
 }
 
 export default function FaceScan({ onClose, onResults }: FaceScanProps) {
-  const [stage, setStage] = useState<Stage>('front_camera');
+  const [stage, setStage] = useState<Stage>('choose');
+  const [sourceMode, setSourceMode] = useState<SourceMode>('camera');
+  const [hasCamera, setHasCamera] = useState<boolean | null>(null);
   const [scores, setScores] = useState<FaceScores | null>(null);
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [sideImage, setSideImage] = useState<string | null>(null);
@@ -26,6 +29,27 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Detect if camera is available
+  useEffect(() => {
+    (async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cams = devices.filter(d => d.kind === 'videoinput');
+        setHasCamera(cams.length > 0);
+        // If no camera, skip choose and go straight to gallery for front
+        if (cams.length === 0) {
+          setSourceMode('gallery');
+          setStage('front_camera'); // reuses the stage name, but will show upload UI
+        }
+      } catch {
+        setHasCamera(false);
+        setSourceMode('gallery');
+        setStage('front_camera');
+      }
+    })();
+  }, []);
 
   const startCamera = useCallback(async () => {
     setError('');
@@ -53,14 +77,67 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err: any) {
       console.error('Camera error:', err);
-      setError('Camera access denied. Please allow camera permissions and reload.');
+      // Camera failed — fall back to gallery mode
+      setSourceMode('gallery');
+      setError('');
     }
   }, []);
 
-  useEffect(() => {
+  // Convert a File to base64 (without the data: prefix)
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1]); // Strip the data:image/...;base64, prefix
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Handle file selection from gallery
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, target: 'front' | 'side') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const base64 = await fileToBase64(file);
+      if (target === 'front') {
+        setFrontImage(base64);
+        setStage('front_review');
+      } else {
+        setSideImage(base64);
+        setStage('side_review');
+      }
+    } catch {
+      setError('Failed to read image');
+    }
+    // Reset the input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Open gallery file picker
+  const openGallery = (target: 'front' | 'side') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => handleFileSelect(e as any, target);
+    input.click();
+  };
+
+  // Choose camera mode and start
+  const chooseCamera = () => {
+    setSourceMode('camera');
+    setStage('front_camera');
     startCamera();
-    return () => { streamRef.current?.getTracks().forEach(t => t.stop()); };
-  }, [startCamera]);
+  };
+
+  // Choose gallery mode and open file picker
+  const chooseGallery = () => {
+    setSourceMode('gallery');
+    setStage('front_camera');
+    openGallery('front');
+  };
 
   const capturePhoto = (): string | null => {
     if (!videoRef.current || !canvasRef.current) return null;
@@ -93,18 +170,21 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
   const retakeFront = () => {
     setFrontImage(null);
     setStage('front_camera');
-    startCamera();
+    if (sourceMode === 'camera') startCamera();
+    else openGallery('front');
   };
 
   const retakeSide = () => {
     setSideImage(null);
     setStage('side_camera');
-    startCamera();
+    if (sourceMode === 'camera') startCamera();
+    else openGallery('side');
   };
 
   const proceedToSide = () => {
     setStage('side_camera');
-    startCamera();
+    if (sourceMode === 'camera') startCamera();
+    else openGallery('side');
   };
 
   const startAnalysis = async () => {
@@ -136,12 +216,77 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
     setFrontImage(null);
     setSideImage(null);
     setScores(null);
-    setStage('front_camera');
-    startCamera();
+    setStage('choose');
   };
 
   // Step indicator
   const currentStep = stage.startsWith('front') ? 1 : stage.startsWith('side') ? 2 : stage === 'analyzing' ? 3 : 0;
+
+  // ─── SOURCE PICKER ───
+  if (stage === 'choose') {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 200, background: '#000',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <button className="close-btn" onClick={handleClose}><X size={20} /></button>
+
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: 'var(--primary)', marginBottom: 10 }}>FACE SCAN</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 6 }}>Choose Photo Source</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 36, textAlign: 'center', maxWidth: 280 }}>
+          Take photos with your camera or upload from your gallery
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, width: '100%', maxWidth: 320, padding: '0 24px' }}>
+          {/* Camera option */}
+          {hasCamera !== false && (
+            <button onClick={chooseCamera} style={{
+              flex: 1, padding: '28px 16px', borderRadius: 16,
+              border: '1.5px solid rgba(200,168,78,0.3)', background: 'rgba(200,168,78,0.05)',
+              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+              transition: 'all 0.2s',
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(200,168,78,0.12)'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(200,168,78,0.05)'; e.currentTarget.style.borderColor = 'rgba(200,168,78,0.3)'; }}
+            >
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(200,168,78,0.2), rgba(200,168,78,0.05))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid rgba(200,168,78,0.2)',
+              }}>
+                <Camera size={24} color="var(--primary)" />
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Camera</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>Take photos live</div>
+            </button>
+          )}
+
+          {/* Gallery option */}
+          <button onClick={chooseGallery} style={{
+            flex: 1, padding: '28px 16px', borderRadius: 16,
+            border: '1.5px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
+            cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+            transition: 'all 0.2s',
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+          >
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.05)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}>
+              <ImageIcon size={24} color="var(--text-muted)" />
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Gallery</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>Upload photos</div>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ─── NO FACE DETECTED ───
   if (stage === 'no_face') {
@@ -417,10 +562,70 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
     );
   }
 
-  // ─── CAMERA STAGES ───
+  // ─── CAMERA / UPLOAD STAGES ───
   const isFrontCamera = stage === 'front_camera';
   const isSideCamera = stage === 'side_camera';
 
+  // Gallery mode — show upload prompt
+  if (sourceMode === 'gallery') {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 200, background: '#000',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <button className="close-btn" onClick={handleClose}><X size={20} /></button>
+        <StepBar step={isFrontCamera ? 1 : 2} />
+
+        <div style={{
+          width: 120, height: 120, borderRadius: '50%',
+          background: 'rgba(200,168,78,0.08)', border: '2px solid rgba(200,168,78,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+        }}>
+          <ImageIcon size={40} color="var(--primary)" />
+        </div>
+
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: 'var(--primary)', marginBottom: 8 }}>
+          {isFrontCamera ? 'STEP 1 OF 2' : 'STEP 2 OF 2'}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6 }}>
+          Upload {isFrontCamera ? 'Front Photo' : 'Side Profile'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32, textAlign: 'center', maxWidth: 280 }}>
+          {isFrontCamera ? 'Choose a photo looking straight at the camera' : 'Choose a photo showing your side profile'}
+        </div>
+
+        <button
+          onClick={() => openGallery(isFrontCamera ? 'front' : 'side')}
+          style={{
+            padding: '16px 40px', borderRadius: 14, border: 'none',
+            background: 'var(--primary)', color: '#000', fontSize: 15, fontWeight: 800,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+            boxShadow: '0 0 24px rgba(200,168,78,0.3)',
+          }}
+        >
+          <Upload size={18} /> Choose Photo
+        </button>
+
+        {/* Front thumbnail when uploading side */}
+        {isSideCamera && frontImage && (
+          <div style={{
+            position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <div style={{
+              width: 44, height: 56, borderRadius: 8, overflow: 'hidden',
+              border: '2px solid var(--primary)',
+            }}>
+              <img src={`data:image/jpeg;base64,${frontImage}`} alt="Front" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>✓ Front photo ready</div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Camera mode — show viewfinder
   return (
     <div className="scanner-view">
       <video ref={videoRef} className="scanner-video" autoPlay playsInline muted />
