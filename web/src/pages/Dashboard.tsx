@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Smile, Triangle } from 'lucide-react';
+import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap } from 'lucide-react';
 import type { FaceScores } from '../lib/api';
+import { PLANS } from '../data/exercisePlans';
+import * as progress from '../data/planProgress';
 
 interface DashboardProps {
   onScan: () => void;
   scores: FaceScores | null;
   faceImage?: string | null;
+  onGoPrograms?: () => void;
 }
 
 function getTier(s: number) {
@@ -23,7 +26,7 @@ function getBarColor(s: number) {
   return '#EF4444';
 }
 
-export default function Dashboard({ onScan, scores, faceImage }: DashboardProps) {
+export default function Dashboard({ onScan, scores, faceImage, onGoPrograms }: DashboardProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
@@ -249,26 +252,7 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
       </div>
 
       {/* ═══ EXERCISES SECTION ═══ */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Exercises</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {[
-            { icon: <Dumbbell size={24} color="var(--primary)" />, label: 'Jawline' },
-            { icon: <Smile size={24} color="var(--primary)" />, label: 'Facial' },
-            { icon: <Triangle size={24} color="var(--primary)" />, label: 'Nose' },
-          ].map(ex => (
-            <div key={ex.label} className="glass-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '20px 12px', cursor: 'pointer' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(200,168,78,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {ex.icon}
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{ex.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ActivePlanCard onGoPrograms={onGoPrograms} />
 
       {/* ═══ LYNXMAXING COURSES ═══ */}
       <div style={{ marginBottom: 24 }}>
@@ -293,6 +277,103 @@ export default function Dashboard({ onScan, scores, faceImage }: DashboardProps)
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ═══ Active Plan Card for Dashboard ═══ */
+function ActivePlanCard({ onGoPrograms }: { onGoPrograms?: () => void }) {
+  const userProgress = progress.getProgress();
+  const activePlan = PLANS.find(p => p.id === userProgress.activePlanId) || null;
+  const planProg = activePlan ? userProgress.plans[activePlan.id] : null;
+  const currentDay = planProg?.currentDay || 1;
+  const completedCount = planProg?.completedDays.length || 0;
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Exercises</div>
+        <span onClick={onGoPrograms} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
+      </div>
+
+      {activePlan && planProg ? (
+        <div className="glass-card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={onGoPrograms}>
+          {/* Plan image banner */}
+          <div style={{ width: '100%', height: 100, position: 'relative', overflow: 'hidden' }}>
+            <div style={{
+              width: '100%', height: '100%',
+              background: 'linear-gradient(135deg, rgba(200,168,78,0.15) 0%, rgba(200,168,78,0.03) 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Dumbbell size={36} color="rgba(200,168,78,0.3)" />
+            </div>
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, transparent 40%, rgba(17,17,17,0.95) 100%)',
+            }} />
+            {/* Day badge */}
+            <div style={{
+              position: 'absolute', top: 10, right: 12,
+              padding: '4px 10px', borderRadius: 6,
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(200,168,78,0.3)',
+              fontSize: 11, fontWeight: 700, color: 'var(--primary)',
+            }}>
+              DAY {Math.min(currentDay, 30)}/30
+            </div>
+            {/* Plan name overlay */}
+            <div style={{ position: 'absolute', bottom: 10, left: 16 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: 'var(--primary)', marginBottom: 2 }}>ACTIVE PROGRAM</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>{activePlan.name}</div>
+            </div>
+          </div>
+
+          {/* Bottom section */}
+          <div style={{ padding: '14px 16px' }}>
+            {/* Progress bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)' }}>
+                <div style={{
+                  height: '100%', borderRadius: 2, background: 'var(--primary)',
+                  width: `${(completedCount / 30) * 100}%`, transition: 'width 0.5s ease',
+                }} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>{completedCount}/30</span>
+            </div>
+
+            {/* Today info + Start button */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Today's Mission</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginTop: 2 }}>
+                  Day {Math.min(currentDay, 30)} — {currentDay <= 10 ? 'Foundation' : currentDay <= 20 ? 'Intensify' : 'Mastery'}
+                </div>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '10px 18px', borderRadius: 10,
+                background: 'var(--primary)',
+                boxShadow: '0 0 16px rgba(200,168,78,0.3)',
+                fontSize: 13, fontWeight: 800, color: '#000',
+              }}>
+                <Play size={14} fill="#000" /> START
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* No active plan */
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', cursor: 'pointer' }} onClick={onGoPrograms}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(200,168,78,0.1)', border: '1.5px solid rgba(200,168,78,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Dumbbell size={22} color="var(--primary)" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Pick a Program</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Choose a 30-day face exercise plan</div>
+          </div>
+          <ChevronRight size={18} color="var(--text-muted)" />
+        </div>
+      )}
     </div>
   );
 }

@@ -86,7 +86,7 @@ export default function App() {
 
   const renderPage = () => {
     switch (tab) {
-      case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
+      case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} />;
       case 'programs': return <Programs />;
       case 'ranks': return <Ranks />;
       case 'vault': return <Courses />;
