@@ -336,7 +336,7 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
         position: 'relative', overflow: 'hidden',
       }}>
         {exercise.frames && exercise.frames.length > 0 ? (
-          <ExerciseAnimation frames={exercise.frames} />
+          <ExerciseAnimation frames={exercise.frames} description={exercise.description} />
         ) : (
           <>
             <Dumbbell size={48} color="rgba(200,168,78,0.25)" />
@@ -468,16 +468,25 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
 }
 
 /* ── Exercise Animation — frame-by-frame GIF-like player ── */
-function ExerciseAnimation({ frames }: { frames: string[] }) {
+function ExerciseAnimation({ frames, description }: { frames: string[]; description: string }) {
   const [idx, setIdx] = useState(0);
+
+  // Extract hold time from exercise description (e.g. "Hold 5 seconds" → 5000ms)
+  const holdMs = (() => {
+    const match = description.match(/hold\s+(\d+)\s*(?:seconds?|s)/i);
+    return match ? parseInt(match[1]) * 1000 : 3000; // default 3s if not found
+  })();
 
   useEffect(() => {
     if (frames.length <= 1) return;
-    const interval = setInterval(() => {
+    // Frame 0 = start/relaxed position (show briefly 1.5s)
+    // Other frames = engaged/hold position (show for holdMs)
+    const currentMs = idx === 0 ? 1500 : holdMs;
+    const timeout = setTimeout(() => {
       setIdx(i => (i + 1) % frames.length);
-    }, 800);
-    return () => clearInterval(interval);
-  }, [frames.length]);
+    }, currentMs);
+    return () => clearTimeout(timeout);
+  }, [idx, frames.length, holdMs]);
 
   // Preload all frames
   useEffect(() => {
@@ -488,7 +497,7 @@ function ExerciseAnimation({ frames }: { frames: string[] }) {
   }, [frames]);
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', background: '#000' }}>
       {frames.map((src, i) => (
         <img
           key={src}
@@ -500,24 +509,33 @@ function ExerciseAnimation({ frames }: { frames: string[] }) {
             maxHeight: '85%',
             objectFit: 'contain',
             opacity: i === idx ? 1 : 0,
-            transition: 'opacity 0.3s ease-in-out',
+            transition: 'opacity 0.4s ease-in-out',
             borderRadius: 12,
+            filter: 'brightness(0.82) contrast(1.3) saturate(1.3)',
+            background: '#000',
           }}
         />
       ))}
-      {/* Frame indicator dots */}
+      {/* Frame indicator dots + hold timer label */}
       {frames.length > 1 && (
         <div style={{
           position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', gap: 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         }}>
-          {frames.map((_, i) => (
-            <div key={i} style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: i === idx ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
-              transition: 'background 0.3s',
-            }} />
-          ))}
+          {idx > 0 && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1 }}>
+              HOLD {holdMs / 1000}s
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {frames.map((_, i) => (
+              <div key={i} style={{
+                width: i === idx ? 18 : 6, height: 6, borderRadius: 3,
+                background: i === idx ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
+                transition: 'all 0.3s',
+              }} />
+            ))}
+          </div>
         </div>
       )}
     </div>
