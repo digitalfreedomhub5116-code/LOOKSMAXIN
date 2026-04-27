@@ -97,24 +97,34 @@ function RemedyCard({ r, isSaved, onSave, onView }: {
   const [imgLoaded, setImgLoaded] = useState(false);
   return (
     <div style={{
-      minWidth: 170, maxWidth: 170, scrollSnapAlign: 'start', flexShrink: 0,
-      borderRadius: 12, overflow: 'hidden',
+      minWidth: 190, maxWidth: 190, scrollSnapAlign: 'start', flexShrink: 0,
+      borderRadius: 14, overflow: 'hidden',
       background: 'var(--surface)', border: '1px solid var(--border)',
     }}>
-      {/* Color accent bar */}
-      <div style={{
-        height: 4, background: `linear-gradient(90deg, ${r.color}, ${r.color}60)`,
-      }} />
+      {/* Image hero */}
+      <div style={{ height: 100, position: 'relative', overflow: 'hidden' }}>
+        {!imgLoaded && <div className="skeleton" style={{ position: 'absolute', inset: 0, borderRadius: 0 }} />}
+        <img src={r.image} alt={r.name} loading="lazy" onLoad={() => setImgLoaded(true)} style={{
+          width: '100%', height: '100%', objectFit: 'cover',
+          filter: 'brightness(0.5) grayscale(100%) contrast(1.1)',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.7) 100%)',
+        }} />
+        <div style={{
+          position: 'absolute', top: 8, right: 8,
+          padding: '3px 8px', borderRadius: 6, fontSize: 9, fontWeight: 700,
+          background: 'rgba(0,0,0,0.5)', color: r.color, border: `1px solid ${r.color}40`,
+          backdropFilter: 'blur(4px)',
+        }}>{r.tags[0]}</div>
+        <div style={{ position: 'absolute', bottom: 8, left: 10, right: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{r.name}</div>
+        </div>
+      </div>
 
       {/* Content */}
-      <div style={{ padding: '10px 10px 10px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.25, flex: 1 }}>{r.name}</div>
-          <span style={{
-            fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 4, flexShrink: 0, marginLeft: 4,
-            background: `${r.color}15`, color: r.color, border: `1px solid ${r.color}25`,
-          }}>{r.tags[0]}</span>
-        </div>
+      <div style={{ padding: '8px 10px 10px' }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: r.color, marginBottom: 4 }}>{r.subtitle}</div>
         <p style={{
           fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8,
