@@ -312,7 +312,7 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
                   : isCurrent
                     ? '0 0 28px rgba(200,168,78,0.45), 0 0 8px rgba(200,168,78,0.2)'
                     : '0 2px 8px rgba(0,0,0,0.5)',
-                opacity: locked ? 0.3 : 1,
+                opacity: locked ? 0.6 : 1,
                 animation: isCurrent ? 'missionPulse 2.5s ease-in-out infinite' : 'none',
                 transition: 'all 0.3s ease',
               }}
@@ -354,7 +354,7 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
                 border: isCurrent
                   ? '1.5px solid rgba(200,168,78,0.35)'
                   : '1px solid rgba(255,255,255,0.08)',
-                opacity: locked ? 0.3 : 1,
+                opacity: locked ? 0.6 : 1,
                 backdropFilter: 'blur(8px)',
               }}
             >
