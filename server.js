@@ -18,24 +18,35 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemi
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. Analyze this selfie and provide detailed scores.
+const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. You will receive TWO photos of the same person:
+1. A FRONT-FACING photo (straight at the camera)
+2. A SIDE PROFILE photo (turned to the side)
 
-IMPORTANT: If the image does NOT contain a clearly visible human face, return ONLY: {"no_face": true}
+Use BOTH angles to provide the most accurate analysis possible. The side profile is critical for:
+- Jawline angle and definition (gonial angle)
+- Chin projection and recession
+- Nose bridge height, tip projection, and dorsal profile
+- Neck posture and forward head position
+- Cheekbone projection from the side
 
-If a face IS visible, return ONLY valid JSON (no markdown):
+IMPORTANT: If EITHER image does NOT contain a clearly visible human face, return ONLY: {"no_face": true}
+
+If faces ARE visible in both images, return ONLY valid JSON (no markdown):
 {
   "overall": <number 1-100>,
   "overall_rating": "<Gigachad|Chad|Above Average|Average|Below Average>",
-  "description": "<2-3 sentence overall assessment>",
+  "description": "<2-3 sentence overall assessment referencing observations from BOTH angles>",
   "potential": <number 1-100>,
   "traits": {
-    "jawline": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "jawline": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score — reference side profile observations>", "fix_it": "<actionable improvement tip>" },
     "skin": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
     "eyes": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
-    "cheekbones": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "cheekbones": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score — reference side profile projection>", "fix_it": "<actionable improvement tip>" },
     "lips": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
     "hair": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
-    "symmetry": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" }
+    "symmetry": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
+    "nose": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<reference side profile — bridge, tip, projection>", "fix_it": "<actionable improvement tip>" },
+    "chin": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<reference side profile — projection, recession>", "fix_it": "<actionable improvement tip>" }
   },
   "recommendations": ["<tip1>", "<tip2>", "<tip3>", "<tip4>", "<tip5>"]
 }
@@ -44,6 +55,7 @@ Rules:
 - Be realistic: most people score 40-75 overall.
 - overall_rating tiers: 90+ Gigachad, 80-89 Chad, 65-79 Above Average, 50-64 Average, <50 Below Average
 - Each trait needs specific, honest holding_back and fix_it advice.
+- For jawline, cheekbones, nose, and chin: ALWAYS reference what you observe in the side profile.
 - Return ONLY JSON.`;
 
 // ════════════════════════════════════
@@ -61,14 +73,15 @@ app.get('/api/health', function (req, res) {
   });
 });
 
-// Face analysis endpoint
+// Face analysis endpoint — accepts front + side images
 app.post('/api/analyze-face', async function (req, res) {
   try {
     var body = req.body || {};
     var image = body.image;
+    var sideImage = body.sideImage;
     var mimeType = body.mimeType || 'image/jpeg';
 
-    console.log('Analyze request received. Image length:', image ? image.length : 0, 'Key set:', !!GEMINI_API_KEY);
+    console.log('Analyze request received. Front:', image ? image.length : 0, 'Side:', sideImage ? sideImage.length : 0, 'Key set:', !!GEMINI_API_KEY);
 
     if (!image) {
       return res.status(400).json({ error: 'No image provided' });
@@ -78,16 +91,23 @@ app.post('/api/analyze-face', async function (req, res) {
       return res.status(500).json({ error: 'Gemini API key not configured' });
     }
 
+    // Build parts array — always include front image, optionally side
+    var parts = [
+      { text: ANALYSIS_PROMPT },
+      { text: 'FRONT-FACING PHOTO:' },
+      { inline_data: { mime_type: mimeType, data: image } },
+    ];
+
+    if (sideImage) {
+      parts.push({ text: 'SIDE PROFILE PHOTO:' });
+      parts.push({ inline_data: { mime_type: mimeType, data: sideImage } });
+    }
+
     var response = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: ANALYSIS_PROMPT },
-            { inline_data: { mime_type: mimeType, data: image } },
-          ],
-        }],
+        contents: [{ parts: parts }],
         generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
       }),
     });
@@ -151,7 +171,7 @@ app.post('/api/analyze-face', async function (req, res) {
     };
 
     if (scores.traits) {
-      var traitNames = ['jawline', 'skin', 'eyes', 'cheekbones', 'lips', 'hair', 'symmetry'];
+      var traitNames = ['jawline', 'skin', 'eyes', 'cheekbones', 'lips', 'hair', 'symmetry', 'nose', 'chin'];
       traitNames.forEach(function(name) {
         var t = scores.traits[name] || {};
         responseData.traits[name] = {

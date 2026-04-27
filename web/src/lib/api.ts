@@ -46,11 +46,15 @@ export interface ScanRecord {
 }
 
 // ─── Gemini AI analysis ───
-export async function analyzeFace(base64: string, mime = 'image/jpeg'): Promise<FaceScores> {
+export async function analyzeFace(frontBase64: string, sideBase64: string, mime = 'image/jpeg'): Promise<FaceScores> {
   const res = await fetch(`${API}/api/analyze-face`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: base64, mimeType: mime }),
+    body: JSON.stringify({
+      image: frontBase64,
+      sideImage: sideBase64,
+      mimeType: mime,
+    }),
   });
   if (!res.ok) {
     const e = await res.json().catch(() => ({ error: 'Unknown error' }));
