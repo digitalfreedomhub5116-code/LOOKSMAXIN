@@ -129,7 +129,7 @@ export default function App() {
   const handleScanResults = (scores: FaceScores, base64Image: string) => {
     setLatestScores(scores);
     setFaceImage(base64Image);
-    saveScores(scores, base64Image);
+    saveScores(scores, base64Image, sessionUser?.id);
   };
 
   const handleLogout = async () => {

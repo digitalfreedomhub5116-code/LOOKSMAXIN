@@ -106,8 +106,8 @@ async function uploadFaceImage(userId: string, base64: string): Promise<string |
 }
 
 // ─── Save scan (localStorage + Supabase Storage) ───
-export function saveScores(scores: FaceScores, faceBase64?: string) {
-  console.log('[SaveScores] Called. Has base64:', !!faceBase64, 'Score:', scores.overall);
+export function saveScores(scores: FaceScores, faceBase64?: string, userId?: string) {
+  console.log('[SaveScores] Called. Has base64:', !!faceBase64, 'Score:', scores.overall, 'userId:', userId);
 
   try {
     // Save scores
@@ -136,7 +136,7 @@ export function saveScores(scores: FaceScores, faceBase64?: string) {
 
   // Upload to Supabase Storage + save scan record, THEN sync to cloud immediately
   console.log('[SaveScores] Calling saveToSupabase...');
-  saveToSupabase(scores, faceBase64).then(() => {
+  saveToSupabase(scores, faceBase64, userId).then(() => {
     console.log('[SaveScores] ✅ saveToSupabase completed, pushing to cloud...');
     // After Storage upload, face_url in localStorage is now a URL (not base64)
     // Push ALL data to cloud immediately (not debounced) so other devices get it
@@ -205,14 +205,11 @@ export function getScanCount(): number {
 }
 
 // ─── Supabase save (Storage upload + DB insert) ───
-async function saveToSupabase(scores: FaceScores, faceBase64?: string) {
+async function saveToSupabase(scores: FaceScores, faceBase64?: string, userId?: string) {
   try {
-    // Get authenticated user — don't fall back to anonymous
-    const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
-
+    // Use passed userId (from onAuthStateChange) — never call getSession() (it hangs)
     if (!userId) {
-      console.warn('[Save] No authenticated session — skipping Supabase save');
+      console.warn('[Save] No userId passed — skipping Supabase save');
       return;
     }
 
