@@ -10,6 +10,7 @@ interface DashboardProps {
   scores: FaceScores | null;
   faceImage?: string | null;
   onGoPrograms?: () => void;
+  onViewAllRemedies?: () => void;
 }
 
 function getTier(s: number) {
@@ -27,7 +28,7 @@ function getBarColor(s: number) {
   return '#EF4444';
 }
 
-export default function Dashboard({ onScan, scores, faceImage, onGoPrograms }: DashboardProps) {
+export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onViewAllRemedies }: DashboardProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
@@ -76,7 +77,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms }: D
           {/* Hero Image */}
           <div style={{ width: '100%', height: 200, overflow: 'hidden', position: 'relative' }}>
             <img
-              src="/hero-chad.png"
+              src="/hero-chad.webp"
               alt="Transform your look"
               style={{
                 width: '100%', height: '100%', objectFit: 'cover',
@@ -256,7 +257,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms }: D
       <ActivePlanCard onGoPrograms={onGoPrograms} />
 
       {/* ═══ SKIN RITUALS ═══ */}
-      <SkinRemediesSection />
+      <SkinRemediesSection limit={2} onViewAll={onViewAllRemedies} />
 
       {/* ═══ LYNXMAXING COURSES ═══ */}
       <div style={{ marginBottom: 24 }}>

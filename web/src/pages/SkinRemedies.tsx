@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { Bookmark, ChevronRight, Clock, Repeat, ArrowLeft, Check } from 'lucide-react';
 import { REMEDIES, CATEGORY_META, CATEGORY_ORDER, type Remedy, type RemedyCategory } from '../data/skinRemedies';
 
-export default function SkinRemediesSection() {
+interface SectionProps {
+  limit?: number; // max categories to show
+  onViewAll?: () => void;
+}
+
+export default function SkinRemediesSection({ limit, onViewAll }: SectionProps) {
   const [selected, setSelected] = useState<Remedy | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('lynx_saved_remedies') || '[]')); } catch { return new Set(); }
@@ -19,11 +24,12 @@ export default function SkinRemediesSection() {
   };
 
   // Group remedies by category
-  const grouped = CATEGORY_ORDER.map(cat => ({
+  const allGrouped = CATEGORY_ORDER.map(cat => ({
     cat,
     meta: CATEGORY_META[cat],
     items: REMEDIES.filter(r => r.category === cat),
   }));
+  const grouped = limit ? allGrouped.slice(0, limit) : allGrouped;
 
   return (
     <>
@@ -58,6 +64,19 @@ export default function SkinRemediesSection() {
             </div>
           </div>
         ))}
+
+        {/* View All button when limited */}
+        {limit && onViewAll && (
+          <button onClick={onViewAll} style={{
+            width: '100%', padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 800,
+            border: '1px solid var(--border)', cursor: 'pointer',
+            background: 'rgba(200,168,78,0.06)', color: 'var(--primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            marginTop: 4,
+          }}>
+            View All {REMEDIES.length} Rituals <ChevronRight size={14} />
+          </button>
+        )}
       </div>
 
       {selected && (
@@ -78,6 +97,7 @@ function RemedyCard({ r, isSaved, onSave, onView }: {
   onSave: (id: string, e: React.MouseEvent) => void;
   onView: () => void;
 }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
   return (
     <div style={{
       minWidth: 190, maxWidth: 190, scrollSnapAlign: 'start', flexShrink: 0,
@@ -86,13 +106,14 @@ function RemedyCard({ r, isSaved, onSave, onView }: {
     }}>
       {/* Image hero */}
       <div style={{ height: 100, position: 'relative', overflow: 'hidden' }}>
-        <img src={r.image} alt={r.name} style={{
+        {!imgLoaded && <div className="skeleton" style={{ position: 'absolute', inset: 0, borderRadius: 0 }} />}
+        <img src={r.image} alt={r.name} loading="lazy" onLoad={() => setImgLoaded(true)} style={{
           width: '100%', height: '100%', objectFit: 'cover',
-          filter: 'brightness(0.55) saturate(0.8)',
+          filter: 'brightness(0.5) grayscale(100%) contrast(1.1)',
         }} />
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.75) 100%)',
+          background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.7) 100%)',
         }} />
         <div style={{
           position: 'absolute', top: 8, right: 8,
@@ -182,7 +203,7 @@ function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
           <div style={{ height: 200, position: 'relative', overflow: 'hidden' }}>
             <img src={r.image} alt={r.name} style={{
               width: '100%', height: '100%', objectFit: 'cover',
-              filter: 'brightness(0.45) saturate(0.7)',
+              filter: 'brightness(0.4) grayscale(100%) contrast(1.1)',
             }} />
             <div style={{
               position: 'absolute', inset: 0,
