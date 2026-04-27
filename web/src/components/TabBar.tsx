@@ -1,10 +1,10 @@
 import type { Tab } from '../App';
-import { Home, Map, Dumbbell, BookOpen, User } from 'lucide-react';
+import { Home, LayoutGrid, Trophy, BookOpen, User } from 'lucide-react';
 
 const tabs: { id: Tab; icon: typeof Home; label: string }[] = [
   { id: 'dashboard', icon: Home, label: 'Home' },
-  { id: 'roadmap', icon: Map, label: 'Roadmap' },
-  { id: 'exercises', icon: Dumbbell, label: 'Exercises' },
+  { id: 'programs', icon: LayoutGrid, label: 'Programs' },
+  { id: 'ranks', icon: Trophy, label: 'Ranks' },
   { id: 'vault', icon: BookOpen, label: 'Courses' },
   { id: 'profile', icon: User, label: 'Profile' },
 ];

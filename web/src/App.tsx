@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Dashboard from './pages/Dashboard';
 import FaceScan from './pages/FaceScan';
-import Roadmap from './pages/Roadmap';
-import Exercises from './pages/Exercises';
+import Programs from './pages/Programs';
+import Ranks from './pages/Ranks';
 import Courses from './pages/Courses';
 import LynxChat from './pages/LynxChat';
 import Profile from './pages/Profile';
@@ -12,7 +12,7 @@ import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import type { FaceScores } from './lib/api';
 
-export type Tab = 'dashboard' | 'roadmap' | 'exercises' | 'vault' | 'profile';
+export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -87,8 +87,8 @@ export default function App() {
   const renderPage = () => {
     switch (tab) {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
-      case 'roadmap': return <Roadmap />;
-      case 'exercises': return <Exercises />;
+      case 'programs': return <Programs />;
+      case 'ranks': return <Ranks />;
       case 'vault': return <Courses />;
       case 'profile': return <Profile onLogout={handleLogout} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
