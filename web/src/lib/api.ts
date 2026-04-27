@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { pushField } from './sync';
+import { pushToCloud, pushField } from './sync';
 
 // Public client keys — safe for browser
 const url = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
@@ -131,16 +131,15 @@ export function saveScores(scores: FaceScores, faceBase64?: string) {
     console.error('localStorage save failed:', e);
   }
 
-  // Sync to cloud (fire-and-forget)
-  try {
-    pushField('latest_scores', scores);
-    // Push history without base64 face images (too large for DB)
-    const historyForCloud = getScanHistory().map(r => ({ ...r, faceImage: undefined }));
-    pushField('scan_history', historyForCloud);
-  } catch {}
-
-  // Upload to Supabase Storage + save scan record (fire-and-forget)
-  saveToSupabase(scores, faceBase64).catch(() => {});
+  // Upload to Supabase Storage + save scan record, THEN sync to cloud immediately
+  saveToSupabase(scores, faceBase64).then(() => {
+    // After Storage upload, face_url in localStorage is now a URL (not base64)
+    // Push ALL data to cloud immediately (not debounced) so other devices get it
+    pushToCloud().catch(() => {});
+  }).catch(() => {
+    // Even if Storage upload fails, still push scores & history to cloud
+    pushToCloud().catch(() => {});
+  });
 }
 
 // ─── Load latest face image URL ───
