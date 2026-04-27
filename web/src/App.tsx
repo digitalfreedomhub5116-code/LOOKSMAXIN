@@ -57,6 +57,15 @@ export default function App() {
         setLatestScores(loadLatestScores());
         setFaceImage(loadFaceImage());
       }
+      if (event === 'SIGNED_OUT') {
+        // Ensure clean state on any sign-out (manual, expired token, etc.)
+        setLatestScores(null);
+        setFaceImage(null);
+        setTab('dashboard');
+        setChatState('closed');
+        setShowRemedies(false);
+        setShowReports(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
