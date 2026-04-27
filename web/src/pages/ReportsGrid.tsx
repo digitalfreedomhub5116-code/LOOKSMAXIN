@@ -40,7 +40,7 @@ export default function RecentReports({ onViewAll }: { onViewAll: () => void }) 
   const visible = reports.slice(0, 4);
 
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div style={{ marginBottom: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Recent Reports</div>
         {reports.length > 4 && (

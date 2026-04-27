@@ -225,7 +225,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
 
       {/* ═══ GENERATE REPORT CTA ═══ */}
       {!scores && (
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', marginBottom: 24, cursor: 'pointer' }} onClick={onScan}>
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', marginBottom: 32, cursor: 'pointer' }} onClick={onScan}>
           <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <ScanLine size={20} color="#000" />
           </div>
@@ -247,7 +247,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
       <SkinRemediesSection limit={2} onViewAll={onViewAllRemedies} />
 
       {/* ═══ LYNXMAXING COURSES ═══ */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Lynxmaxing Courses</div>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
@@ -282,7 +282,7 @@ function ActivePlanCard({ onGoPrograms }: { onGoPrograms?: () => void }) {
   const completedCount = planProg?.completedDays.length || 0;
 
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div style={{ marginBottom: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Exercises</div>
         <span onClick={onGoPrograms} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
@@ -290,26 +290,16 @@ function ActivePlanCard({ onGoPrograms }: { onGoPrograms?: () => void }) {
 
       {activePlan && planProg ? (
         <div className="glass-card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={onGoPrograms}>
-          {/* Plan image banner */}
-          <div style={{ width: '100%', height: 120, position: 'relative', overflow: 'hidden' }}>
-            <img
-              src={activePlan.image}
-              alt={activePlan.name}
-              style={{
-                width: '100%', height: '100%', objectFit: 'cover',
-                filter: 'grayscale(80%) contrast(1.1) brightness(0.7)',
-                display: 'block',
-              }}
-            />
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(180deg, transparent 40%, rgba(17,17,17,0.95) 100%)',
-            }} />
+          {/* Plain gradient banner */}
+          <div style={{
+            width: '100%', height: 100, position: 'relative', overflow: 'hidden',
+            background: 'linear-gradient(135deg, rgba(200,168,78,0.08) 0%, rgba(200,168,78,0.02) 50%, rgba(0,0,0,0) 100%)',
+          }}>
             {/* Day badge */}
             <div style={{
               position: 'absolute', top: 10, right: 12,
               padding: '4px 10px', borderRadius: 6,
-              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
               border: '1px solid rgba(200,168,78,0.3)',
               fontSize: 11, fontWeight: 700, color: 'var(--primary)',
             }}>
