@@ -12,6 +12,7 @@ import AuthPage from './pages/AuthPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
+import { pullFromCloud, pushToCloud } from './lib/sync';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
@@ -29,14 +30,32 @@ export default function App() {
   const [showRemedies, setShowRemedies] = useState(false);
   const [showReports, setShowReports] = useState(false);
 
+  // Flush pending sync data before page unload (tab close, refresh, navigate away)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const handleUnload = () => { pushToCloud(); };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setAuthed(!!session);
+      if (session) {
+        // Pull cloud data on startup to sync across devices
+        await pullFromCloud();
+        setLatestScores(loadLatestScores());
+        setFaceImage(loadFaceImage());
+      }
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setAuthed(!!session);
       if (event === 'PASSWORD_RECOVERY') {
         setShowUpdatePassword(true);
+      }
+      if (event === 'SIGNED_IN' && session) {
+        await pullFromCloud();
+        setLatestScores(loadLatestScores());
+        setFaceImage(loadFaceImage());
       }
     });
     return () => subscription.unsubscribe();
@@ -48,7 +67,9 @@ export default function App() {
     saveScores(scores, base64Image);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Flush all pending data to cloud before signing out
+    await pushToCloud();
     setAuthed(false);
     setLatestScores(null);
     setTab('dashboard');
