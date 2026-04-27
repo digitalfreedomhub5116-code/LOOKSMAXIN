@@ -35,9 +35,9 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
           facingMode: 'user',
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          zoom: { ideal: 1 } as any,
-          resizeMode: 'none' as any,
-        },
+          zoom: { ideal: 1 },
+          resizeMode: 'none',
+        } as MediaTrackConstraints,
         audio: false,
       });
       // Try to set zoom to minimum if the track supports it
