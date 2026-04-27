@@ -107,6 +107,8 @@ async function uploadFaceImage(userId: string, base64: string): Promise<string |
 
 // ─── Save scan (localStorage + Supabase Storage) ───
 export function saveScores(scores: FaceScores, faceBase64?: string) {
+  console.log('[SaveScores] Called. Has base64:', !!faceBase64, 'Score:', scores.overall);
+
   try {
     // Save scores
     localStorage.setItem(LS_SCORES, JSON.stringify(scores));
@@ -127,16 +129,20 @@ export function saveScores(scores: FaceScores, faceBase64?: string) {
     history.unshift(historyEntry);
     // Keep last 20 reports (with images they take more space)
     localStorage.setItem(LS_HISTORY, JSON.stringify(history.slice(0, 20)));
+    console.log('[SaveScores] ✅ localStorage saved');
   } catch (e) {
-    console.error('localStorage save failed:', e);
+    console.error('[SaveScores] localStorage save failed:', e);
   }
 
   // Upload to Supabase Storage + save scan record, THEN sync to cloud immediately
+  console.log('[SaveScores] Calling saveToSupabase...');
   saveToSupabase(scores, faceBase64).then(() => {
+    console.log('[SaveScores] ✅ saveToSupabase completed, pushing to cloud...');
     // After Storage upload, face_url in localStorage is now a URL (not base64)
     // Push ALL data to cloud immediately (not debounced) so other devices get it
     pushToCloud().catch(() => {});
-  }).catch(() => {
+  }).catch((err) => {
+    console.warn('[SaveScores] ❌ saveToSupabase failed:', err);
     // Even if Storage upload fails, still push scores & history to cloud
     pushToCloud().catch(() => {});
   });
