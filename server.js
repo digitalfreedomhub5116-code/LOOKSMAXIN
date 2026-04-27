@@ -88,7 +88,7 @@ app.post('/api/analyze-face', async function (req, res) {
             { inline_data: { mime_type: mimeType, data: image } },
           ],
         }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
       }),
     });
 
@@ -99,9 +99,29 @@ app.post('/api/analyze-face', async function (req, res) {
     }
 
     var result = await response.json();
-    var textContent = result.candidates && result.candidates[0] &&
-      result.candidates[0].content && result.candidates[0].content.parts &&
-      result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
+    
+    // Gemini 2.5 Flash is a "thinking" model — response has multiple parts:
+    // thought parts (internal reasoning) + the actual text output.
+    // We need the last non-thought text part.
+    var textContent = null;
+    if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts) {
+      var parts = result.candidates[0].content.parts;
+      for (var p = parts.length - 1; p >= 0; p--) {
+        if (parts[p].text && !parts[p].thought) {
+          textContent = parts[p].text;
+          break;
+        }
+      }
+      // Fallback: if no non-thought part found, use the last part with text
+      if (!textContent) {
+        for (var p2 = parts.length - 1; p2 >= 0; p2--) {
+          if (parts[p2].text) {
+            textContent = parts[p2].text;
+            break;
+          }
+        }
+      }
+    }
 
     if (!textContent) {
       return res.status(500).json({ error: 'No response from AI' });
@@ -271,9 +291,18 @@ app.post('/api/chat', async function (req, res) {
 
       if (geminiRes.ok) {
         var geminiResult = await geminiRes.json();
-        reply = geminiResult.candidates && geminiResult.candidates[0] &&
-          geminiResult.candidates[0].content && geminiResult.candidates[0].content.parts &&
-          geminiResult.candidates[0].content.parts[0] && geminiResult.candidates[0].content.parts[0].text;
+        // Handle thinking model: find last non-thought text part
+        if (geminiResult.candidates && geminiResult.candidates[0] && geminiResult.candidates[0].content && geminiResult.candidates[0].content.parts) {
+          var gParts = geminiResult.candidates[0].content.parts;
+          for (var gp = gParts.length - 1; gp >= 0; gp--) {
+            if (gParts[gp].text && !gParts[gp].thought) { reply = gParts[gp].text; break; }
+          }
+          if (!reply) {
+            for (var gp2 = gParts.length - 1; gp2 >= 0; gp2--) {
+              if (gParts[gp2].text) { reply = gParts[gp2].text; break; }
+            }
+          }
+        }
       } else {
         var errText = await geminiRes.text();
         console.error('Gemini also failed:', geminiRes.status, errText);
