@@ -99,6 +99,46 @@ async function getUserId(): Promise<string | null> {
 }
 
 // ═══════════════════════════════════════
+//  Face image upload to Supabase Storage
+// ═══════════════════════════════════════
+async function uploadFaceToStorage(userId: string, base64Data: string): Promise<string | null> {
+  try {
+    // Convert base64 to Blob
+    const parts = base64Data.split(',');
+    const mime = parts[0]?.match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const byteString = atob(parts[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: mime });
+
+    const ext = mime === 'image/png' ? 'png' : 'jpg';
+    const filePath = `${userId}/latest.${ext}`;
+
+    // Upload (upsert to overwrite previous)
+    const { error } = await supabase.storage
+      .from('face-scans')
+      .upload(filePath, blob, { upsert: true, contentType: mime });
+
+    if (error) {
+      console.warn('[Sync] Storage upload error:', error.message);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('face-scans')
+      .getPublicUrl(filePath);
+
+    console.log('[Sync] ✅ Face image uploaded to Storage');
+    return publicUrl + '?t=' + Date.now(); // Cache bust
+  } catch (e) {
+    console.warn('[Sync] Face upload exception:', e);
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════
 //  Network awareness
 // ═══════════════════════════════════════
 function isOnline(): boolean {
@@ -124,30 +164,38 @@ export async function pullFromCloud(): Promise<boolean> {
   if (!userId || !isOnline()) return false;
 
   try {
-    // Step 1: Lightweight freshness check — only fetch updated_at (tiny response ~20 bytes)
     const meta = loadMeta();
-    const { data: freshness, error: freshErr } = await supabase
-      .from(TABLE)
-      .select('updated_at')
-      .eq('user_id', userId)
-      .maybeSingle();
 
-    if (freshErr) {
-      console.warn('[Sync] Freshness check failed:', freshErr.message);
-      return false;
-    }
+    // First-time on this device? Always do full pull (no freshness skip)
+    const isFirstSync = !meta.lastSyncedAt;
 
-    // No cloud record yet — nothing to pull
-    if (!freshness) return true;
+    if (!isFirstSync) {
+      // Lightweight freshness check — only fetch updated_at (tiny response ~20 bytes)
+      const { data: freshness, error: freshErr } = await supabase
+        .from(TABLE)
+        .select('updated_at')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    // Cloud hasn't changed since our last sync — skip full pull (saves bandwidth)
-    if (meta.lastSyncedAt && freshness.updated_at) {
-      const cloudTime = new Date(freshness.updated_at).getTime();
-      const localTime = new Date(meta.lastSyncedAt).getTime();
-      if (cloudTime <= localTime) {
-        console.log('[Sync] Cloud unchanged — skip pull');
-        return true;
+      if (freshErr) {
+        console.warn('[Sync] Freshness check failed:', freshErr.message);
+        return false;
       }
+
+      // No cloud record yet — nothing to pull
+      if (!freshness) return true;
+
+      // Cloud hasn't changed since our last sync — skip full pull (saves bandwidth)
+      if (freshness.updated_at) {
+        const cloudTime = new Date(freshness.updated_at).getTime();
+        const localTime = new Date(meta.lastSyncedAt!).getTime();
+        if (cloudTime <= localTime) {
+          console.log('[Sync] Cloud unchanged — skip pull');
+          return true;
+        }
+      }
+    } else {
+      console.log('[Sync] First sync on this device — forcing full pull');
     }
 
     // Step 2: Full pull (only when actually needed)
@@ -267,8 +315,18 @@ async function flushDirtyFields(): Promise<boolean> {
 
       if (field === 'face_url') {
         const val = localStorage.getItem(lsKey);
-        // Only store URLs, never base64 (keep payload small)
-        if (val && !val.startsWith('data:') && val.length < 500) {
+        if (val && val.startsWith('data:')) {
+          // Upload base64 to Supabase Storage and store the public URL
+          try {
+            const url = await uploadFaceToStorage(userId, val);
+            if (url) {
+              payload[field] = url;
+              localStorage.setItem(lsKey, url); // Replace base64 with URL locally too
+            }
+          } catch (e) {
+            console.warn('[Sync] Face upload failed:', e);
+          }
+        } else if (val && val.length < 2000) {
           payload[field] = val;
         }
       } else if (field === 'scan_history') {
