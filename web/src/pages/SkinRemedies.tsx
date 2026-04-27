@@ -124,14 +124,7 @@ function RemedyCard({ r, isSaved, onSave, onView }: {
       </div>
 
       {/* Content */}
-      <div style={{ padding: '8px 10px 10px' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: r.color, marginBottom: 4 }}>{r.subtitle}</div>
-        <p style={{
-          fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8,
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-        }}>{r.summary}</p>
-
-        {/* Tags */}
+      <div style={{ padding: '8px 10px 10px' }}>        {/* Tags */}
         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginBottom: 8 }}>
           {r.tags.slice(0, 3).map(t => (
             <span key={t} style={{
