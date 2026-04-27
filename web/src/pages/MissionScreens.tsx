@@ -328,14 +328,21 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
         </div>
       </div>
 
-      {/* Video Placeholder */}
+      {/* Exercise Animation / Illustration */}
       <div style={{
         flex: 1, minHeight: '50vh',
-        background: 'linear-gradient(180deg, rgba(200,168,78,0.05) 0%, rgba(0,0,0,0) 40%), var(--surface)',
+        background: 'linear-gradient(180deg, rgba(200,168,78,0.05) 0%, rgba(0,0,0,0) 40%), #000',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        position: 'relative', overflow: 'hidden',
       }}>
-        <Dumbbell size={48} color="rgba(200,168,78,0.25)" />
-        <div style={{ fontSize: 13, color: 'var(--text-disabled)', marginTop: 12 }}>Video coming soon</div>
+        {exercise.frames && exercise.frames.length > 0 ? (
+          <ExerciseAnimation frames={exercise.frames} />
+        ) : (
+          <>
+            <Dumbbell size={48} color="rgba(200,168,78,0.25)" />
+            <div style={{ fontSize: 13, color: 'var(--text-disabled)', marginTop: 12 }}>Follow the description below</div>
+          </>
+        )}
       </div>
 
       {/* Bottom Controls */}
@@ -456,6 +463,63 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
           <SkipForward size={14} /> Skip Exercise
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ── Exercise Animation — frame-by-frame GIF-like player ── */
+function ExerciseAnimation({ frames }: { frames: string[] }) {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (frames.length <= 1) return;
+    const interval = setInterval(() => {
+      setIdx(i => (i + 1) % frames.length);
+    }, 800);
+    return () => clearInterval(interval);
+  }, [frames.length]);
+
+  // Preload all frames
+  useEffect(() => {
+    frames.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [frames]);
+
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+      {frames.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          style={{
+            position: i === 0 ? 'relative' : 'absolute',
+            maxWidth: '85%',
+            maxHeight: '85%',
+            objectFit: 'contain',
+            opacity: i === idx ? 1 : 0,
+            transition: 'opacity 0.3s ease-in-out',
+            borderRadius: 12,
+          }}
+        />
+      ))}
+      {/* Frame indicator dots */}
+      {frames.length > 1 && (
+        <div style={{
+          position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', gap: 6,
+        }}>
+          {frames.map((_, i) => (
+            <div key={i} style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: i === idx ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
+              transition: 'background 0.3s',
+            }} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
