@@ -25,7 +25,7 @@ export const CATEGORY_META: Record<RemedyCategory, { label: string; description:
   pores: { label: 'Pore & Oil Control', description: 'Mattify, tighten & detox pores', color: '#F472B6' },
 };
 
-export const CATEGORY_ORDER: RemedyCategory[] = ['glow', 'acne', 'detan', 'hydration', 'antiaging', 'pores'];
+export const CATEGORY_ORDER: RemedyCategory[] = ['glow', 'detan', 'acne', 'hydration', 'antiaging', 'pores'];
 
 const IMG = {
   turmeric: '/remedies/turmeric.webp',
@@ -47,6 +47,12 @@ const IMG = {
   rice: '/remedies/rice.webp',
   coconut: '/remedies/coconut.webp',
   potato: '/remedies/potato.webp',
+  haldi_milk: '/remedies/haldi_milk.webp',
+  karela: '/remedies/karela.webp',
+  saffron: '/remedies/saffron.webp',
+  amla2: '/remedies/amla2.webp',
+  fenugreek: '/remedies/fenugreek.webp',
+  tulsi: '/remedies/tulsi.webp',
 };
 
 export const REMEDIES: Remedy[] = [
@@ -79,7 +85,7 @@ export const REMEDIES: Remedy[] = [
     ingredients: ['1 tsp Haldi powder', '2 tbsp raw Milk', '1 tsp Shahad (honey)', 'Pinch of Dalchini (cinnamon)'],
     steps: ['Mix haldi with raw milk to make a paste.', 'Add honey and cinnamon powder.', 'Apply on face and neck evenly.', 'Leave for 15 minutes.', 'Wash off with lukewarm water.', 'Use a toner afterwards to remove yellow tint.'],
     benefits: ['Reduces inflammation', 'Heals acne scars', 'Natural glow', 'Anti-bacterial'],
-    duration: '15 min', frequency: '2-3x per week', color: '#EAB308', image: IMG.turmeric,
+    duration: '15 min', frequency: '2-3x per week', color: '#EAB308', image: IMG.haldi_milk,
   },
   {
     id: 'kesar-cream', category: 'glow',
@@ -89,7 +95,7 @@ export const REMEDIES: Remedy[] = [
     ingredients: ['5-6 Kesar (saffron) strands', '2 tbsp Malai (cream)', '1 tsp Badam (almond) oil', '1 tsp Honey'],
     steps: ['Soak saffron in 1 tsp warm milk for 15 min.', 'Mix malai with almond oil and honey.', 'Add saffron milk to the mixture.', 'Apply on face as a night cream.', 'Massage gently for 3-5 minutes.', 'Leave overnight or wash after 30 min.'],
     benefits: ['Luminous glow', 'Anti-aging', 'Reduces pigmentation', 'Deep nourishment'],
-    duration: '30 min', frequency: '3x per week', color: '#DC2626', image: IMG.milk,
+    duration: '30 min', frequency: '3x per week', color: '#DC2626', image: IMG.saffron,
   },
   {
     id: 'honey-glow', category: 'glow',
@@ -131,7 +137,7 @@ export const REMEDIES: Remedy[] = [
     ingredients: ['1 tbsp Neem powder', '1 tbsp Karela (bitter gourd) juice', '1 tsp Haldi', 'Rose water'],
     steps: ['Extract fresh karela juice by grinding and straining.', 'Mix neem powder with karela juice and haldi.', 'Add rose water for consistency.', 'Apply on face and affected areas.', 'Leave for 15 minutes (may tingle slightly).', 'Wash with lukewarm water.'],
     benefits: ['Purifies blood', 'Clears cystic acne', 'Reduces boils', 'Detoxifies skin'],
-    duration: '15 min', frequency: '2x per week', color: '#166534', image: IMG.neem,
+    duration: '15 min', frequency: '2x per week', color: '#166534', image: IMG.karela,
   },
   {
     id: 'tulsi-toner', category: 'acne',
@@ -141,7 +147,7 @@ export const REMEDIES: Remedy[] = [
     ingredients: ['15-20 fresh Tulsi leaves', '1 cup boiled Water', '1 tsp Apple cider vinegar', '2-3 drops Tea tree oil'],
     steps: ['Boil water and add tulsi leaves.', 'Simmer for 10 minutes on low heat.', 'Strain and let it cool completely.', 'Add apple cider vinegar and tea tree oil.', 'Pour into a spray bottle.', 'Spritz on face after cleansing, morning and night.', 'Store in fridge — lasts 1 week.'],
     benefits: ['Natural antibacterial', 'Tightens pores', 'Controls oil', 'Prevents breakouts'],
-    duration: '2 min', frequency: 'Daily (AM & PM)', color: '#059669', image: IMG.teatree,
+    duration: '2 min', frequency: 'Daily (AM & PM)', color: '#059669', image: IMG.tulsi,
   },
   {
     id: 'tea-tree-spot', category: 'acne',
@@ -225,7 +231,7 @@ export const REMEDIES: Remedy[] = [
     ingredients: ['2 tbsp fresh Malai (milk cream)', '1 tsp Honey', 'Pinch of Haldi', '1 tsp Badam (almond) oil'],
     steps: ['Collect fresh malai from boiled milk.', 'Mix with honey, haldi, and almond oil.', 'Apply thick layer on face and neck.', 'Gently massage for 2-3 minutes.', 'Leave for 20 minutes.', 'Wash with lukewarm water, pat dry.'],
     benefits: ['Intense moisturization', 'Softens rough patches', 'Natural glow', 'Repairs dry skin'],
-    duration: '20 min', frequency: '3x per week', color: '#FEF3C7', image: IMG.milk,
+    duration: '20 min', frequency: '3x per week', color: '#FEF3C7', image: IMG.coconut,
   },
   {
     id: 'oats-gentle', category: 'hydration',
@@ -257,7 +263,7 @@ export const REMEDIES: Remedy[] = [
     ingredients: ['2 tbsp Methi (fenugreek) seeds', 'Water for soaking', '1 tbsp Dahi (yogurt)', '1 tsp Honey'],
     steps: ['Soak methi seeds overnight in water.', 'Grind soaked seeds into a smooth paste.', 'Mix with yogurt and honey.', 'Apply on face and neck — focus on wrinkle areas.', 'Leave for 20 minutes.', 'Wash with lukewarm water.'],
     benefits: ['Firms sagging skin', 'Reduces fine lines', 'Rich in antioxidants', 'Tightens skin'],
-    duration: '20 min', frequency: '2x per week', color: '#A16207', image: IMG.honey,
+    duration: '20 min', frequency: '2x per week', color: '#A16207', image: IMG.fenugreek,
   },
   {
     id: 'amla-vitamin', category: 'antiaging',
@@ -267,7 +273,7 @@ export const REMEDIES: Remedy[] = [
     ingredients: ['2 tbsp Amla powder', '1 tbsp Honey', '1 tbsp Dahi', 'Rose water'],
     steps: ['Mix amla powder with yogurt and honey.', 'Add rose water for smooth consistency.', 'Apply on face and neck.', 'Leave for 15-20 minutes.', 'Wash with lukewarm water.', 'Follow with moisturizer.'],
     benefits: ['Intense vitamin C', 'Collagen boost', 'Brightens dull skin', 'Anti-aging'],
-    duration: '20 min', frequency: '2x per week', color: '#84CC16', image: IMG.aloe,
+    duration: '20 min', frequency: '2x per week', color: '#84CC16', image: IMG.amla2,
   },
   {
     id: 'rice-water', category: 'antiaging',
