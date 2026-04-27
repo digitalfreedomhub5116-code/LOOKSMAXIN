@@ -212,7 +212,7 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
                      35, 55, 40, 70, 30, 60, 45, 35, 55, 50];
   const NODE_SIZE = 52;
   const MILESTONE_SIZE = 60;
-  const ROW_H = 140; // vertical spacing between nodes
+  const ROW_H = 110; // vertical spacing between nodes
   const EXPANDED_EXTRA = 220; // extra space for expanded card
 
   // Calculate node positions
