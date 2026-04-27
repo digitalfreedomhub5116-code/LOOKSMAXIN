@@ -41,15 +41,22 @@ export default function SkinRemediesSection() {
             }}>
               {/* Hero */}
               <div style={{
-                height: 90, position: 'relative',
-                background: `linear-gradient(135deg, ${r.color}22 0%, ${r.color}08 100%)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                height: 100, position: 'relative', overflow: 'hidden',
               }}>
-                <span style={{ fontSize: 36 }}>{r.emoji}</span>
+                <img src={r.image} alt={r.name} style={{
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  filter: 'brightness(0.6) saturate(0.8)',
+                }} />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: `linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.7) 100%)`,
+                }} />
+                <span style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 24 }}>{r.emoji}</span>
                 <div style={{
                   position: 'absolute', top: 8, right: 8,
                   padding: '3px 8px', borderRadius: 6, fontSize: 9, fontWeight: 700,
-                  background: `${r.color}20`, color: r.color, border: `1px solid ${r.color}30`,
+                  background: 'rgba(0,0,0,0.6)', color: r.color, border: `1px solid ${r.color}40`,
+                  backdropFilter: 'blur(4px)',
                 }}>{r.tags[0]}</div>
               </div>
 
@@ -134,10 +141,17 @@ function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
         <div style={{ maxWidth: 430, margin: '0 auto' }}>
           {/* Hero */}
           <div style={{
-            height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${r.color}20 0%, ${r.color}05 100%)`,
+            height: 200, position: 'relative', overflow: 'hidden',
           }}>
-            <span style={{ fontSize: 64 }}>{r.emoji}</span>
+            <img src={r.image} alt={r.name} style={{
+              width: '100%', height: '100%', objectFit: 'cover',
+              filter: 'brightness(0.5) saturate(0.7)',
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.9) 100%)',
+            }} />
+            <span style={{ position: 'absolute', bottom: 16, left: 20, fontSize: 48 }}>{r.emoji}</span>
           </div>
 
           <div style={{ padding: '20px 20px 100px' }}>
