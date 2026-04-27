@@ -299,14 +299,16 @@ function ActivePlanCard({ onGoPrograms }: { onGoPrograms?: () => void }) {
       {activePlan && planProg ? (
         <div className="glass-card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={onGoPrograms}>
           {/* Plan image banner */}
-          <div style={{ width: '100%', height: 100, position: 'relative', overflow: 'hidden' }}>
-            <div style={{
-              width: '100%', height: '100%',
-              background: 'linear-gradient(135deg, rgba(200,168,78,0.15) 0%, rgba(200,168,78,0.03) 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Dumbbell size={36} color="rgba(200,168,78,0.3)" />
-            </div>
+          <div style={{ width: '100%', height: 120, position: 'relative', overflow: 'hidden' }}>
+            <img
+              src={activePlan.image}
+              alt={activePlan.name}
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+                filter: 'grayscale(80%) contrast(1.1) brightness(0.7)',
+                display: 'block',
+              }}
+            />
             <div style={{
               position: 'absolute', inset: 0,
               background: 'linear-gradient(180deg, transparent 40%, rgba(17,17,17,0.95) 100%)',
