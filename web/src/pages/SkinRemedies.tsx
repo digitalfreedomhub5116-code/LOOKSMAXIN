@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { X, Bookmark, ChevronRight, Clock, Repeat, ArrowLeft, Check } from 'lucide-react';
-import { REMEDIES, type Remedy } from '../data/skinRemedies';
+import { Bookmark, ChevronRight, Clock, Repeat, ArrowLeft, Check } from 'lucide-react';
+import { REMEDIES, CATEGORY_META, CATEGORY_ORDER, type Remedy, type RemedyCategory } from '../data/skinRemedies';
 
 export default function SkinRemediesSection() {
   const [selected, setSelected] = useState<Remedy | null>(null);
@@ -18,99 +18,138 @@ export default function SkinRemediesSection() {
     });
   };
 
+  // Group remedies by category
+  const grouped = CATEGORY_ORDER.map(cat => ({
+    cat,
+    meta: CATEGORY_META[cat],
+    items: REMEDIES.filter(r => r.category === cat),
+  }));
+
   return (
     <>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Skin Rituals</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
-            {REMEDIES.length} remedies
-          </span>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14, marginTop: -4 }}>
-          Ayurvedic home remedies — tested & effective
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Skin Rituals</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
+          Ayurvedic home remedies — tested & proven
         </div>
 
-        {/* Horizontal scroll */}
-        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }}>
-          {REMEDIES.map(r => (
-            <div key={r.id} style={{
-              minWidth: 200, maxWidth: 200, scrollSnapAlign: 'start',
-              borderRadius: 14, overflow: 'hidden', flexShrink: 0,
-              background: 'var(--surface)', border: '1px solid var(--border)',
-            }}>
-              {/* Hero */}
+        {grouped.map(({ cat, meta, items }) => (
+          <div key={cat} style={{ marginBottom: 24 }}>
+            {/* Category header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <div style={{
-                height: 100, position: 'relative', overflow: 'hidden',
-              }}>
-                <img src={r.image} alt={r.name} style={{
-                  width: '100%', height: '100%', objectFit: 'cover',
-                  filter: 'brightness(0.6) saturate(0.8)',
-                }} />
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: `linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.7) 100%)`,
-                }} />
-                <span style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 24 }}>{r.emoji}</span>
-                <div style={{
-                  position: 'absolute', top: 8, right: 8,
-                  padding: '3px 8px', borderRadius: 6, fontSize: 9, fontWeight: 700,
-                  background: 'rgba(0,0,0,0.6)', color: r.color, border: `1px solid ${r.color}40`,
-                  backdropFilter: 'blur(4px)',
-                }}>{r.tags[0]}</div>
+                width: 4, height: 18, borderRadius: 2, background: meta.color,
+              }} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{meta.label}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{meta.description}</div>
               </div>
-
-              {/* Content */}
-              <div style={{ padding: '10px 12px 12px' }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{r.name}</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: r.color, marginBottom: 6 }}>{r.subtitle}</div>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 10,
-                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                }}>{r.summary}</p>
-
-                {/* Tags */}
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 10 }}>
-                  {r.tags.slice(0, 3).map(t => (
-                    <span key={t} style={{
-                      fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                      background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                    }}>{t}</span>
-                  ))}
-                </div>
-
-                {/* Buttons */}
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={(e) => toggleSave(r.id, e)} style={{
-                    flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                    border: '1px solid var(--border)', cursor: 'pointer',
-                    background: saved.has(r.id) ? 'rgba(200,168,78,0.1)' : 'none',
-                    color: saved.has(r.id) ? 'var(--primary)' : 'var(--text-muted)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                  }}>
-                    <Bookmark size={12} fill={saved.has(r.id) ? 'var(--primary)' : 'none'} /> {saved.has(r.id) ? 'Saved' : 'Save'}
-                  </button>
-                  <button onClick={() => setSelected(r)} style={{
-                    flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 11, fontWeight: 800,
-                    border: 'none', cursor: 'pointer',
-                    background: 'var(--primary)', color: '#000',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                  }}>
-                    View <ChevronRight size={12} />
-                  </button>
-                </div>
-              </div>
+              <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: meta.color }}>{items.length}</span>
             </div>
-          ))}
-        </div>
+
+            {/* Horizontal scroll */}
+            <div style={{
+              display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4,
+              scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch',
+            }}>
+              {items.map(r => (
+                <RemedyCard key={r.id} r={r} isSaved={saved.has(r.id)} onSave={toggleSave} onView={() => setSelected(r)} />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Detail Modal */}
-      {selected && <RemedyDetail remedy={selected} isSaved={saved.has(selected.id)} onSave={(e) => toggleSave(selected.id, e)} onClose={() => setSelected(null)} />}
+      {selected && (
+        <RemedyDetail
+          remedy={selected}
+          isSaved={saved.has(selected.id)}
+          onSave={(e) => toggleSave(selected.id, e)}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </>
   );
 }
 
+/* ─── Single Remedy Card ─── */
+function RemedyCard({ r, isSaved, onSave, onView }: {
+  r: Remedy; isSaved: boolean;
+  onSave: (id: string, e: React.MouseEvent) => void;
+  onView: () => void;
+}) {
+  return (
+    <div style={{
+      minWidth: 190, maxWidth: 190, scrollSnapAlign: 'start', flexShrink: 0,
+      borderRadius: 14, overflow: 'hidden',
+      background: 'var(--surface)', border: '1px solid var(--border)',
+    }}>
+      {/* Image hero */}
+      <div style={{ height: 100, position: 'relative', overflow: 'hidden' }}>
+        <img src={r.image} alt={r.name} style={{
+          width: '100%', height: '100%', objectFit: 'cover',
+          filter: 'brightness(0.55) saturate(0.8)',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.75) 100%)',
+        }} />
+        <div style={{
+          position: 'absolute', top: 8, right: 8,
+          padding: '3px 8px', borderRadius: 6, fontSize: 9, fontWeight: 700,
+          background: 'rgba(0,0,0,0.5)', color: r.color, border: `1px solid ${r.color}40`,
+          backdropFilter: 'blur(4px)',
+        }}>{r.tags[0]}</div>
+        <div style={{ position: 'absolute', bottom: 8, left: 10, right: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{r.name}</div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: '8px 10px 10px' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: r.color, marginBottom: 4 }}>{r.subtitle}</div>
+        <p style={{
+          fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{r.summary}</p>
+
+        {/* Tags */}
+        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginBottom: 8 }}>
+          {r.tags.slice(0, 3).map(t => (
+            <span key={t} style={{
+              fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3,
+              background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}>{t}</span>
+          ))}
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={(e) => onSave(r.id, e)} style={{
+            flex: 1, padding: '6px 0', borderRadius: 8, fontSize: 10, fontWeight: 700,
+            border: '1px solid var(--border)', cursor: 'pointer',
+            background: isSaved ? 'rgba(200,168,78,0.1)' : 'none',
+            color: isSaved ? 'var(--primary)' : 'var(--text-muted)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
+          }}>
+            <Bookmark size={10} fill={isSaved ? 'var(--primary)' : 'none'} /> {isSaved ? 'Saved' : 'Save'}
+          </button>
+          <button onClick={onView} style={{
+            flex: 1, padding: '6px 0', borderRadius: 8, fontSize: 10, fontWeight: 800,
+            border: 'none', cursor: 'pointer',
+            background: 'var(--primary)', color: '#000',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
+          }}>
+            View <ChevronRight size={10} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Detail Modal ─── */
 function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
   remedy: Remedy; isSaved: boolean;
   onSave: (e: React.MouseEvent) => void; onClose: () => void;
@@ -139,29 +178,28 @@ function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
       {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ maxWidth: 430, margin: '0 auto' }}>
-          {/* Hero */}
-          <div style={{
-            height: 200, position: 'relative', overflow: 'hidden',
-          }}>
+          {/* Hero image */}
+          <div style={{ height: 200, position: 'relative', overflow: 'hidden' }}>
             <img src={r.image} alt={r.name} style={{
               width: '100%', height: '100%', objectFit: 'cover',
-              filter: 'brightness(0.5) saturate(0.7)',
+              filter: 'brightness(0.45) saturate(0.7)',
             }} />
             <div style={{
               position: 'absolute', inset: 0,
-              background: 'linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.9) 100%)',
+              background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.9) 100%)',
             }} />
-            <span style={{ position: 'absolute', bottom: 16, left: 20, fontSize: 48 }}>{r.emoji}</span>
+            <div style={{ position: 'absolute', bottom: 16, left: 20, right: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: r.color, marginBottom: 4 }}>
+                {CATEGORY_META[r.category].label.toUpperCase()}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>{r.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginTop: 2 }}>{r.subtitle}</div>
+            </div>
           </div>
 
           <div style={{ padding: '20px 20px 100px' }}>
-            {/* Title */}
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: r.color, marginBottom: 4 }}>SKIN RITUAL</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{r.name}</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 16 }}>{r.subtitle}</div>
-
             {/* Meta */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+            <div style={{ display: 'flex', gap: 16, marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)' }}>
                 <Clock size={14} color={r.color} /> {r.duration}
               </div>
@@ -171,7 +209,7 @@ function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
             </div>
 
             {/* Tags */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
               {r.tags.map(t => (
                 <span key={t} style={{
                   padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
@@ -181,36 +219,34 @@ function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
             </div>
 
             {/* Summary */}
-            <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 28 }}>{r.summary}</p>
+            <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 24 }}>{r.summary}</p>
 
             {/* Ingredients */}
-            <div style={{ marginBottom: 28 }}>
+            <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 12 }}>Ingredients</div>
               {r.ingredients.map((ing, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{
-                    width: 6, height: 6, borderRadius: '50%', background: r.color, flexShrink: 0,
-                  }} />
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
                   <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{ing}</span>
                 </div>
               ))}
             </div>
 
             {/* Steps */}
-            <div style={{ marginBottom: 28 }}>
+            <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 14 }}>Step-by-Step Guide</div>
               {r.steps.map((step, i) => (
                 <div key={i} style={{
-                  display: 'flex', gap: 14, marginBottom: 16,
-                  padding: 14, borderRadius: 12,
+                  display: 'flex', gap: 14, marginBottom: 14,
+                  padding: 12, borderRadius: 12,
                   background: i === 0 ? `${r.color}08` : 'rgba(255,255,255,0.02)',
                   border: `1px solid ${i === 0 ? r.color + '20' : 'rgba(255,255,255,0.05)'}`,
                 }}>
                   <div style={{
-                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                    width: 26, height: 26, borderRadius: 8, flexShrink: 0,
                     background: `${r.color}15`, border: `1px solid ${r.color}30`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 800, color: r.color,
+                    fontSize: 11, fontWeight: 800, color: r.color,
                   }}>{i + 1}</div>
                   <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>{step}</p>
                 </div>
