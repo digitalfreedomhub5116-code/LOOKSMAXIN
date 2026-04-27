@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Check, Lock, ChevronDown, ChevronUp, Play, Pause, RotateCcw, Trophy, X, ChevronLeft, Dumbbell, Timer, Zap } from 'lucide-react';
 import { PLANS } from '../data/exercisePlans';
 import type { ExercisePlan, ExerciseItem, PlanDay } from '../data/exercisePlans';
@@ -206,6 +206,16 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
   onStartMission: (d: number) => void;
   onCompleteDay: (d: number, bonusXP?: number) => void;
 }) {
+  const currentNodeRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to today's node on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      currentNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300); // small delay to let layout settle
+    return () => clearTimeout(timer);
+  }, [currentDay]);
+
   const xPattern = [35, 65, 50, 25, 70, 45, 30, 60, 50, 40,
                      65, 35, 55, 25, 70, 45, 60, 30, 50, 65,
                      35, 55, 40, 70, 30, 60, 45, 35, 55, 50];
@@ -285,7 +295,7 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
         const cardOnRight = x < 50;
 
         return (
-          <div key={d} style={{ position: 'absolute', top: y, left: 0, right: 0 }}>
+          <div key={d} ref={isCurrent ? currentNodeRef : undefined} style={{ position: 'absolute', top: y, left: 0, right: 0 }}>
             {/* Node circle */}
             <div
               onClick={() => !locked && (isCurrent ? onStartMission(d) : onToggleDay(d))}
