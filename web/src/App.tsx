@@ -130,13 +130,23 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    // Step 1: Try to sync data (best-effort, won't block logout)
-    try { await pushToCloud(); } catch {}
+    // Step 1: Try to sync data (best-effort, 3s max — never block logout)
+    try {
+      await Promise.race([
+        pushToCloud(),
+        new Promise(r => setTimeout(r, 3000)),
+      ]);
+    } catch {}
 
-    // Step 2: Try Supabase sign out (scope: 'local' so other devices stay logged in)
-    try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
+    // Step 2: Try Supabase sign out (2s max)
+    try {
+      await Promise.race([
+        supabase.auth.signOut({ scope: 'local' }),
+        new Promise(r => setTimeout(r, 2000)),
+      ]);
+    } catch {}
 
-    // Step 3: Clear app data from localStorage
+    // Step 3: Clear app data from localStorage (keep sb- auth keys for Supabase)
     try {
       const appKeys = Object.keys(localStorage).filter(k => !k.startsWith('sb-'));
       appKeys.forEach(k => localStorage.removeItem(k));
