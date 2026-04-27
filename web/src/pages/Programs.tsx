@@ -206,51 +206,42 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
   onStartMission: (d: number) => void;
   onCompleteDay: (d: number, bonusXP?: number) => void;
 }) {
-  // Irregular X positions for nodes (% from left) — zigzag pattern
   const xPattern = [35, 65, 50, 25, 70, 45, 30, 60, 50, 40,
                      65, 35, 55, 25, 70, 45, 60, 30, 50, 65,
                      35, 55, 40, 70, 30, 60, 45, 35, 55, 50];
   const NODE_SIZE = 52;
   const MILESTONE_SIZE = 60;
-  const ROW_H = 110; // vertical spacing between nodes
-  const EXPANDED_EXTRA = 220; // extra space for expanded card
 
-  // Calculate node positions
+  // Calculate per-node height: node + card + gap
+  const getNodeRowH = (dayData: PlanDay) => {
+    const d = dayData.day;
+    const done = completedDays.includes(d);
+    const isCurrent = d === currentDay && !done;
+    const locked = d > currentDay;
+    const size = dayData.milestone ? MILESTONE_SIZE : NODE_SIZE;
+    // Card height estimates: node + gap + card content + bottom margin
+    const cardH = isCurrent ? 130 : (locked ? 50 : 80);
+    return size + 12 + cardH + 20; // node + gap + card + bottom breathing room
+  };
+
+  // Calculate node positions with proper spacing
   const nodes = plan.days.map((dayData, i) => {
     const isMilestone = !!dayData.milestone;
     const size = isMilestone ? MILESTONE_SIZE : NODE_SIZE;
     const xPct = xPattern[i % xPattern.length];
-    // Accumulate Y with extra space for expanded days above this one
     let y = 0;
     for (let j = 0; j < i; j++) {
-      y += ROW_H;
-      if (expandedDay === plan.days[j].day) y += EXPANDED_EXTRA;
+      y += getNodeRowH(plan.days[j]);
     }
     return { dayData, x: xPct, y, size, isMilestone };
   });
 
   const totalH = nodes.length > 0
-    ? nodes[nodes.length - 1].y + ROW_H
+    ? nodes[nodes.length - 1].y + getNodeRowH(plan.days[plan.days.length - 1])
     : 0;
 
-  // Build SVG path through all nodes
-  const buildPath = () => {
-    if (nodes.length < 2) return '';
-    const W = 100; // viewbox percentage width
-    const pts = nodes.map(n => ({ x: (n.x / 100) * W, y: n.y + n.size / 2 }));
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1];
-      const curr = pts[i];
-      const cpY = (prev.y + curr.y) / 2;
-      d += ` C ${prev.x} ${cpY}, ${curr.x} ${cpY}, ${curr.x} ${curr.y}`;
-    }
-    return d;
-  };
-
+  // Build SVG curved path
   const svgW = 400;
-  const pathD = buildPath();
-  // Scale SVG coords: x is 0-100 mapped to svgW, y is direct pixels
   const scaledPath = (() => {
     if (nodes.length < 2) return '';
     const pts = nodes.map(n => ({ x: (n.x / 100) * svgW, y: n.y + n.size / 2 }));
@@ -281,9 +272,7 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
             </feMerge>
           </filter>
         </defs>
-        {/* Glow layer */}
         <path d={scaledPath} fill="none" stroke="rgba(200,168,78,0.15)" strokeWidth="10" filter="url(#trackGlow)" />
-        {/* Main track */}
         <path d={scaledPath} fill="none" stroke="rgba(200,168,78,0.35)" strokeWidth="3" strokeLinecap="round" />
       </svg>
 
@@ -293,17 +282,13 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
         const done = completedDays.includes(d);
         const isCurrent = d === currentDay && !done;
         const locked = d > currentDay;
-        const isExpanded = expandedDay === d;
-        const completedExCount = completedExercises[d]?.length || 0;
-
-        // Card goes on opposite side of node; if node is left of center, card goes right and vice versa
         const cardOnRight = x < 50;
 
         return (
-          <div key={d} style={{ position: 'absolute', top: y, left: 0, right: 0, height: isExpanded ? ROW_H + EXPANDED_EXTRA : ROW_H }}>
+          <div key={d} style={{ position: 'absolute', top: y, left: 0, right: 0 }}>
             {/* Node circle */}
             <div
-              onClick={() => !locked && onToggleDay(d)}
+              onClick={() => !locked && (isCurrent ? onStartMission(d) : onToggleDay(d))}
               style={{
                 position: 'absolute',
                 left: `calc(${x}% - ${size / 2}px)`,
@@ -349,17 +334,17 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
               )}
             </div>
 
-            {/* Info card — positioned near node */}
+            {/* Info card */}
             <div
               onClick={() => !locked && (isCurrent ? onStartMission(d) : onToggleDay(d))}
               style={{
                 position: 'absolute',
-                top: size + 8,
-                left: cardOnRight ? `calc(${Math.min(x + 5, 55)}%)` : undefined,
-                right: !cardOnRight ? `calc(${Math.min(100 - x + 5, 55)}%)` : undefined,
-                width: '55%',
-                maxWidth: 220,
-                padding: isCurrent ? '14px 16px' : '10px 14px',
+                top: size + 12,
+                left: cardOnRight ? `calc(${Math.max(x - 10, 10)}%)` : undefined,
+                right: !cardOnRight ? `calc(${Math.max(100 - x - 10, 10)}%)` : undefined,
+                width: '52%',
+                maxWidth: 210,
+                padding: isCurrent ? '12px 14px' : '8px 12px',
                 borderRadius: 12,
                 cursor: locked ? 'default' : 'pointer',
                 zIndex: 2,
@@ -368,11 +353,8 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
                   : 'rgba(17,17,17,0.85)',
                 border: isCurrent
                   ? '1.5px solid rgba(200,168,78,0.35)'
-                  : isExpanded
-                    ? '1.5px solid rgba(200,168,78,0.25)'
-                    : '1px solid rgba(255,255,255,0.08)',
+                  : '1px solid rgba(255,255,255,0.08)',
                 opacity: locked ? 0.3 : 1,
-                transition: 'all 0.25s ease',
                 backdropFilter: 'blur(8px)',
               }}
             >
@@ -383,7 +365,7 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
                 DAY {d}
               </div>
               <div style={{
-                fontSize: 17, fontWeight: 800,
+                fontSize: 16, fontWeight: 800,
                 color: done ? 'var(--primary)' : '#fff',
                 letterSpacing: 0.3, marginBottom: isCurrent ? 10 : 0,
               }}>
@@ -394,7 +376,6 @@ function JourneyMap({ plan, completedDays, completedExercises, currentDay, expan
                   {done ? '✓ Completed' : `${dayData.exercises.length} exercises`}
                 </div>
               )}
-              {/* START MISSION button for current day */}
               {isCurrent && (
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
