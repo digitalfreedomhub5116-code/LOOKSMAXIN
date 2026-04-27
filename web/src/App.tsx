@@ -7,6 +7,7 @@ import Courses from './pages/Courses';
 import LynxChat from './pages/LynxChat';
 import Profile from './pages/Profile';
 import RemediesPage from './pages/RemediesPage';
+import { ReportsPage } from './pages/ReportsGrid';
 import AuthPage from './pages/AuthPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import TabBar, { LynxBubbleIcon } from './components/TabBar';
@@ -26,6 +27,7 @@ export default function App() {
   const [showUpdatePassword, setShowUpdatePassword] = useState(false);
   const chatTimerRef = useRef<number>(0);
   const [showRemedies, setShowRemedies] = useState(false);
+  const [showReports, setShowReports] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -88,7 +90,7 @@ export default function App() {
 
   const renderPage = () => {
     switch (tab) {
-      case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} onViewAllRemedies={() => setShowRemedies(true)} />;
+      case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} onViewAllRemedies={() => setShowRemedies(true)} onViewAllReports={() => setShowReports(true)} />;
       case 'programs': return <Programs />;
       case 'ranks': return <Ranks />;
       case 'vault': return <Courses />;
@@ -134,6 +136,7 @@ export default function App() {
       )}
 
       {showRemedies && <RemediesPage onBack={() => setShowRemedies(false)} />}
+      {showReports && <ReportsPage onBack={() => setShowReports(false)} />}
     </div>
   );
 }

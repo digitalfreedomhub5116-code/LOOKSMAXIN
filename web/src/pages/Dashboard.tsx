@@ -4,6 +4,7 @@ import type { FaceScores } from '../lib/api';
 import { PLANS } from '../data/exercisePlans';
 import * as progress from '../data/planProgress';
 import SkinRemediesSection from './SkinRemedies';
+import RecentReports from './ReportsGrid';
 
 interface DashboardProps {
   onScan: () => void;
@@ -11,6 +12,7 @@ interface DashboardProps {
   faceImage?: string | null;
   onGoPrograms?: () => void;
   onViewAllRemedies?: () => void;
+  onViewAllReports?: () => void;
 }
 
 function getTier(s: number) {
@@ -28,7 +30,7 @@ function getBarColor(s: number) {
   return '#EF4444';
 }
 
-export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onViewAllRemedies }: DashboardProps) {
+export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onViewAllRemedies, onViewAllReports }: DashboardProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
@@ -235,23 +237,8 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
         </div>
       )}
 
-      {/* ═══ ROADMAP SECTION ═══ */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Roadmap</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
-        </div>
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', cursor: 'pointer' }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surface-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 20 }}>🏔️</span>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Your Looksmax Journey</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Step-by-step path to Lynx Mode</div>
-          </div>
-          <ChevronRight size={18} color="var(--text-muted)" />
-        </div>
-      </div>
+      {/* ═══ RECENT REPORTS ═══ */}
+      <RecentReports onViewAll={onViewAllReports || (() => {})} />
 
       {/* ═══ EXERCISES SECTION ═══ */}
       <ActivePlanCard onGoPrograms={onGoPrograms} />

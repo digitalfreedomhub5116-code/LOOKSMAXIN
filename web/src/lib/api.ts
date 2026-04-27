@@ -43,6 +43,7 @@ export interface FaceScores {
 export interface ScanRecord {
   scores: FaceScores;
   timestamp: string;
+  faceImage?: string;
 }
 
 // ─── Gemini AI analysis ───
@@ -114,12 +115,17 @@ export function saveScores(scores: FaceScores, faceBase64?: string) {
       localStorage.setItem(LS_FACE_URL, faceBase64);
     }
 
-    // Append to history
-    const historyEntry = { ...scores };
-    delete (historyEntry as any).face_image;
+    // Append to history — include face image for the reports grid
+    const historyEntry: ScanRecord = {
+      scores: { ...scores },
+      timestamp: new Date().toISOString(),
+      faceImage: faceBase64 || undefined,
+    };
+    delete (historyEntry.scores as any).face_image;
     const history = getScanHistory();
-    history.unshift({ scores: historyEntry, timestamp: new Date().toISOString() });
-    localStorage.setItem(LS_HISTORY, JSON.stringify(history.slice(0, 50)));
+    history.unshift(historyEntry);
+    // Keep last 20 reports (with images they take more space)
+    localStorage.setItem(LS_HISTORY, JSON.stringify(history.slice(0, 20)));
   } catch (e) {
     console.error('localStorage save failed:', e);
   }
@@ -166,6 +172,14 @@ export function getScanHistory(): ScanRecord[] {
   } catch {
     return [];
   }
+}
+
+// ─── Delete a specific scan report ───
+export function deleteReport(timestamp: string) {
+  try {
+    const history = getScanHistory().filter(r => r.timestamp !== timestamp);
+    localStorage.setItem(LS_HISTORY, JSON.stringify(history));
+  } catch {}
 }
 
 // ─── Get scan count ───
