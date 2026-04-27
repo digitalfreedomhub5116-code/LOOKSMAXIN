@@ -452,3 +452,33 @@ function mergeByTimestamp(primary: any[], secondary: any[]): any[] {
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 }
+
+// ═══════════════════════════════════════
+//  Retry pending uploads on app startup
+// ═══════════════════════════════════════
+/**
+ * Call this on app startup after auth is established.
+ * Checks if face_url is still base64 (meaning previous upload failed)
+ * and retries the upload to Supabase Storage.
+ */
+export async function retryPendingUploads(): Promise<void> {
+  try {
+    const userId = await getUserId();
+    if (!userId || !isOnline()) return;
+
+    const faceUrl = localStorage.getItem(FIELD_LS_MAP.face_url);
+    if (faceUrl && faceUrl.startsWith('data:')) {
+      console.log('[Sync] Found pending face upload — retrying...');
+      const url = await uploadFaceToStorage(userId, faceUrl);
+      if (url) {
+        localStorage.setItem(FIELD_LS_MAP.face_url, url);
+        // Push the URL to cloud
+        markDirty('face_url');
+        await flushDirtyFields();
+        console.log('[Sync] ✅ Pending face upload completed');
+      }
+    }
+  } catch (e) {
+    console.warn('[Sync] Retry pending uploads failed:', e);
+  }
+}

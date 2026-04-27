@@ -12,7 +12,7 @@ import AuthPage from './pages/AuthPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
-import { pullFromCloud, pushToCloud } from './lib/sync';
+import { pullFromCloud, pushToCloud, retryPendingUploads } from './lib/sync';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
@@ -68,6 +68,8 @@ export default function App() {
             await pullFromCloud();
             setLatestScores(loadLatestScores());
             setFaceImage(loadFaceImage());
+            // Retry any failed face uploads from previous sessions
+            retryPendingUploads().catch(() => {});
           } catch (e) {
             console.warn('[Auth] Cloud pull failed:', e);
           }
@@ -85,6 +87,7 @@ export default function App() {
           await pullFromCloud();
           setLatestScores(loadLatestScores());
           setFaceImage(loadFaceImage());
+          retryPendingUploads().catch(() => {});
         } catch {}
         return;
       }
