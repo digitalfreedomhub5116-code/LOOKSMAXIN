@@ -87,21 +87,19 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    // Step 1: Try to sync data (best-effort, won't block logout)
+    try { await pushToCloud(); } catch {}
+
+    // Step 2: Try Supabase sign out (scope: 'local' so other devices stay logged in)
+    try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
+
+    // Step 3: Clear app data from localStorage
     try {
-      // 1. Flush pending data to cloud while still authenticated
-      await pushToCloud();
-    } catch (e) {
-      console.warn('Cloud sync before logout failed:', e);
-    }
+      const appKeys = Object.keys(localStorage).filter(k => !k.startsWith('sb-'));
+      appKeys.forEach(k => localStorage.removeItem(k));
+    } catch {}
 
-    // 2. Sign out from Supabase (this removes auth tokens from localStorage)
-    await supabase.auth.signOut();
-
-    // 3. Clear app-specific localStorage keys (NOT Supabase auth — signOut handles that)
-    const appKeys = Object.keys(localStorage).filter(k => !k.startsWith('sb-'));
-    appKeys.forEach(k => localStorage.removeItem(k));
-
-    // 4. Reset all React state
+    // Step 4: Reset React state → triggers render of AuthPage
     setAuthed(false);
     setLatestScores(null);
     setFaceImage(null);
@@ -109,6 +107,7 @@ export default function App() {
     setShowRemedies(false);
     setShowReports(false);
     setChatState('closed');
+    setScanning(false);
   };
 
   const openChat = () => {
