@@ -85,7 +85,7 @@ async function uploadFaceImage(userId: string, base64: string): Promise<string |
       .from('face-scans')
       .upload(filename, blob, {
         contentType: 'image/jpeg',
-        upsert: false,
+        upsert: true,
       });
 
     if (error) {
@@ -201,25 +201,26 @@ export function getScanCount(): number {
 // ─── Supabase save (Storage upload + DB insert) ───
 async function saveToSupabase(scores: FaceScores, faceBase64?: string) {
   try {
-    let userId: string | null = null;
-
+    // Get authenticated user — don't fall back to anonymous
     const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user?.id) {
-      userId = session.user.id;
-    } else {
-      const { data } = await supabase.auth.signInAnonymously();
-      userId = data.user?.id || null;
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      console.warn('[Save] No authenticated session — skipping Supabase save');
+      return;
     }
 
-    if (!userId) return;
+    console.log('[Save] Saving scan for user:', userId);
 
     // Upload face image to Storage bucket and get public URL
     let imageUrl: string | null = null;
     if (faceBase64) {
+      console.log('[Save] Uploading face image...', faceBase64.length, 'chars');
       imageUrl = await uploadFaceImage(userId, faceBase64);
 
-      // Save URL to localStorage for instant dashboard load
       if (imageUrl) {
+        console.log('[Save] ✅ Face uploaded:', imageUrl.substring(0, 80));
+        // Save URL to localStorage for instant dashboard load
         localStorage.setItem(LS_FACE_URL, imageUrl);
 
         // Also update saved scores with the URL
@@ -231,11 +232,13 @@ async function saveToSupabase(scores: FaceScores, faceBase64?: string) {
             localStorage.setItem(LS_SCORES, JSON.stringify(parsed));
           }
         } catch {}
+      } else {
+        console.warn('[Save] ❌ Face upload returned null');
       }
     }
 
     // Insert scan record with image URL
-    await supabase.from('face_scans').insert({
+    const { error: insertErr } = await supabase.from('face_scans').insert({
       user_id: userId,
       overall_score: scores.overall,
       analysis: {
@@ -246,7 +249,10 @@ async function saveToSupabase(scores: FaceScores, faceBase64?: string) {
       },
       image_url: imageUrl,
     });
+
+    if (insertErr) console.warn('[Save] face_scans insert error:', insertErr.message);
+    else console.log('[Save] ✅ Scan record saved');
   } catch (e) {
-    console.warn('Supabase save failed (non-critical):', e);
+    console.warn('[Save] Supabase save failed:', e);
   }
 }
