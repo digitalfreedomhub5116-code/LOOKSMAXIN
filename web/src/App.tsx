@@ -25,6 +25,7 @@ export default function App() {
   const [latestScores, setLatestScores] = useState<FaceScores | null>(() => loadLatestScores());
   const [faceImage, setFaceImage] = useState<string | null>(() => loadFaceImage());
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [sessionUser, setSessionUser] = useState<any>(null);
   const [showUpdatePassword, setShowUpdatePassword] = useState(false);
   const chatTimerRef = useRef<number>(0);
   const [showRemedies, setShowRemedies] = useState(false);
@@ -62,6 +63,7 @@ export default function App() {
         if (session) {
           console.log('[Auth] ✅ Valid session found on load');
           setAuthed(true);
+          setSessionUser(session.user);
           try {
             await pullFromCloud();
             setLatestScores(loadLatestScores());
@@ -78,6 +80,7 @@ export default function App() {
 
       if (event === 'SIGNED_IN') {
         setAuthed(true);
+        setSessionUser(session?.user || null);
         try {
           await pullFromCloud();
           setLatestScores(loadLatestScores());
@@ -94,6 +97,7 @@ export default function App() {
 
       if (event === 'SIGNED_OUT') {
         setAuthed(false);
+        setSessionUser(null);
         setLatestScores(null);
         setFaceImage(null);
         setTab('dashboard');
@@ -140,6 +144,7 @@ export default function App() {
 
     // Step 4: Reset React state → triggers render of AuthPage
     setAuthed(false);
+    setSessionUser(null);
     setLatestScores(null);
     setFaceImage(null);
     setTab('dashboard');
@@ -189,7 +194,7 @@ export default function App() {
       case 'programs': return <Programs />;
       case 'ranks': return <Ranks />;
       case 'vault': return <Courses />;
-      case 'profile': return <Profile onLogout={handleLogout} />;
+      case 'profile': return <Profile onLogout={handleLogout} user={sessionUser} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
     }
   };

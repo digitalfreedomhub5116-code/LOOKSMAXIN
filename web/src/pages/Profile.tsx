@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Settings, ChevronRight, Star, BarChart3, Shield, LogOut, Mail } from 'lucide-react';
-import { supabase, getScanCount } from '../lib/api';
+import { getScanCount } from '../lib/api';
 
 const MENU = [
   { icon: <BarChart3 size={18} />, label: 'Advanced Stats', sub: 'Detailed analytics' },
@@ -15,36 +15,22 @@ interface UserInfo {
   avatar?: string;
 }
 
-export default function Profile({ onLogout }: { onLogout: () => void }) {
-  const [user, setUser] = useState<UserInfo | null>(null);
+export default function Profile({ onLogout, user: sessionUser }: { onLogout: () => void; user: any }) {
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [scanCount, setScanCount] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    // Helper to set user from a Supabase User object
-    const setFromUser = (u: any) => {
-      if (!u) return;
-      setUser({
-        email: u.email || '',
-        name: u.user_metadata?.display_name || u.user_metadata?.full_name || u.email?.split('@')[0] || 'Champion',
-        avatar: u.user_metadata?.avatar_url,
+    // Use the user prop from App.tsx (populated by onAuthStateChange — always reliable)
+    if (sessionUser) {
+      setUserInfo({
+        email: sessionUser.email || '',
+        name: sessionUser.user_metadata?.display_name || sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'Champion',
+        avatar: sessionUser.user_metadata?.avatar_url,
       });
-    };
-
-    // Read session from localStorage (instant, no network call)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) setFromUser(session.user);
-    });
-
-    // Subscribe to auth changes so Profile updates if token refreshes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) setFromUser(session.user);
-    });
-
+    }
     setScanCount(getScanCount());
-
-    return () => subscription.unsubscribe();
-  }, []);
+  }, [sessionUser]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -61,8 +47,8 @@ export default function Profile({ onLogout }: { onLogout: () => void }) {
     <div className="page">
       {/* Avatar */}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        {user?.avatar ? (
-          <img src={user.avatar} alt="Avatar" style={{
+        {userInfo?.avatar ? (
+          <img src={userInfo.avatar} alt="Avatar" style={{
             width: 80, height: 80, borderRadius: '50%',
             border: '2px solid rgba(142,161,188,0.3)',
             boxShadow: '0 0 20px var(--primary-glow)',
@@ -79,9 +65,9 @@ export default function Profile({ onLogout }: { onLogout: () => void }) {
             <User size={32} color="#fff" />
           </div>
         )}
-        <div className="h1" style={{ marginBottom: 2 }}>{user?.name || 'Champion'}</div>
+        <div className="h1" style={{ marginBottom: 2 }}>{userInfo?.name || 'Champion'}</div>
         <div className="label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-          <Mail size={12} /> {user?.email || '...'}
+          <Mail size={12} /> {userInfo?.email || '...'}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 16 }}>
