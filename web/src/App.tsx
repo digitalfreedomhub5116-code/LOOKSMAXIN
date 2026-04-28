@@ -14,9 +14,10 @@ import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import TopNavbar from './components/TopNavbar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import { pullFromCloud, pushToCloud, retryPendingUploads, setActiveUserId } from './lib/sync';
-import { claimDailyLogin, recordStreakActivity, applyThemeVars, getEquipped } from './lib/economy';
+import { claimDailyLogin, recordStreakActivity, applyThemeVars, getEquipped, getStreak } from './lib/economy';
 import { getItemById } from './data/storeItems';
 import { registerDeviceSession, startSessionGuard, stopSessionGuard, clearDeviceToken } from './lib/sessionGuard';
+import { pushStreakToLeaderboard } from './lib/leaderboard';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
@@ -98,6 +99,14 @@ export default function App() {
             retryPendingUploads().catch(() => {});
             claimDailyLogin();
             recordStreakActivity();
+            // Push streak to leaderboard
+            const streak = getStreak();
+            pushStreakToLeaderboard(
+              session.user.id,
+              streak.current,
+              session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Player',
+              session.user.user_metadata?.avatar_url,
+            ).catch(() => {});
           } catch (e) {
             console.warn('[Auth] Cloud pull failed:', e);
           }
@@ -249,7 +258,7 @@ export default function App() {
     switch (tab) {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} onViewAllRemedies={() => setShowRemedies(true)} onViewAllReports={() => setShowReports(true)} />;
       case 'programs': return <Programs />;
-      case 'ranks': return <Ranks />;
+      case 'ranks': return <Ranks userId={sessionUser?.id} />;
       case 'vault': {
         const show = openPlans;
         if (openPlans) setTimeout(() => setOpenPlans(false), 100);
