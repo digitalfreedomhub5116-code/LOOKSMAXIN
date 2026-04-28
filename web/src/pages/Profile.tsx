@@ -162,11 +162,12 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
   const equipped = getEquipped();
   const borderItem = equipped.border ? getItemById(equipped.border) : null;
   const borderConfig = borderItem?.borderConfig;
-  const borderGrad = borderConfig
+  const hasLottie = !!borderItem?.lottieBorder;
+  const borderGrad = borderConfig && !hasLottie
     ? `linear-gradient(135deg, ${borderConfig.colors.join(', ')})`
     : 'linear-gradient(135deg, rgba(142,161,188,0.3), rgba(142,161,188,0.3))';
   const borderGlow = borderConfig?.glowColor || 'var(--primary-glow)';
-  const hasBorder = !!borderConfig;
+  const hasBorder = !!borderConfig && !hasLottie;
 
   const handleUpgrade = () => {
     if (onNavigate) onNavigate('vault', { showPlans: true });

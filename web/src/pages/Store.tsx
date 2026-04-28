@@ -8,10 +8,63 @@ import {
   Palette, Frame, Tag, Clock, Check, Crown, BrainCircuit,
   Infinity, ChevronRight, Sparkles,
 } from 'lucide-react';
+import Lottie from 'lottie-react';
 import { ALL_STORE_ITEMS, getItemsByCategory, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
 import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyThemeVars, DEV_UNLOCK_ALL, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
 import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/StoreComponents';
 import { syncBorderToLeaderboard } from '../lib/leaderboard';
+
+/* ═══ Store Lottie Border Preview ═══ */
+const storeLottieCache: Record<string, any> = {};
+
+function StoreLottieBorder({ src, avatarUrl, glow }: { src: string; avatarUrl?: string; glow: string }) {
+  const [data, setData] = useState<any>(storeLottieCache[src] || null);
+
+  useEffect(() => {
+    if (storeLottieCache[src]) { setData(storeLottieCache[src]); return; }
+    fetch(src).then(r => r.json()).then(d => { storeLottieCache[src] = d; setData(d); }).catch(() => {});
+  }, [src]);
+
+  return (
+    <div style={{ position: 'relative', width: 110, height: 110 }}>
+      {/* Avatar */}
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        width: 72, height: 72, borderRadius: '50%',
+        background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
+        transform: 'translate(-50%, -50%)', zIndex: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+        ) : (
+          <svg width="56" height="56" viewBox="0 0 40 40">
+            <circle cx="20" cy="16" r="7" fill="#555568" />
+            <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
+          </svg>
+        )}
+      </div>
+      {/* Lottie overlay */}
+      {data && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          width: 110, height: 110, borderRadius: '50%', overflow: 'hidden',
+          transform: 'translate(-50%, -50%)', zIndex: 2, pointerEvents: 'none',
+          mixBlendMode: 'screen',
+        }}>
+          <div style={{
+            position: 'absolute',
+            width: '100%', height: '178%',
+            top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          }}>
+            <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ═══ Category accent colors ═══ */
 const CAT_COLORS: Record<string, string> = {
@@ -793,6 +846,8 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   )}
                 </div>
               </div>
+            ) : item.category === 'border' && item.lottieBorder ? (
+              <StoreLottieBorder src={item.lottieBorder} avatarUrl={avatarUrl} glow={item.borderConfig?.glowColor || 'rgba(200,168,78,0.3)'} />
             ) : item.category === 'border' && item.borderConfig ? (
               <BorderRing config={item.borderConfig} size={90} profileUrl={avatarUrl} />
             ) : null}
