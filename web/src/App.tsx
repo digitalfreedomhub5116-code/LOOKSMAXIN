@@ -16,6 +16,7 @@ import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api
 import { pullFromCloud, pushToCloud, retryPendingUploads, setActiveUserId } from './lib/sync';
 import { claimDailyLogin, recordStreakActivity, applyThemeVars, getEquipped } from './lib/economy';
 import { getItemById } from './data/storeItems';
+import { registerDeviceSession, startSessionGuard, stopSessionGuard, clearDeviceToken } from './lib/sessionGuard';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
@@ -82,7 +83,10 @@ export default function App() {
           setAuthed(true);
           setSessionUser(session.user);
           accessTokenRef.current = session.access_token;
-          setActiveUserId(session.user.id);  // Cache userId for sync pushes
+          setActiveUserId(session.user.id);
+          // Register this device and start session guard
+          await registerDeviceSession();
+          startSessionGuard();
           try {
             await pullFromCloud(session.user.id);
             setLatestScores(loadLatestScores());
@@ -91,9 +95,7 @@ export default function App() {
               hasScores: !!loadLatestScores(),
               hasFace: !!loadFaceImage(),
             });
-            // Retry any failed face uploads from previous sessions
             retryPendingUploads().catch(() => {});
-            // Economy: daily login bonus + streak
             claimDailyLogin();
             recordStreakActivity();
           } catch (e) {
@@ -110,7 +112,10 @@ export default function App() {
         setAuthed(true);
         setSessionUser(session?.user || null);
         accessTokenRef.current = session?.access_token || null;
-        setActiveUserId(session?.user?.id || null);  // Cache userId for sync pushes
+        setActiveUserId(session?.user?.id || null);
+        // Register this device as the active one
+        await registerDeviceSession();
+        startSessionGuard();
         try {
           await pullFromCloud(session?.user?.id);
           setLatestScores(loadLatestScores());
@@ -131,7 +136,9 @@ export default function App() {
       }
 
       if (event === 'SIGNED_OUT') {
-        setActiveUserId(null);  // Clear cached userId
+        stopSessionGuard();
+        clearDeviceToken();
+        setActiveUserId(null);
         setAuthed(false);
         setSessionUser(null);
         setLatestScores(null);
@@ -156,6 +163,7 @@ export default function App() {
     return () => {
       clearTimeout(safetyTimer);
       subscription.unsubscribe();
+      stopSessionGuard();
     };
   }, []);
 
