@@ -39,7 +39,7 @@ export default function SkinRemediesSection({ limit, onViewAll }: SectionProps) 
 
   return (
     <>
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 36 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 16 }}>Skin Rituals</div>
 
         {/* Saved section — only on full page */}

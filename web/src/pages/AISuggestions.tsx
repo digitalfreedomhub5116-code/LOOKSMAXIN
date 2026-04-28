@@ -56,7 +56,7 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
   };
 
   return (
-    <div style={{ marginBottom: 32 }}>
+    <div style={{ marginBottom: 36 }}>
       {/* Section Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>AI Suggestions</div>

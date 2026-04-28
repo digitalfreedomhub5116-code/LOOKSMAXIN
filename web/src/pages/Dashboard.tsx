@@ -77,7 +77,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
 
       {/* ═══ SECTION 1: GET RATED / LYNX REPORT ═══ */}
       {!scores ? (
-        <div className="glass-card" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
+        <div className="glass-card" style={{ padding: 0, marginBottom: 36, overflow: 'hidden' }}>
           {/* Hero Image */}
           <div style={{ width: '100%', height: 200, overflow: 'hidden', position: 'relative' }}>
             <img
@@ -112,7 +112,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
           </div>
         </div>
       ) : (
-        <div className="glass-card" style={{ padding: 0, marginBottom: 16, overflow: 'hidden' }}>
+        <div className="glass-card" style={{ padding: 0, marginBottom: 36, overflow: 'hidden' }}>
           {/* B&W face photo — compact */}
           {faceImgSrc && (
             <div style={{ width: '100%', height: 180, overflow: 'hidden', position: 'relative' }}>
@@ -235,7 +235,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
 
       {/* ═══ GENERATE REPORT CTA ═══ */}
       {!scores && (
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', marginBottom: 32, cursor: 'pointer' }} onClick={onScan}>
+        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', marginBottom: 36, cursor: 'pointer' }} onClick={onScan}>
           <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <ScanLine size={20} color="#000" />
           </div>
@@ -271,7 +271,7 @@ function ActivePlanCard({ onGoPrograms }: { onGoPrograms?: () => void }) {
   const completedCount = planProg?.completedDays.length || 0;
 
   return (
-    <div style={{ marginBottom: 32 }}>
+    <div style={{ marginBottom: 36 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Exercises</div>
         <span onClick={onGoPrograms} style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>View all</span>
