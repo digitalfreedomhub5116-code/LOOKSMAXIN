@@ -14,9 +14,9 @@ import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/Sto
 
 /* ═══ Category accent colors ═══ */
 const CAT_COLORS: Record<string, string> = {
-  border: '#705820ff',
+  border: '#705820',
   theme: '#8B5CF6',
-  deals: '#705820ff',
+  deals: '#8d702d',
 };
 
 const CONSUMABLE_ICONS: Record<string, typeof Zap> = {
