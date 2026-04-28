@@ -287,7 +287,13 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
   const accentColor = isFree ? 'rgba(255,255,255,0.15)' : 'rgba(200,168,78,0.5)';
 
   return (
-    /* Outer border glow */
+    /* Glow wrapper — no clip-path so drop-shadow renders outside */
+    <div style={{
+      filter: isFree ? 'none' : isPro
+        ? 'drop-shadow(0 0 10px rgba(200,168,78,0.12))'
+        : 'drop-shadow(0 0 16px rgba(200,168,78,0.2))',
+    }}>
+    {/* Border layer — clipped */}
     <div style={{
       clipPath,
       padding: isFree ? 1 : isUltra ? 2 : 1.5,
@@ -296,7 +302,6 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
         : isPro
           ? 'linear-gradient(145deg, rgba(200,168,78,0.5), rgba(200,168,78,0.1), rgba(200,168,78,0.3))'
           : 'linear-gradient(145deg, rgba(200,168,78,0.7), rgba(200,168,78,0.2), rgba(200,168,78,0.5))',
-      boxShadow: glowShadow,
     }}>
       {/* Inner card */}
       <div style={{
@@ -430,6 +435,7 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
         )}
       </div>
     </div>
+    </div>
   );
 }
 
@@ -443,7 +449,6 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
   const catColor = CAT_COLORS[item.category] || '#C8A84E';
   const finalPrice = discount ? Math.round(item.price * (1 - discount / 100)) : item.price;
 
-  // Chipped corner clip-path (top-right + bottom-left beveled)
   const chipSize = 14;
   const clipPath = `polygon(
     0 0,
@@ -455,150 +460,149 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
   )`;
 
   return (
-    /* Outer border layer — the "glow border" */
+    /* Outer glow wrapper — NO clip-path so drop-shadow renders properly */
     <div style={{
-      position: 'relative',
-      clipPath,
-      padding: 1.5,
-      background: `linear-gradient(145deg, ${catColor}60, ${catColor}15, ${catColor}40)`,
-      boxShadow: `0 0 18px ${catColor}20, 0 4px 16px rgba(0,0,0,0.5)`,
+      filter: `drop-shadow(0 0 8px ${catColor}30) drop-shadow(0 2px 8px rgba(0,0,0,0.4))`,
     }}>
-      {/* Inner card */}
+      {/* Border layer — clipped, gradient background acts as border */}
       <div style={{
         clipPath,
-        background: `linear-gradient(160deg, ${catColor}12 0%, #0d0d0f 35%, #111114 100%)`,
-        position: 'relative', overflow: 'hidden',
+        padding: 1.5,
+        background: `linear-gradient(145deg, ${catColor}70, ${catColor}20, ${catColor}50)`,
       }}>
-        {/* ─── Diagonal Shine Streaks ─── */}
+        {/* Inner card */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          pointerEvents: 'none', zIndex: 1, overflow: 'hidden',
+          clipPath,
+          background: `linear-gradient(160deg, ${catColor}10 0%, #0d0d0f 40%, #111114 100%)`,
+          position: 'relative', overflow: 'hidden',
         }}>
-          {/* Main diagonal line */}
+          {/* ─── Diagonal Shine Streaks ─── */}
           <div style={{
-            position: 'absolute', top: '-50%', left: '-10%',
-            width: '40%', height: '200%',
-            background: `linear-gradient(70deg, transparent 42%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.04) 52%, transparent 58%)`,
-            transform: 'rotate(25deg)',
-          }} />
-          {/* Secondary thin line */}
-          <div style={{
-            position: 'absolute', top: '-50%', left: '20%',
-            width: '20%', height: '200%',
-            background: `linear-gradient(70deg, transparent 46%, rgba(255,255,255,0.03) 49%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.03) 51%, transparent 54%)`,
-            transform: 'rotate(25deg)',
-          }} />
-        </div>
-
-        {/* ─── Top edge glow line ─── */}
-        <div style={{
-          position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1,
-          background: `linear-gradient(90deg, transparent, ${catColor}50, transparent)`,
-          zIndex: 2,
-        }} />
-
-        {/* ─── Corner accent dot ─── */}
-        <div style={{
-          position: 'absolute', top: chipSize - 3, right: 0, width: 6, height: 6,
-          background: catColor, borderRadius: '50%', opacity: 0.5,
-          boxShadow: `0 0 6px ${catColor}`,
-          zIndex: 2,
-        }} />
-
-        {/* ─── Discount badge ─── */}
-        {discount && (
-          <div style={{
-            position: 'absolute', top: 8, left: 8, zIndex: 3,
-            padding: '3px 8px', borderRadius: 4,
-            background: '#22C55E', fontSize: 9, fontWeight: 900, color: '#000',
-            boxShadow: '0 0 10px rgba(34,197,94,0.4)',
-            clipPath: `polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px))`,
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            pointerEvents: 'none', zIndex: 1, overflow: 'hidden',
           }}>
-            {discount}% OFF
-          </div>
-        )}
-
-        {/* ─── Category label ─── */}
-        <div style={{
-          padding: '10px 12px 4px', position: 'relative', zIndex: 2,
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{item.name}</div>
-          <div style={{ fontSize: 9, fontWeight: 600, color: catColor, opacity: 0.8, textTransform: 'capitalize' }}>
-            {item.tier} {item.category}
-          </div>
-        </div>
-
-        {/* ─── Preview area ─── */}
-        <div style={{
-          height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          position: 'relative', zIndex: 2,
-        }}>
-          {item.category === 'border' && item.borderConfig && <BorderRing config={item.borderConfig} size={60} />}
-          {item.category === 'theme' && item.themeVars && (
-            <div style={{ width: '80%' }}><ThemeSwatch themeVars={item.themeVars} size="small" /></div>
-          )}
-          {item.category === 'title' && item.titleConfig && <TitleBadge name={item.name} config={item.titleConfig} />}
-          {item.category === 'consumable' && (() => {
-            const I = CONSUMABLE_ICONS[item.id] || Zap;
-            return (
-              <div style={{
-                width: 48, height: 48, borderRadius: 12,
-                background: `radial-gradient(circle, ${catColor}20 0%, transparent 70%)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <I size={24} color={catColor} />
-              </div>
-            );
-          })()}
-          {item.rankRequired && (
             <div style={{
-              position: 'absolute', top: 4, right: 8, padding: '2px 6px',
-              background: 'rgba(0,0,0,0.8)', fontSize: 8, fontWeight: 700, color: '#F59E0B',
-              border: '1px solid rgba(245,158,11,0.2)', borderRadius: 4,
+              position: 'absolute', top: '-50%', left: '-10%',
+              width: '40%', height: '200%',
+              background: 'linear-gradient(70deg, transparent 42%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.04) 52%, transparent 58%)',
+              transform: 'rotate(25deg)',
+            }} />
+            <div style={{
+              position: 'absolute', top: '-50%', left: '25%',
+              width: '20%', height: '200%',
+              background: 'linear-gradient(70deg, transparent 46%, rgba(255,255,255,0.02) 49%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 51%, transparent 54%)',
+              transform: 'rotate(25deg)',
+            }} />
+          </div>
+
+          {/* ─── Top edge glow line ─── */}
+          <div style={{
+            position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1,
+            background: `linear-gradient(90deg, transparent, ${catColor}60, transparent)`,
+            zIndex: 2,
+          }} />
+
+          {/* ─── Corner accent dot ─── */}
+          <div style={{
+            position: 'absolute', top: chipSize - 3, right: 0, width: 5, height: 5,
+            background: catColor, borderRadius: '50%', opacity: 0.6,
+            boxShadow: `0 0 6px ${catColor}`,
+            zIndex: 2,
+          }} />
+
+          {/* ─── Item Name & Category (top section) ─── */}
+          <div style={{
+            padding: discount ? '28px 12px 4px' : '10px 12px 4px',
+            position: 'relative', zIndex: 2,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{item.name}</div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: catColor, opacity: 0.8, textTransform: 'capitalize', marginTop: 1 }}>
+              {item.tier} {item.category}
+            </div>
+          </div>
+
+          {/* ─── Discount badge (positioned after name reservation) ─── */}
+          {discount && (
+            <div style={{
+              position: 'absolute', top: 6, right: 6, zIndex: 3,
+              padding: '2px 7px', borderRadius: 4,
+              background: '#22C55E', fontSize: 9, fontWeight: 900, color: '#000',
+              boxShadow: '0 0 8px rgba(34,197,94,0.35)',
             }}>
-              {item.rankRequired}
+              -{discount}%
             </div>
           )}
-        </div>
 
-        {/* ─── Bottom section with price / equip ─── */}
-        <div style={{ padding: '4px 10px 10px', position: 'relative', zIndex: 2 }}>
-          {owned ? (
-            onEquip ? (
-              <button onClick={onEquip} style={{
-                width: '100%', padding: '7px 0', border: 'none', cursor: 'pointer',
-                background: equipped
-                  ? `linear-gradient(135deg, ${catColor}, ${catColor}CC)`
-                  : `${catColor}15`,
-                color: equipped ? '#000' : catColor,
-                fontSize: 10, fontWeight: 800, letterSpacing: 0.5,
-                clipPath: `polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))`,
-                boxShadow: equipped ? `0 0 12px ${catColor}40` : 'none',
+          {/* ─── Preview area ─── */}
+          <div style={{
+            height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', zIndex: 2,
+          }}>
+            {item.category === 'border' && item.borderConfig && <BorderRing config={item.borderConfig} size={58} />}
+            {item.category === 'theme' && item.themeVars && (
+              <div style={{ width: '80%' }}><ThemeSwatch themeVars={item.themeVars} size="small" /></div>
+            )}
+            {item.category === 'title' && item.titleConfig && <TitleBadge name={item.name} config={item.titleConfig} />}
+            {item.category === 'consumable' && (() => {
+              const I = CONSUMABLE_ICONS[item.id] || Zap;
+              return (
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: `radial-gradient(circle, ${catColor}20 0%, transparent 70%)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <I size={22} color={catColor} />
+                </div>
+              );
+            })()}
+            {item.rankRequired && (
+              <div style={{
+                position: 'absolute', top: 2, right: 8, padding: '2px 6px',
+                background: 'rgba(0,0,0,0.8)', fontSize: 8, fontWeight: 700, color: '#F59E0B',
+                border: '1px solid rgba(245,158,11,0.2)', borderRadius: 4,
               }}>
-                {equipped ? '✓ EQUIPPED' : 'EQUIP'}
-              </button>
+                {item.rankRequired}
+              </div>
+            )}
+          </div>
+
+          {/* ─── Bottom: Price / Equip ─── */}
+          <div style={{ padding: '4px 10px 10px', position: 'relative', zIndex: 2 }}>
+            {owned ? (
+              onEquip ? (
+                <button onClick={onEquip} style={{
+                  width: '100%', padding: '7px 0', border: 'none', cursor: 'pointer',
+                  background: equipped
+                    ? `linear-gradient(135deg, ${catColor}, ${catColor}CC)`
+                    : `${catColor}15`,
+                  color: equipped ? '#000' : catColor,
+                  fontSize: 10, fontWeight: 800, letterSpacing: 0.5,
+                  clipPath: `polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))`,
+                }}>
+                  {equipped ? '✓ EQUIPPED' : 'EQUIP'}
+                </button>
+              ) : (
+                <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#22C55E', padding: '7px 0' }}>✓ Owned</div>
+              )
             ) : (
-              <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#22C55E', padding: '7px 0' }}>✓ Owned</div>
-            )
-          ) : (
-            <button onClick={onBuy} disabled={!canAfford} style={{
-              width: '100%', padding: '7px 0',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-              background: canAfford
-                ? `linear-gradient(135deg, ${catColor}25, ${catColor}0A)`
-                : 'rgba(255,255,255,0.03)',
-              color: canAfford ? '#fff' : 'var(--text-muted)',
-              fontSize: 11, fontWeight: 800, cursor: canAfford ? 'pointer' : 'default',
-              border: canAfford ? `1px solid ${catColor}35` : '1px solid rgba(255,255,255,0.06)',
-              clipPath: `polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))`,
-              boxShadow: canAfford ? `0 0 10px ${catColor}15` : 'none',
-              transition: 'all 0.2s',
-            }}>
-              {discount && <span style={{ textDecoration: 'line-through', opacity: 0.4, fontSize: 9 }}>{item.price}</span>}
-              {canAfford ? <LynxCoin size={13} /> : <Lock size={10} />}
-              {finalPrice}
-            </button>
-          )}
+              <button onClick={onBuy} disabled={!canAfford} style={{
+                width: '100%', padding: '7px 0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                background: canAfford
+                  ? `linear-gradient(135deg, ${catColor}25, ${catColor}0A)`
+                  : 'rgba(255,255,255,0.03)',
+                color: canAfford ? '#fff' : 'var(--text-muted)',
+                fontSize: 11, fontWeight: 800, cursor: canAfford ? 'pointer' : 'default',
+                border: canAfford ? `1px solid ${catColor}35` : '1px solid rgba(255,255,255,0.06)',
+                clipPath: `polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))`,
+                transition: 'all 0.2s',
+              }}>
+                {discount && <span style={{ textDecoration: 'line-through', opacity: 0.4, fontSize: 9 }}>{item.price}</span>}
+                {canAfford ? <LynxCoin size={13} /> : <Lock size={10} />}
+                {finalPrice}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
