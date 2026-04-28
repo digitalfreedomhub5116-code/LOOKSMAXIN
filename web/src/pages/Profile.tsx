@@ -113,7 +113,9 @@ function ProfileLottieBorder({ src, glow }: { src: string; glow: string }) {
       position: 'absolute', inset: -12,
       width: 'calc(100% + 24px)', height: 'calc(100% + 24px)',
       pointerEvents: 'none',
+      mixBlendMode: 'screen',
       filter: `drop-shadow(0 0 8px ${glow})`,
+      borderRadius: '50%', overflow: 'hidden',
     }}>
       <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
     </div>

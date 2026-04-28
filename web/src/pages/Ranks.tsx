@@ -121,7 +121,9 @@ function LottieBorderOverlay({ src, size, glow }: { src: string; size: number; g
     <div style={{
       position: 'absolute', inset: '50%', transform: 'translate(-50%, -50%)',
       width: size, height: size, pointerEvents: 'none',
+      mixBlendMode: 'screen',
       filter: `drop-shadow(0 0 6px ${glow})`,
+      borderRadius: '50%', overflow: 'hidden',
     }}>
       <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
     </div>
