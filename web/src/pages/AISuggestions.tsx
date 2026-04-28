@@ -4,7 +4,7 @@
  * based on the user's latest face scan results.
  */
 import { useState, useEffect } from 'react';
-import { Sparkles, ChevronRight, X, Droplets, ArrowRight, Dumbbell } from 'lucide-react';
+import { Sparkles, ChevronRight, X, ArrowRight, Dumbbell } from 'lucide-react';
 import type { FaceScores } from '../lib/api';
 import { getPersonalizedSuggestions, dismissTip, type Suggestions, type RemedySuggestion, type QuickTip, type PlanSuggestion } from '../data/suggestionsEngine';
 import type { Remedy } from '../data/skinRemedies';
@@ -129,13 +129,19 @@ function RemedyCard({ remedy, reason, expanded, onToggle }: {
     >
       {/* Image */}
       <div style={{ width: '100%', height: 100, overflow: 'hidden', position: 'relative' }}>
+        <img
+          src={remedy.image}
+          alt={remedy.name}
+          loading="lazy"
+          style={{
+            width: '100%', height: '100%', objectFit: 'cover',
+            filter: 'grayscale(100%) brightness(0.5) contrast(1.1)',
+          }}
+        />
         <div style={{
-          width: '100%', height: '100%',
-          background: `linear-gradient(135deg, ${remedy.color}22 0%, ${remedy.color}08 100%)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Droplets size={32} color={remedy.color} style={{ opacity: 0.6 }} />
-        </div>
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.7) 100%)',
+        }} />
         {/* Frequency badge */}
         <div style={{
           position: 'absolute', top: 8, right: 8,
