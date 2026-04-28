@@ -1,5 +1,6 @@
 /**
  * Leaderboard — Real-time streak leaderboard via Supabase REST API.
+ * Now includes equipped_border so all users can see each other's borders.
  */
 import { supabase } from './api';
 
@@ -7,13 +8,14 @@ const SUPABASE_URL = 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_g2L0rujZkZS_mpbC3BhSQA_-Kns1bc0';
 const TABLE = 'leaderboard';
 const CACHE_TTL_MS = 60_000;
-const LS_LAST_PUSHED_STREAK = 'lynx_lb_last_streak';
+const LS_LAST_PUSHED = 'lynx_lb_last_push';
 
 export interface LeaderboardEntry {
   user_id: string;
   display_name: string;
   avatar_url: string | null;
   streak: number;
+  equipped_border: string | null;
   updated_at: string;
 }
 
@@ -21,16 +23,20 @@ let cachedEntries: LeaderboardEntry[] = [];
 let cacheTimestamp = 0;
 
 /**
- * Push the current user's streak to the leaderboard.
+ * Push the current user's streak + equipped border to the leaderboard.
+ * Only writes when streak or border has changed since last push.
  */
 export async function pushStreakToLeaderboard(
   userId: string,
   streak: number,
   displayName: string,
   avatarUrl?: string | null,
+  equippedBorder?: string | null,
 ): Promise<void> {
-  const lastPushed = localStorage.getItem(LS_LAST_PUSHED_STREAK);
-  if (lastPushed === String(streak)) return;
+  // Build a fingerprint to skip redundant pushes
+  const fingerprint = `${streak}|${equippedBorder || ''}`;
+  const lastPushed = localStorage.getItem(LS_LAST_PUSHED);
+  if (lastPushed === fingerprint) return;
 
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -50,6 +56,7 @@ export async function pushStreakToLeaderboard(
         display_name: displayName || 'Player',
         avatar_url: avatarUrl || null,
         streak,
+        equipped_border: equippedBorder || null,
         updated_at: new Date().toISOString(),
       }),
     });
@@ -59,9 +66,9 @@ export async function pushStreakToLeaderboard(
       return;
     }
 
-    localStorage.setItem(LS_LAST_PUSHED_STREAK, String(streak));
+    localStorage.setItem(LS_LAST_PUSHED, fingerprint);
     cacheTimestamp = 0;
-    console.log('[LB] ✅ Pushed streak:', streak);
+    console.log('[LB] ✅ Pushed streak:', streak, 'border:', equippedBorder || 'none');
   } catch (err) {
     console.warn('[LB] Push error:', err);
   }
@@ -69,7 +76,7 @@ export async function pushStreakToLeaderboard(
 
 /**
  * Fetch the top 50 players by streak.
- * Uses anon key only (no auth needed for SELECT — public RLS policy).
+ * Includes equipped_border for rendering other users' borders.
  */
 export async function fetchLeaderboard(forceRefresh = false): Promise<LeaderboardEntry[]> {
   console.log('[LB] fetchLeaderboard called, force:', forceRefresh);
@@ -87,7 +94,7 @@ export async function fetchLeaderboard(forceRefresh = false): Promise<Leaderboar
   }, 8000);
 
   try {
-    const url = `${SUPABASE_URL}/rest/v1/${TABLE}?select=user_id,display_name,avatar_url,streak,updated_at&order=streak.desc&limit=50`;
+    const url = `${SUPABASE_URL}/rest/v1/${TABLE}?select=user_id,display_name,avatar_url,streak,equipped_border,updated_at&order=streak.desc&limit=50`;
     console.log('[LB] Fetching:', url);
 
     const res = await fetch(url, {

@@ -99,13 +99,15 @@ export default function App() {
             retryPendingUploads().catch(() => {});
             claimDailyLogin();
             recordStreakActivity();
-            // Push streak to leaderboard
+            // Push streak + equipped border to leaderboard
             const streak = getStreak();
+            const equipped = getEquipped();
             pushStreakToLeaderboard(
               session.user.id,
               streak.current,
               session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Player',
               session.user.user_metadata?.avatar_url,
+              equipped.border,
             ).catch(() => {});
           } catch (e) {
             console.warn('[Auth] Cloud pull failed:', e);

@@ -9,8 +9,9 @@ import {
   Infinity, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { ALL_STORE_ITEMS, getItemsByCategory, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
-import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyThemeVars, DEV_UNLOCK_ALL, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
+import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyThemeVars, DEV_UNLOCK_ALL, getStreak, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
 import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/StoreComponents';
+import { pushStreakToLeaderboard } from '../lib/leaderboard';
 
 /* ═══ Category accent colors ═══ */
 const CAT_COLORS: Record<string, string> = {
@@ -153,6 +154,20 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
     if (slot === 'theme') {
       const themeItem = newId ? ALL_STORE_ITEMS.find(i => i.id === newId) : null;
       applyThemeVars(themeItem?.themeVars || null);
+    }
+    // If equipping a border, push to leaderboard so others see it
+    if (slot === 'border') {
+      localStorage.removeItem('lynx_lb_last_push'); // Force re-push
+      const streak = getStreak();
+      const userId = user?.id;
+      if (userId) {
+        pushStreakToLeaderboard(
+          userId, streak.current,
+          user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Player',
+          user?.user_metadata?.avatar_url,
+          newId,
+        ).catch(() => {});
+      }
     }
   };
 

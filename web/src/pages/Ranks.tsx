@@ -5,7 +5,6 @@
 import { useState, useEffect } from 'react';
 import { Flame, RefreshCw, User } from 'lucide-react';
 import { fetchLeaderboard, getUserRank, type LeaderboardEntry } from '../lib/leaderboard';
-import { getEquipped } from '../lib/economy';
 import { getItemById, type BorderConfig } from '../data/storeItems';
 
 function AvatarCircle({ url, size = 48, rank, borderCfg }: { url?: string | null; size?: number; rank?: number; borderCfg?: BorderConfig | null }) {
@@ -73,10 +72,12 @@ export default function Ranks({ userId }: { userId?: string }) {
 
   const myRank = userId ? getUserRank(userId) : 0;
 
-  // Get the current user's equipped border config
-  const equipped = getEquipped();
-  const borderItem = equipped.border ? getItemById(equipped.border) : null;
-  const myBorderCfg = borderItem?.borderConfig || null;
+  // Look up any user's border config from their equipped_border ID
+  const getBorderCfg = (borderId: string | null | undefined) => {
+    if (!borderId) return null;
+    const item = getItemById(borderId);
+    return item?.borderConfig || null;
+  };
 
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
@@ -155,7 +156,7 @@ export default function Ranks({ userId }: { userId?: string }) {
 
                     {/* Avatar with wreath effect */}
                     <div style={{ position: 'relative' }}>
-                      <AvatarCircle url={entry.avatar_url} size={avatarSize} rank={rank} borderCfg={userId && entry.user_id === userId ? myBorderCfg : null} />
+                      <AvatarCircle url={entry.avatar_url} size={avatarSize} rank={rank} borderCfg={getBorderCfg(entry.equipped_border)} />
                       {/* Glow behind avatar for #1 */}
                       {isFirst && (
                         <div style={{
@@ -212,7 +213,7 @@ export default function Ranks({ userId }: { userId?: string }) {
                   </div>
 
                   {/* Avatar */}
-                  <AvatarCircle url={entry.avatar_url} size={40} borderCfg={isMe ? myBorderCfg : null} />
+                  <AvatarCircle url={entry.avatar_url} size={40} borderCfg={getBorderCfg(entry.equipped_border)} />
 
                   {/* Name */}
                   <div style={{ flex: 1, overflow: 'hidden' }}>
