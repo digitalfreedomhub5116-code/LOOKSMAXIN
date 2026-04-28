@@ -58,46 +58,12 @@ export interface TitleConfig {
 
 /* ═══ BORDERS ═══ */
 const BORDERS: StoreItem[] = [
-  // Basic (50 LC)
-  {
-    id: 'border-gold', name: 'Clean Gold', category: 'border', tier: 'basic', price: 50,
-    description: 'A sleek gold ring — understated elegance.',
-    borderConfig: { colors: ['#C8A84E'], strokeWidth: 3, animated: false },
-  },
-  {
-    id: 'border-silver', name: 'Subtle Silver', category: 'border', tier: 'basic', price: 50,
-    description: 'Classic silver finish for a clean look.',
-    borderConfig: { colors: ['#B0B0B0', '#E0E0E0'], strokeWidth: 3, animated: false },
-  },
-  {
-    id: 'border-bronze', name: 'Bronze Ring', category: 'border', tier: 'basic', price: 50,
-    description: 'Warm bronze tones — timeless and bold.',
-    borderConfig: { colors: ['#CD7F32', '#8B4513'], strokeWidth: 3, animated: false },
-  },
-
-  // Elemental (200 LC)
+  // SVG Borders
   {
     id: 'border-inferno', name: 'Inferno', category: 'border', tier: 'elemental', price: 200,
     description: 'Blazing fire ring with animated glow.',
     borderConfig: { colors: ['#FF4500', '#FF8C00'], strokeWidth: 3.5, animated: true, animationType: 'pulse', glowColor: 'rgba(255,69,0,0.3)', glowIntensity: 0.6 },
   },
-  {
-    id: 'border-frost', name: 'Frost', category: 'border', tier: 'elemental', price: 200,
-    description: 'Ice-cold shimmer with frozen highlights.',
-    borderConfig: { colors: ['#00BFFF', '#E0FFFF'], strokeWidth: 3.5, animated: true, animationType: 'shimmer', glowColor: 'rgba(173,216,230,0.4)', glowIntensity: 0.5 },
-  },
-  {
-    id: 'border-lightning', name: 'Lightning', category: 'border', tier: 'elemental', price: 200,
-    description: 'Electric energy crackling around your avatar.',
-    borderConfig: { colors: ['#FFD700', '#FFA500'], strokeWidth: 3.5, animated: true, animationType: 'dash', glowColor: 'rgba(255,215,0,0.4)', glowIntensity: 0.7 },
-  },
-  {
-    id: 'border-shadow', name: 'Shadow', category: 'border', tier: 'elemental', price: 200,
-    description: 'Dark aura emanating void energy.',
-    borderConfig: { colors: ['#4B0082', '#1a1a2e'], strokeWidth: 3.5, animated: true, animationType: 'pulse', glowColor: 'rgba(75,0,130,0.5)', glowIntensity: 0.5 },
-  },
-
-  // Rank-Gated (300 LC + rank)
   {
     id: 'border-diamond', name: 'Diamond Edge', category: 'border', tier: 'rank-gated', price: 300,
     description: 'Faceted diamond ring — for the above average.',
@@ -105,30 +71,17 @@ const BORDERS: StoreItem[] = [
     rankRequired: 'Above Average',
   },
   {
-    id: 'border-emerald', name: 'Emerald Pulse', category: 'border', tier: 'rank-gated', price: 300,
-    description: 'Living green pulse — for true Chads.',
-    borderConfig: { colors: ['#10B981', '#059669'], strokeWidth: 3.5, animated: true, animationType: 'pulse', glowColor: 'rgba(16,185,129,0.3)', glowIntensity: 0.5 },
-    rankRequired: 'Chad',
-  },
-  {
-    id: 'border-ruby', name: 'Ruby Halo', category: 'border', tier: 'rank-gated', price: 300,
-    description: 'Deep crimson halo — Gigachad exclusive.',
-    borderConfig: { colors: ['#DC2626', '#991B1B'], strokeWidth: 4, animated: true, animationType: 'rotate', glowColor: 'rgba(220,38,38,0.4)', glowIntensity: 0.6 },
-    rankRequired: 'Gigachad',
+    id: 'border-darkmatter', name: 'Dark Matter', category: 'border', tier: 'premium', price: 500,
+    description: 'Void black core with orbiting gold particles.',
+    borderConfig: { colors: ['#000000', '#C8A84E'], strokeWidth: 4, animated: true, animationType: 'dash', glowColor: 'rgba(200,168,78,0.4)', glowIntensity: 0.7 },
   },
 
-  // Image-Based Elemental (350 LC)
+  // Image-Based Borders
   {
     id: 'border-ice-img', name: 'Ice Crown', category: 'border', tier: 'elemental', price: 350,
     description: 'Frozen crystalline frost wrapping your avatar.',
     imageBorder: '/borders/ice-transparent.png',
     borderConfig: { colors: ['#00BFFF', '#E0FFFF'], strokeWidth: 3, animated: false, glowColor: 'rgba(0,191,255,0.4)', glowIntensity: 0.6 },
-  },
-  {
-    id: 'border-lightning-img', name: 'Lightning Arc', category: 'border', tier: 'elemental', price: 350,
-    description: 'Electric bolts crackling around your portrait.',
-    imageBorder: '/borders/lightning-transparent.png',
-    borderConfig: { colors: ['#7C3AED', '#3B82F6'], strokeWidth: 3, animated: false, glowColor: 'rgba(124,58,237,0.4)', glowIntensity: 0.7 },
   },
   {
     id: 'border-dragon-img', name: 'Dragon Coil', category: 'border', tier: 'legendary', price: 500,
@@ -150,7 +103,7 @@ const BORDERS: StoreItem[] = [
     borderConfig: { colors: ['#C084FC', '#A855F7'], strokeWidth: 3, animated: false, glowColor: 'rgba(192,132,252,0.4)', glowIntensity: 0.7 },
   },
 
-  // CSS Aura Glow Borders (pure CSS — no PNG needed)
+  // CSS Aura Glow Borders
   {
     id: 'border-aura-void', name: 'Void Aura', category: 'border', tier: 'legendary', price: 600,
     description: 'A swirling void of purple and blue energy radiating from your profile.',
@@ -169,18 +122,9 @@ const BORDERS: StoreItem[] = [
     auraConfig: { colors: ['#22C55E', '#10B981', '#84CC16', '#34D399'], blur: 10, spread: 3, animated: true, pulseSpeed: 4 },
     borderConfig: { colors: ['#22C55E', '#10B981'], strokeWidth: 3, animated: false, glowColor: 'rgba(34,197,94,0.5)', glowIntensity: 0.7 },
   },
-  // Premium (500 LC)
-  {
-    id: 'border-holo', name: 'Holographic', category: 'border', tier: 'premium', price: 500,
-    description: 'Rainbow spectrum cycling in real-time.',
-    borderConfig: { colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF'], strokeWidth: 4, animated: true, animationType: 'hue-rotate', glowColor: 'rgba(200,168,78,0.3)', glowIntensity: 0.5 },
-  },
-  {
-    id: 'border-darkmatter', name: 'Dark Matter', category: 'border', tier: 'premium', price: 500,
-    description: 'Void black core with orbiting gold particles.',
-    borderConfig: { colors: ['#000000', '#C8A84E'], strokeWidth: 4, animated: true, animationType: 'dash', glowColor: 'rgba(200,168,78,0.4)', glowIntensity: 0.7 },
-  },
 ];
+
+
 
 /* ═══ THEMES ═══ */
 const THEMES: StoreItem[] = [
