@@ -18,6 +18,8 @@ export interface StoreItem {
   themeVars?: Record<string, string>;
   /** For borders: SVG config */
   borderConfig?: BorderConfig;
+  /** For borders: image path (used with mix-blend-mode: screen) */
+  imageBorder?: string;
   /** For titles: display styling */
   titleConfig?: TitleConfig;
   /** For consumables: effect */
@@ -103,6 +105,26 @@ const BORDERS: StoreItem[] = [
     description: 'Deep crimson halo — Gigachad exclusive.',
     borderConfig: { colors: ['#DC2626', '#991B1B'], strokeWidth: 4, animated: true, animationType: 'rotate', glowColor: 'rgba(220,38,38,0.4)', glowIntensity: 0.6 },
     rankRequired: 'Gigachad',
+  },
+
+  // Image-Based Elemental (350 LC)
+  {
+    id: 'border-fire-img', name: 'Fire Ring', category: 'border', tier: 'elemental', price: 350,
+    description: 'Blazing flames engulfing your profile — pure fire.',
+    imageBorder: '/borders/fire.png',
+    borderConfig: { colors: ['#FF4500', '#FF8C00'], strokeWidth: 3, animated: false, glowColor: 'rgba(255,69,0,0.4)', glowIntensity: 0.7 },
+  },
+  {
+    id: 'border-ice-img', name: 'Ice Crown', category: 'border', tier: 'elemental', price: 350,
+    description: 'Frozen crystalline frost wrapping your avatar.',
+    imageBorder: '/borders/ice.png',
+    borderConfig: { colors: ['#00BFFF', '#E0FFFF'], strokeWidth: 3, animated: false, glowColor: 'rgba(0,191,255,0.4)', glowIntensity: 0.6 },
+  },
+  {
+    id: 'border-lightning-img', name: 'Lightning Arc', category: 'border', tier: 'elemental', price: 350,
+    description: 'Electric bolts crackling around your portrait.',
+    imageBorder: '/borders/lightning.png',
+    borderConfig: { colors: ['#7C3AED', '#3B82F6'], strokeWidth: 3, animated: false, glowColor: 'rgba(124,58,237,0.4)', glowIntensity: 0.7 },
   },
 
   // Premium (500 LC)
