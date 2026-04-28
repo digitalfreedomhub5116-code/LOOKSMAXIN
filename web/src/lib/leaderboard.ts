@@ -130,18 +130,27 @@ export function getUserRank(userId: string): number {
 
 /**
  * Self-contained border sync — call from Store when border changes.
- * Gets auth session, streak, and pushes everything in one call.
+ * Bypasses supabase.auth.getSession() (which hangs) — reads token directly.
  */
 export async function syncBorderToLeaderboard(borderId: string | null): Promise<void> {
+  console.log('[LB] syncBorderToLeaderboard called with:', borderId);
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) { console.warn('[LB] No session for border sync'); return; }
+    // Read auth token directly from localStorage (supabase JS client hangs)
+    const storageKey = `sb-jtcqyxrbvxzhzzgrmsom-auth-token`;
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) { console.warn('[LB] No auth token in localStorage'); return; }
 
-    const u = session.user;
-    const token = session.access_token;
+    const parsed = JSON.parse(raw);
+    const token = parsed?.access_token;
+    const userId = parsed?.user?.id;
+    if (!token || !userId) { console.warn('[LB] Token/userId missing from session data'); return; }
 
-    // Direct PATCH to update ONLY the border column (fastest, most reliable)
-    const patchUrl = `${SUPABASE_URL}/rest/v1/${TABLE}?user_id=eq.${u.id}`;
+    console.log('[LB] Got token for user:', userId.slice(0, 8) + '...');
+
+    // Direct PATCH to update ONLY the border column
+    const patchUrl = `${SUPABASE_URL}/rest/v1/${TABLE}?user_id=eq.${userId}`;
+    console.log('[LB] PATCHing:', patchUrl);
+
     const res = await fetch(patchUrl, {
       method: 'PATCH',
       headers: {
@@ -156,17 +165,19 @@ export async function syncBorderToLeaderboard(borderId: string | null): Promise<
       }),
     });
 
+    console.log('[LB] PATCH response:', res.status);
+
     if (!res.ok) {
       const errText = await res.text();
-      console.warn('[LB] Border PATCH fail:', res.status, errText);
+      console.error('[LB] Border PATCH fail:', res.status, errText);
       return;
     }
 
-    // Update cache fingerprint
+    // Invalidate cache
     localStorage.removeItem(LS_LAST_PUSHED);
     cacheTimestamp = 0;
     console.log('[LB] ✅ Border synced:', borderId || 'none');
   } catch (err) {
-    console.warn('[LB] Border sync error:', err);
+    console.error('[LB] Border sync error:', err);
   }
 }
