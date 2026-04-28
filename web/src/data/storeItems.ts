@@ -177,6 +177,33 @@ const THEMES: StoreItem[] = [
     themeVars: { '--primary': '#94A3B8', '--primary-rgb': '148,163,184', '--surface': '#14161a', '--bg': '#0a0a0e', '--border': 'rgba(148,163,184,0.15)' },
   },
 
+  // Pale / Muted (100 LC)
+  {
+    id: 'theme-dusty-rose', name: 'Dusty Rose', category: 'theme', tier: 'color', price: 100,
+    description: 'Soft muted pink — gentle and elegant.',
+    themeVars: { '--primary': '#C9A0A0', '--primary-rgb': '201,160,160', '--surface': '#1a1214', '--bg': '#0e0a0b', '--border': 'rgba(201,160,160,0.12)' },
+  },
+  {
+    id: 'theme-sage', name: 'Sage Green', category: 'theme', tier: 'color', price: 100,
+    description: 'Earthy pale green — calm and grounded.',
+    themeVars: { '--primary': '#9CB8A0', '--primary-rgb': '156,184,160', '--surface': '#121a14', '--bg': '#0a0e0b', '--border': 'rgba(156,184,160,0.12)' },
+  },
+  {
+    id: 'theme-lavender', name: 'Lavender Mist', category: 'theme', tier: 'color', price: 100,
+    description: 'Soft pale purple — dreamy and soothing.',
+    themeVars: { '--primary': '#B0A0C8', '--primary-rgb': '176,160,200', '--surface': '#14121a', '--bg': '#0b0a0e', '--border': 'rgba(176,160,200,0.12)' },
+  },
+  {
+    id: 'theme-powder-blue', name: 'Powder Blue', category: 'theme', tier: 'color', price: 100,
+    description: 'Light muted blue — cool and peaceful.',
+    themeVars: { '--primary': '#9EBAD4', '--primary-rgb': '158,186,212', '--surface': '#12161a', '--bg': '#0a0c0e', '--border': 'rgba(158,186,212,0.12)' },
+  },
+  {
+    id: 'theme-sand', name: 'Desert Sand', category: 'theme', tier: 'color', price: 100,
+    description: 'Warm beige-tan — subtle and refined.',
+    themeVars: { '--primary': '#C4B49A', '--primary-rgb': '196,180,154', '--surface': '#1a1812', '--bg': '#0e0c0a', '--border': 'rgba(196,180,154,0.12)' },
+  },
+
   // Special (200 LC)
   {
     id: 'theme-carbon', name: 'Carbon Fiber', category: 'theme', tier: 'special', price: 200,

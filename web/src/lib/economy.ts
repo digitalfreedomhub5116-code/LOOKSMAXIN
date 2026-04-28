@@ -199,20 +199,29 @@ export function equipItem(slot: keyof EquippedItems, itemId: string | null): Eco
 
 /**
  * Default theme CSS variables (gold).
- * Used to reset when no theme is equipped.
  */
 export const DEFAULT_THEME_VARS: Record<string, string> = {
   '--primary': '#C8A84E', '--primary-rgb': '200,168,78',
   '--surface': '#12141a', '--bg': '#0a0a0f',
   '--border': 'rgba(200,168,78,0.08)',
+  '--accent-gradient': 'linear-gradient(135deg, #C8A84E, #D4B04A)',
 };
 
 /**
  * Apply theme CSS variables to document root.
- * Pass the theme's themeVars, or null/undefined to reset to default gold.
+ * Auto-derives --primary-glow, --primary-muted, --secondary, --accent,
+ * and a fallback --accent-gradient from the primary color.
  */
 export function applyThemeVars(themeVars?: Record<string, string> | null): void {
-  const vars = themeVars || DEFAULT_THEME_VARS;
+  const vars = { ...(themeVars || DEFAULT_THEME_VARS) };
+  const rgb = vars['--primary-rgb'] || '200,168,78';
+  // Auto-derive related vars if not explicitly set
+  if (!vars['--primary-glow']) vars['--primary-glow'] = `rgba(${rgb},0.25)`;
+  if (!vars['--primary-muted']) vars['--primary-muted'] = `rgba(${rgb},0.12)`;
+  if (!vars['--secondary']) vars['--secondary'] = vars['--primary'];
+  if (!vars['--accent']) vars['--accent'] = vars['--primary'];
+  // If no gradient defined, create a solid-to-solid from primary
+  if (!vars['--accent-gradient']) vars['--accent-gradient'] = `linear-gradient(135deg, ${vars['--primary']}, ${vars['--primary']})`;
   Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
 }
 
