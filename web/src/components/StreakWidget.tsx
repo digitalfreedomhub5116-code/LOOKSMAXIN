@@ -9,8 +9,8 @@ import { getStreak, type StreakData } from '../lib/economy';
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-// Fire Lottie animation URL — loaded at runtime
-const FIRE_LOTTIE_URL = 'https://assets2.lottiefiles.com/packages/lf20_5nwguyhg.json';
+// Fire Lottie animation — local file in /public
+const FIRE_LOTTIE_URL = '/flame.json';
 
 /* ═══ Header Streak Badge (for top-right of app) ═══ */
 export function StreakBadge() {
