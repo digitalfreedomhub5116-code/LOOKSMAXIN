@@ -191,7 +191,7 @@ function RemedyCard({ r, isSaved, onSave, onView }: {
 }
 
 /* ─── Detail Modal ─── */
-function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
+export function RemedyDetail({ remedy: r, isSaved, onSave, onClose }: {
   remedy: Remedy; isSaved: boolean;
   onSave: (e: React.MouseEvent) => void; onClose: () => void;
 }) {

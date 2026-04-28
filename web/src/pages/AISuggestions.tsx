@@ -8,6 +8,8 @@ import { Sparkles, ChevronRight, X, ArrowRight, Dumbbell, Droplets, Droplet, Sun
 import type { FaceScores } from '../lib/api';
 import { getPersonalizedSuggestions, dismissTip, type Suggestions, type RemedySuggestion, type QuickTip, type PlanSuggestion } from '../data/suggestionsEngine';
 import type { Remedy } from '../data/skinRemedies';
+import { RemedyDetail } from './SkinRemedies';
+import { pushField } from '../lib/sync';
 
 interface Props {
   scores: FaceScores;
@@ -18,7 +20,10 @@ interface Props {
 export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Props) {
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(new Set());
-  const [expandedRemedy, setExpandedRemedy] = useState<string | null>(null);
+  const [selectedRemedy, setSelectedRemedy] = useState<Remedy | null>(null);
+  const [saved, setSaved] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('lynx_saved_remedies') || '[]')); } catch { return new Set(); }
+  });
 
   useEffect(() => {
     const s = getPersonalizedSuggestions(scores);
@@ -36,6 +41,18 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
   const handleDismissTip = (id: string) => {
     dismissTip(id);
     setDismissedTips(prev => new Set([...prev, id]));
+  };
+
+  const toggleSave = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSaved(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      const arr = [...next];
+      localStorage.setItem('lynx_saved_remedies', JSON.stringify(arr));
+      pushField('saved_remedies', arr).catch(() => {});
+      return next;
+    });
   };
 
   return (
@@ -68,8 +85,7 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
                 key={remedy.id}
                 remedy={remedy}
                 reason={reason}
-                expanded={expandedRemedy === remedy.id}
-                onToggle={() => setExpandedRemedy(expandedRemedy === remedy.id ? null : remedy.id)}
+                onOpen={() => setSelectedRemedy(remedy)}
               />
             ))}
           </div>
@@ -103,25 +119,34 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
           </div>
         </div>
       )}
+
+      {/* ═══ Full-screen Remedy Detail Modal ═══ */}
+      {selectedRemedy && (
+        <RemedyDetail
+          remedy={selectedRemedy}
+          isSaved={saved.has(selectedRemedy.id)}
+          onSave={(e) => toggleSave(selectedRemedy.id, e)}
+          onClose={() => setSelectedRemedy(null)}
+        />
+      )}
     </div>
   );
 }
 
-/* ═══ Remedy Card ═══ */
-function RemedyCard({ remedy, reason, expanded, onToggle }: {
-  remedy: Remedy; reason: string; expanded: boolean; onToggle: () => void;
+/* ═══ Remedy Card (compact — opens full detail on click) ═══ */
+function RemedyCard({ remedy, reason, onOpen }: {
+  remedy: Remedy; reason: string; onOpen: () => void;
 }) {
   return (
     <div
-      onClick={onToggle}
+      onClick={onOpen}
       style={{
-        minWidth: expanded ? 260 : 160, maxWidth: expanded ? 280 : 180,
+        minWidth: 160, maxWidth: 180,
         flexShrink: 0, borderRadius: 16, overflow: 'hidden',
         background: 'var(--surface)',
-        border: expanded ? '1.5px solid rgba(200,168,78,0.3)' : '1px solid var(--border)',
+        border: '1px solid var(--border)',
         cursor: 'pointer', transition: 'all 0.3s ease',
         scrollSnapAlign: 'start',
-        boxShadow: expanded ? '0 0 20px rgba(200,168,78,0.1)' : 'none',
       }}
     >
       {/* Image */}
@@ -183,49 +208,6 @@ function RemedyCard({ remedy, reason, expanded, onToggle }: {
             </span>
           ))}
         </div>
-
-        {/* Expanded Details */}
-        {expanded && (
-          <div style={{
-            marginTop: 10, paddingTop: 10,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
-            animation: 'fadeIn 0.3s ease',
-          }}>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
-              {remedy.summary}
-            </div>
-
-            {/* Ingredients preview */}
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', marginBottom: 4, letterSpacing: 0.5 }}>
-              INGREDIENTS
-            </div>
-            {remedy.ingredients.slice(0, 3).map((ing, i) => (
-              <div key={i} style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2, paddingLeft: 8 }}>
-                • {ing}
-              </div>
-            ))}
-            {remedy.ingredients.length > 3 && (
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', paddingLeft: 8, fontStyle: 'italic' }}>
-                +{remedy.ingredients.length - 3} more
-              </div>
-            )}
-
-            {/* Steps preview */}
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', marginBottom: 4, marginTop: 8, letterSpacing: 0.5 }}>
-              HOW TO USE
-            </div>
-            {remedy.steps.slice(0, 3).map((step, i) => (
-              <div key={i} style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3, paddingLeft: 8, lineHeight: 1.4 }}>
-                {i + 1}. {step}
-              </div>
-            ))}
-            {remedy.steps.length > 3 && (
-              <div style={{ fontSize: 10, color: 'var(--primary)', paddingLeft: 8, fontWeight: 600, marginTop: 4 }}>
-                See full recipe in Skin Rituals ↓
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
