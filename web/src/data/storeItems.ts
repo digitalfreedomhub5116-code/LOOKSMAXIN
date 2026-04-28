@@ -109,12 +109,6 @@ const BORDERS: StoreItem[] = [
 
   // Image-Based Elemental (350 LC)
   {
-    id: 'border-fire-img', name: 'Fire Ring', category: 'border', tier: 'elemental', price: 350,
-    description: 'Blazing flames engulfing your profile — pure fire.',
-    imageBorder: '/borders/fire-transparent.png',
-    borderConfig: { colors: ['#FF4500', '#FF8C00'], strokeWidth: 3, animated: false, glowColor: 'rgba(255,69,0,0.4)', glowIntensity: 0.7 },
-  },
-  {
     id: 'border-ice-img', name: 'Ice Crown', category: 'border', tier: 'elemental', price: 350,
     description: 'Frozen crystalline frost wrapping your avatar.',
     imageBorder: '/borders/ice-transparent.png',
@@ -125,6 +119,24 @@ const BORDERS: StoreItem[] = [
     description: 'Electric bolts crackling around your portrait.',
     imageBorder: '/borders/lightning-transparent.png',
     borderConfig: { colors: ['#7C3AED', '#3B82F6'], strokeWidth: 3, animated: false, glowColor: 'rgba(124,58,237,0.4)', glowIntensity: 0.7 },
+  },
+  {
+    id: 'border-dragon-img', name: 'Dragon Coil', category: 'border', tier: 'legendary', price: 500,
+    description: 'A mythic water dragon coils around your profile.',
+    imageBorder: '/borders/dragon.png',
+    borderConfig: { colors: ['#60A5FA', '#93C5FD'], strokeWidth: 3, animated: false, glowColor: 'rgba(96,165,250,0.4)', glowIntensity: 0.7 },
+  },
+  {
+    id: 'border-starcrown-img', name: 'Star Crown', category: 'border', tier: 'premium', price: 400,
+    description: 'Celestial stars orbiting your portrait like a crown.',
+    imageBorder: '/borders/rotate.png',
+    borderConfig: { colors: ['#E2E8F0', '#94A3B8'], strokeWidth: 3, animated: false, glowColor: 'rgba(226,232,240,0.4)', glowIntensity: 0.5 },
+  },
+  {
+    id: 'border-shadowthrone-img', name: 'Shadow Throne', category: 'border', tier: 'legendary', price: 500,
+    description: 'Ornate dark-magic thorns weaving a royal frame.',
+    imageBorder: '/borders/purple.png',
+    borderConfig: { colors: ['#C084FC', '#A855F7'], strokeWidth: 3, animated: false, glowColor: 'rgba(192,132,252,0.4)', glowIntensity: 0.7 },
   },
 
   // Premium (500 LC)
