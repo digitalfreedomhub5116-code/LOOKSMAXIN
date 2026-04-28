@@ -113,7 +113,17 @@ export default function Ranks({ userId }: { userId?: string }) {
     setRefreshing(false);
   };
 
-  useEffect(() => { load(); }, []);
+  // Force-refresh on every mount (each tab switch remounts the component)
+  useEffect(() => { load(true); }, []);
+
+  // Auto-refresh when tab becomes visible (switching back to Ranks)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load(true);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   // Instant refresh when border changes in Store
   useEffect(() => {
