@@ -133,7 +133,6 @@ export function getUserRank(userId: string): number {
  * Bypasses supabase.auth.getSession() (which hangs) — reads token directly.
  */
 export async function syncBorderToLeaderboard(borderId: string | null): Promise<void> {
-  console.log('[LB] syncBorderToLeaderboard called with:', borderId);
   try {
     // Read auth token directly from localStorage (supabase JS client hangs)
     const storageKey = `sb-jtcqyxrbvxzhzzgrmsom-auth-token`;
@@ -145,11 +144,8 @@ export async function syncBorderToLeaderboard(borderId: string | null): Promise<
     const userId = parsed?.user?.id;
     if (!token || !userId) { console.warn('[LB] Token/userId missing from session data'); return; }
 
-    console.log('[LB] Got token for user:', userId.slice(0, 8) + '...');
-
     // Direct PATCH to update ONLY the border column
     const patchUrl = `${SUPABASE_URL}/rest/v1/${TABLE}?user_id=eq.${userId}`;
-    console.log('[LB] PATCHing:', patchUrl);
 
     const res = await fetch(patchUrl, {
       method: 'PATCH',
@@ -165,7 +161,7 @@ export async function syncBorderToLeaderboard(borderId: string | null): Promise<
       }),
     });
 
-    console.log('[LB] PATCH response:', res.status);
+
 
     if (!res.ok) {
       const errText = await res.text();

@@ -147,22 +147,17 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
   };
 
   const handleEquip = (slot: keyof EquippedItems, itemId: string) => {
-    console.log('[STORE] handleEquip called:', slot, itemId);
     const newId = economy.equipped[slot] === itemId ? null : itemId;
     const newEco = equipItem(slot, newId);
     setEconomy(newEco);
-    // If equipping a theme, apply it instantly
     if (slot === 'theme') {
       const themeItem = newId ? ALL_STORE_ITEMS.find(i => i.id === newId) : null;
       applyThemeVars(themeItem?.themeVars || null);
     }
-    // If equipping a border, sync to leaderboard instantly
     if (slot === 'border') {
-      console.log('[STORE] Border equip detected, syncing:', newId);
       syncBorderToLeaderboard(newId).then(() => {
-        console.log('[STORE] Border sync complete, dispatching refresh');
         window.dispatchEvent(new Event('leaderboard:refresh'));
-      }).catch(e => console.error('[STORE] Border sync FAILED:', e));
+      }).catch(() => {});
     }
   };
 
