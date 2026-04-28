@@ -207,22 +207,27 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
               </div>
             </div>
 
-            {/* Billing Toggle */}
+            {/* Billing Toggle — sticky on scroll */}
             <div style={{
-              display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden',
-              border: '1px solid rgba(200,168,78,0.15)', background: 'rgba(0,0,0,0.3)', padding: 3,
+              position: 'sticky', top: 0, zIndex: 10,
+              background: '#0a0a0f', paddingTop: 8, paddingBottom: 12, marginLeft: -20, marginRight: -20, paddingLeft: 20, paddingRight: 20,
             }}>
-              {(['weekly', 'monthly', 'yearly'] as BillingCycle[]).map(b => (
-                <button key={b} onClick={() => setBilling(b)} style={{
-                  flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer', borderRadius: 8,
-                  background: billing === b ? 'rgba(200,168,78,0.2)' : 'transparent',
-                  color: billing === b ? '#fff' : 'var(--text-muted)',
-                  fontSize: 11, fontWeight: 700, letterSpacing: 0.3, transition: 'all 0.2s', textTransform: 'capitalize',
-                }}>
-                  {b}
-                  {b === 'yearly' && <span style={{ display: 'block', fontSize: 8, color: '#22C55E', fontWeight: 800, marginTop: 1 }}>SAVE 60%</span>}
-                </button>
-              ))}
+              <div style={{
+                display: 'flex', gap: 0, borderRadius: 10, overflow: 'hidden',
+                border: '1px solid rgba(200,168,78,0.15)', background: 'rgba(0,0,0,0.5)', padding: 3,
+              }}>
+                {(['weekly', 'monthly', 'yearly'] as BillingCycle[]).map(b => (
+                  <button key={b} onClick={() => setBilling(b)} style={{
+                    flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer', borderRadius: 8,
+                    background: billing === b ? 'rgba(200,168,78,0.2)' : 'transparent',
+                    color: billing === b ? '#fff' : 'var(--text-muted)',
+                    fontSize: 11, fontWeight: 700, letterSpacing: 0.3, transition: 'all 0.2s', textTransform: 'capitalize',
+                  }}>
+                    {b}
+                    {b === 'yearly' && <span style={{ display: 'block', fontSize: 8, color: '#22C55E', fontWeight: 800, marginTop: 1 }}>SAVE 60%</span>}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Plan Cards — Vertical stack */}
