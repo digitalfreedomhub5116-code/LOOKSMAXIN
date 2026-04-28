@@ -5,27 +5,56 @@
 import { useState, useEffect } from 'react';
 import { Flame, RefreshCw, User } from 'lucide-react';
 import { fetchLeaderboard, getUserRank, type LeaderboardEntry } from '../lib/leaderboard';
-import { getItemById, type BorderConfig } from '../data/storeItems';
+import { getItemById, type StoreItem } from '../data/storeItems';
 
-function AvatarCircle({ url, size = 48, rank, borderCfg }: { url?: string | null; size?: number; rank?: number; borderCfg?: BorderConfig | null }) {
+function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | null; size?: number; rank?: number; borderItem?: StoreItem | null }) {
   const defaultColor = rank === 1 ? '#FBBF24' : rank === 2 ? '#94A3B8' : rank === 3 ? '#CD7F32' : 'rgba(255,255,255,0.1)';
 
-  // If a store border is equipped, use its gradient + glow
-  if (borderCfg) {
-    const grad = `linear-gradient(135deg, ${borderCfg.colors.join(', ')})`;
-    const glow = borderCfg.glowColor || 'rgba(200,168,78,0.3)';
-    const pad = 3;
+  // If a store border is equipped, render the full border
+  if (borderItem) {
+    const cfg = borderItem.borderConfig;
+    const glow = cfg?.glowColor || 'rgba(200,168,78,0.3)';
+    const hasImage = !!borderItem.imageBorder;
+    const hasAura = !!borderItem.auraConfig;
+    const outerSize = size + 16; // extra space for border/image overlay
+
     return (
       <div style={{
-        width: size + pad * 2, height: size + pad * 2, borderRadius: '50%',
-        background: grad, padding: pad, flexShrink: 0,
-        boxShadow: `0 0 14px ${glow}, 0 0 28px ${glow}`,
-        animation: borderCfg.animated ? 'border-pulse 2s ease-in-out infinite' : 'none',
+        position: 'relative', width: outerSize, height: outerSize,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
+        {/* Aura glow layer */}
+        {hasAura && borderItem.auraConfig && (
+          <div style={{
+            position: 'absolute', inset: -4, borderRadius: '50%',
+            background: `conic-gradient(${borderItem.auraConfig.colors.join(', ')}, ${borderItem.auraConfig.colors[0]})`,
+            filter: `blur(${borderItem.auraConfig.blur}px)`,
+            opacity: 0.6,
+            animation: borderItem.auraConfig.animated ? `spin ${borderItem.auraConfig.pulseSpeed || 3}s linear infinite` : 'none',
+          }} />
+        )}
+
+        {/* Gradient ring (for SVG/gradient borders) */}
+        {cfg && !hasImage && (
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${cfg.colors.join(', ')})`,
+            padding: 3,
+            boxShadow: `0 0 12px ${glow}, 0 0 24px ${glow}`,
+            animation: cfg.animated ? 'border-pulse 2s ease-in-out infinite' : 'none',
+          }}>
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--bg)' }} />
+          </div>
+        )}
+
+        {/* Avatar image (centered inside) */}
         <div style={{
+          position: 'absolute',
           width: size, height: size, borderRadius: '50%',
           background: 'var(--bg)', overflow: 'hidden',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: hasImage ? 'none' : `2px solid ${glow}`,
+          top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         }}>
           {url ? (
             <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -33,10 +62,26 @@ function AvatarCircle({ url, size = 48, rank, borderCfg }: { url?: string | null
             <User size={size * 0.5} color="var(--text-muted)" />
           )}
         </div>
+
+        {/* Image border overlay (PNG around the avatar) */}
+        {hasImage && (
+          <img
+            src={borderItem.imageBorder}
+            alt=""
+            style={{
+              position: 'absolute', inset: -2,
+              width: outerSize + 4, height: outerSize + 4,
+              objectFit: 'contain', pointerEvents: 'none',
+              animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
+              filter: `drop-shadow(0 0 6px ${glow})`,
+            }}
+          />
+        )}
       </div>
     );
   }
 
+  // Default: simple border with rank color
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
@@ -72,11 +117,10 @@ export default function Ranks({ userId }: { userId?: string }) {
 
   const myRank = userId ? getUserRank(userId) : 0;
 
-  // Look up any user's border config from their equipped_border ID
-  const getBorderCfg = (borderId: string | null | undefined) => {
+  // Look up any user's border item from their equipped_border ID
+  const getBorderItem = (borderId: string | null | undefined): StoreItem | null => {
     if (!borderId) return null;
-    const item = getItemById(borderId);
-    return item?.borderConfig || null;
+    return getItemById(borderId) || null;
   };
 
   const top3 = entries.slice(0, 3);
@@ -156,7 +200,7 @@ export default function Ranks({ userId }: { userId?: string }) {
 
                     {/* Avatar with wreath effect */}
                     <div style={{ position: 'relative' }}>
-                      <AvatarCircle url={entry.avatar_url} size={avatarSize} rank={rank} borderCfg={getBorderCfg(entry.equipped_border)} />
+                      <AvatarCircle url={entry.avatar_url} size={avatarSize} rank={rank} borderItem={getBorderItem(entry.equipped_border)} />
                       {/* Glow behind avatar for #1 */}
                       {isFirst && (
                         <div style={{
@@ -213,7 +257,7 @@ export default function Ranks({ userId }: { userId?: string }) {
                   </div>
 
                   {/* Avatar */}
-                  <AvatarCircle url={entry.avatar_url} size={40} borderCfg={getBorderCfg(entry.equipped_border)} />
+                  <AvatarCircle url={entry.avatar_url} size={40} borderItem={getBorderItem(entry.equipped_border)} />
 
                   {/* Name */}
                   <div style={{ flex: 1, overflow: 'hidden' }}>
