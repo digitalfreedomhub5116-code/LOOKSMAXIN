@@ -227,7 +227,7 @@ export default function App() {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} onViewAllRemedies={() => setShowRemedies(true)} onViewAllReports={() => setShowReports(true)} />;
       case 'programs': return <Programs />;
       case 'ranks': return <Ranks />;
-      case 'vault': return <Store />;
+      case 'vault': return <Store user={sessionUser} />;
       case 'profile': return <Profile onLogout={handleLogout} user={sessionUser} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
     }
