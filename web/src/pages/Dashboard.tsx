@@ -6,7 +6,7 @@ import * as progress from '../data/planProgress';
 import SkinRemediesSection from './SkinRemedies';
 import RecentReports from './ReportsGrid';
 import AISuggestions from './AISuggestions';
-import StreakWidget from '../components/StreakWidget';
+import StreakWidget, { StreakBadge } from '../components/StreakWidget';
 import { getImageSrc } from '../lib/imageUtils';
 
 interface DashboardProps {
@@ -68,12 +68,15 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5, marginBottom: 4 }}>LYNX AI</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Welcome back</div>
         </div>
-        {scores && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px' }}>
-            <Sparkles size={14} color="var(--primary)" />
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>⚡ {scores.potential || 0} XP</span>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <StreakBadge />
+          {scores && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px' }}>
+              <Sparkles size={14} color="var(--primary)" />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>⚡ {scores.potential || 0} XP</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ═══ SECTION 1: GET RATED / LYNX REPORT ═══ */}
