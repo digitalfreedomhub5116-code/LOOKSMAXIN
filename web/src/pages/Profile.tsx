@@ -80,9 +80,6 @@ function BellCurve({ score }: { score: number }) {
       {/* "You" label */}
       <text x={scoreX} y={scoreY - 10} textAnchor="middle" fill="#C8A84E" fontSize="9" fontWeight="700" fontFamily="Inter, sans-serif">YOU</text>
       
-      {/* Score at the peak */}
-      <text x={canvasW / 2} y={18} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="10" fontFamily="Inter, sans-serif">POTENTIAL</text>
-      
       {/* X-axis labels */}
       <text x={padX} y={canvasH - 6} fill="rgba(255,255,255,0.3)" fontSize="8" fontFamily="Inter, sans-serif">0</text>
       <text x={canvasW / 2} y={canvasH - 6} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="8" fontFamily="Inter, sans-serif">50</text>
