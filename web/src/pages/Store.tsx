@@ -493,7 +493,7 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
         </div>
 
         {/* Credits badge */}
-        {(info.credits > 0 || info.credits === 'unlimited') && (
+        {(info.credits === 'unlimited' || (typeof info.credits === 'number' && info.credits > 0)) && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '6px 12px', marginBottom: 14,

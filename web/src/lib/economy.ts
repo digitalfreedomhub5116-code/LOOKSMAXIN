@@ -108,21 +108,21 @@ export function getAICredits(): number {
 
 export function canAffordScan(): boolean {
   const s = getEconomy();
-  const cost = PLAN_CONFIG[s.plan].scanCost;
+  const cost = PLAN_CONFIG[s.plan].scanCost as number;
   if (cost === 0) return true; // unlimited
   return s.aiCredits >= cost;
 }
 
 export function canAffordChat(): boolean {
   const s = getEconomy();
-  const cost = PLAN_CONFIG[s.plan].chatCost;
+  const cost = PLAN_CONFIG[s.plan].chatCost as number;
   if (cost === 0) return true;
   return s.aiCredits >= cost;
 }
 
 export function spendScanCredits(): EconomyState | null {
   const s = getEconomy();
-  const cost = PLAN_CONFIG[s.plan].scanCost;
+  const cost = PLAN_CONFIG[s.plan].scanCost as number;
   if (cost === 0) return s; // unlimited
   if (s.aiCredits < cost) return null;
   s.aiCredits -= cost;
@@ -131,7 +131,7 @@ export function spendScanCredits(): EconomyState | null {
 
 export function spendChatCredits(): EconomyState | null {
   const s = getEconomy();
-  const cost = PLAN_CONFIG[s.plan].chatCost;
+  const cost = PLAN_CONFIG[s.plan].chatCost as number;
   if (cost === 0) return s;
   if (s.aiCredits < cost) return null;
   s.aiCredits -= cost;
