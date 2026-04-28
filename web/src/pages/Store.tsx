@@ -551,8 +551,11 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
             }} />
 
             {item.category === 'border' && item.imageBorder ? (
-              /* Image-based border (fire/ice/lightning) with mix-blend-mode */
-              <div style={{ position: 'relative', width: 80, height: 80 }}>
+              /* Image-based border — circular clip hides black PNG corners */
+              <div style={{
+                position: 'relative', width: 80, height: 80,
+                borderRadius: '50%', overflow: 'hidden',
+              }}>
                 {/* Profile circle underneath */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
@@ -562,22 +565,21 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   overflow: 'hidden',
                 }}>
-                  {/* Default avatar head + body */}
                   <svg width="40" height="40" viewBox="0 0 40 40">
                     <circle cx="20" cy="16" r="7" fill="#555568" />
                     <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
                   </svg>
                 </div>
-                {/* Border image overlay — mix-blend-mode: screen makes black invisible */}
+                {/* Border image overlay */}
                 <img
                   src={item.imageBorder}
                   alt={item.name}
                   style={{
                     position: 'absolute', top: '50%', left: '50%',
-                    width: '100%', height: '100%',
+                    width: '115%', height: '115%',
                     transform: 'translate(-50%, -50%)',
                     mixBlendMode: 'screen',
-                    objectFit: 'contain',
+                    objectFit: 'cover',
                     zIndex: 2,
                   }}
                 />
