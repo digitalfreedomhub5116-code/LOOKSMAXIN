@@ -85,43 +85,43 @@ const SCORE_TO_PLAN: { traitKey: string; threshold: number; planId: string; labe
 const TIP_RULES: { keywords: string[]; tip: QuickTip }[] = [
   {
     keywords: ['dry', 'dehydrat', 'flaky', 'water'],
-    tip: { id: 'hydrate', icon: '💧', text: 'Drink at least 3L of water daily', category: 'Hydration', reason: 'Dehydration signs detected in your scan' },
+    tip: { id: 'hydrate', icon: 'droplets', text: 'Drink at least 3L of water daily', category: 'Hydration', reason: 'Dehydration signs detected in your scan' },
   },
   {
     keywords: ['sun', 'tan', 'dark spot', 'pigment', 'uv'],
-    tip: { id: 'sunscreen', icon: '☀️', text: 'Apply SPF 50+ sunscreen every morning', category: 'Sun Protection', reason: 'Sun damage indicators found' },
+    tip: { id: 'sunscreen', icon: 'sun', text: 'Apply SPF 50+ sunscreen every morning', category: 'Sun Protection', reason: 'Sun damage indicators found' },
   },
   {
     keywords: ['dark circle', 'tired', 'puffy', 'fatigue'],
-    tip: { id: 'sleep', icon: '😴', text: 'Get 7-8 hours of quality sleep', category: 'Sleep', reason: 'Dark circles / fatigue detected' },
+    tip: { id: 'sleep', icon: 'moon', text: 'Get 7-8 hours of quality sleep', category: 'Sleep', reason: 'Dark circles / fatigue detected' },
   },
   {
     keywords: ['acne', 'pimple', 'oily', 'breakout'],
-    tip: { id: 'pillowcase', icon: '🛏️', text: 'Change your pillowcase every 2-3 days', category: 'Hygiene', reason: 'Acne-prone skin detected' },
+    tip: { id: 'pillowcase', icon: 'shield', text: 'Change your pillowcase every 2-3 days', category: 'Hygiene', reason: 'Acne-prone skin detected' },
   },
   {
     keywords: ['oily', 'pore', 'sebum', 'blackhead'],
-    tip: { id: 'cleanse', icon: '🧼', text: 'Double-cleanse every night before bed', category: 'Skincare', reason: 'Excess oil production detected' },
+    tip: { id: 'cleanse', icon: 'sparkles', text: 'Double-cleanse every night before bed', category: 'Skincare', reason: 'Excess oil production detected' },
   },
   {
     keywords: ['dull', 'glow', 'radiance', 'bright'],
-    tip: { id: 'vitaminc', icon: '🍊', text: 'Add a Vitamin C serum to your AM routine', category: 'Skincare', reason: 'Dull skin tone detected' },
+    tip: { id: 'vitaminc', icon: 'pipette', text: 'Add a Vitamin C serum to your AM routine', category: 'Skincare', reason: 'Dull skin tone detected' },
   },
   {
     keywords: ['wrinkle', 'fine line', 'aging', 'sag'],
-    tip: { id: 'retinol', icon: '✨', text: 'Start using retinol 2x per week at night', category: 'Anti-Aging', reason: 'Early aging signs detected' },
+    tip: { id: 'retinol', icon: 'clock', text: 'Start using retinol 2x per week at night', category: 'Anti-Aging', reason: 'Early aging signs detected' },
   },
   {
     keywords: ['dry', 'crack', 'rough', 'flaky'],
-    tip: { id: 'moisturize', icon: '🧴', text: 'Apply moisturizer on damp skin after washing', category: 'Skincare', reason: 'Dry, rough skin detected' },
+    tip: { id: 'moisturize', icon: 'droplet', text: 'Apply moisturizer on damp skin after washing', category: 'Skincare', reason: 'Dry, rough skin detected' },
   },
   {
     keywords: ['jawline', 'chin', 'double chin', 'neck'],
-    tip: { id: 'posture', icon: '🧍', text: 'Keep phone at eye level to avoid neck strain', category: 'Posture', reason: 'Jawline/neck improvement opportunity' },
+    tip: { id: 'posture', icon: 'user', text: 'Keep phone at eye level to avoid neck strain', category: 'Posture', reason: 'Jawline/neck improvement opportunity' },
   },
   {
     keywords: ['diet', 'sugar', 'process', 'food'],
-    tip: { id: 'diet', icon: '🥗', text: 'Cut refined sugar — it accelerates skin aging', category: 'Diet', reason: 'Dietary improvements can boost your skin' },
+    tip: { id: 'diet', icon: 'apple', text: 'Cut refined sugar — it accelerates skin aging', category: 'Diet', reason: 'Dietary improvements can boost your skin' },
   },
 ];
 
@@ -221,8 +221,8 @@ function matchTips(text: string, scores: FaceScores): QuickTip[] {
   // If fewer than 2, add general tips
   if (matched.length < 2) {
     const general: QuickTip[] = [
-      { id: 'water-gen', icon: '💧', text: 'Stay hydrated — drink 3L water daily', category: 'Health', reason: 'Essential for healthy skin' },
-      { id: 'sun-gen', icon: '☀️', text: 'Never skip sunscreen, even indoors', category: 'Protection', reason: 'UV is the #1 cause of premature aging' },
+      { id: 'water-gen', icon: 'droplets', text: 'Stay hydrated — drink 3L water daily', category: 'Health', reason: 'Essential for healthy skin' },
+      { id: 'sun-gen', icon: 'sun', text: 'Never skip sunscreen, even indoors', category: 'Protection', reason: 'UV is the #1 cause of premature aging' },
     ];
     for (const g of general) {
       if (matched.length >= 3) break;

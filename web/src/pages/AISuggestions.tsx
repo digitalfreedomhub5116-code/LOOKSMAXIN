@@ -4,7 +4,7 @@
  * based on the user's latest face scan results.
  */
 import { useState, useEffect } from 'react';
-import { Sparkles, ChevronRight, X, ArrowRight, Dumbbell } from 'lucide-react';
+import { Sparkles, ChevronRight, X, ArrowRight, Dumbbell, Droplets, Droplet, Sun, Moon, Shield, Clock, User, Apple, Pipette } from 'lucide-react';
 import type { FaceScores } from '../lib/api';
 import { getPersonalizedSuggestions, dismissTip, type Suggestions, type RemedySuggestion, type QuickTip, type PlanSuggestion } from '../data/suggestionsEngine';
 import type { Remedy } from '../data/skinRemedies';
@@ -42,10 +42,7 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
     <div style={{ marginBottom: 32 }}>
       {/* Section Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sparkles size={18} color="var(--primary)" />
           <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>AI Suggestions</div>
-        </div>
         <div style={{ 
           fontSize: 10, fontWeight: 700, letterSpacing: 1, color: 'var(--primary)',
           padding: '4px 10px', borderRadius: 20,
@@ -235,7 +232,24 @@ function RemedyCard({ remedy, reason, expanded, onToggle }: {
 }
 
 /* ═══ Quick Tip Card ═══ */
+
+// Map icon string names → Lucide components
+const TIP_ICON_MAP: Record<string, React.ReactNode> = {
+  droplets: <Droplets size={18} color="var(--primary)" />,
+  droplet: <Droplet size={18} color="var(--primary)" />,
+  sun: <Sun size={18} color="var(--primary)" />,
+  moon: <Moon size={18} color="var(--primary)" />,
+  shield: <Shield size={18} color="var(--primary)" />,
+  sparkles: <Sparkles size={18} color="var(--primary)" />,
+  pipette: <Pipette size={18} color="var(--primary)" />,
+  clock: <Clock size={18} color="var(--primary)" />,
+  user: <User size={18} color="var(--primary)" />,
+  apple: <Apple size={18} color="var(--primary)" />,
+};
+
 function TipCard({ tip, onDismiss }: { tip: QuickTip; onDismiss: () => void }) {
+  const iconNode = TIP_ICON_MAP[tip.icon] || <Sparkles size={18} color="var(--primary)" />;
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
@@ -250,9 +264,8 @@ function TipCard({ tip, onDismiss }: { tip: QuickTip; onDismiss: () => void }) {
         background: 'rgba(200,168,78,0.08)',
         border: '1px solid rgba(200,168,78,0.15)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 18,
       }}>
-        {tip.icon}
+        {iconNode}
       </div>
 
       {/* Content */}
