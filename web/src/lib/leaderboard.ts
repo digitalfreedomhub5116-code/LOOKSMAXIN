@@ -70,6 +70,7 @@ export async function pushStreakToLeaderboard(
 /**
  * Fetch the top 50 players by streak.
  * Results are cached for 60s to minimize egress.
+ * Includes an 8s timeout to prevent infinite loading.
  */
 export async function fetchLeaderboard(forceRefresh = false): Promise<LeaderboardEntry[]> {
   const now = Date.now();
@@ -78,16 +79,28 @@ export async function fetchLeaderboard(forceRefresh = false): Promise<Leaderboar
   }
 
   try {
-    const { data, error } = await supabase
+    // Race the query against a timeout
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
+
+    const query = supabase
       .from(TABLE)
       .select('user_id, display_name, avatar_url, streak, updated_at')
-      .gt('streak', 0)
+      .gte('streak', 0)
       .order('streak', { ascending: false })
       .limit(50);
 
+    const result = await Promise.race([query, timeout]);
+
+    if (!result) {
+      console.warn('[Leaderboard] Fetch timed out (8s)');
+      return cachedEntries;
+    }
+
+    const { data, error } = result as { data: LeaderboardEntry[] | null; error: any };
+
     if (error) {
-      console.warn('[Leaderboard] Fetch failed:', error.message);
-      return cachedEntries; // Return stale cache on error
+      console.warn('[Leaderboard] Fetch failed:', error.message, error.details, error.hint);
+      return cachedEntries;
     }
 
     cachedEntries = (data || []) as LeaderboardEntry[];
