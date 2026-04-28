@@ -12,9 +12,10 @@ export default function LynxLogo({ size = 28 }: { size?: number }) {
       <svg width={iconSize} height={iconSize} viewBox="0 0 32 32" fill="none">
         {/* Glow filter */}
         <defs>
-          <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.5" result="blur" />
+          <filter id="logo-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge>
+              <feMergeNode in="blur" />
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
