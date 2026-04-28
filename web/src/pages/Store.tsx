@@ -56,7 +56,7 @@ export default function Store({ user }: { user?: any }) {
   const [purchasedId, setPurchasedId] = useState<string | null>(null);
   const [dealTimer, setDealTimer] = useState('');
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [confettiPieces, setConfettiPieces] = useState<{x:number;y:number;vx:number;vy:number;r:number;color:string;size:number;rotation:number;rotSpeed:number}[]>([]);
+  const [confettiPieces, setConfettiPieces] = useState<{x:number;y:number;vx:number;vy:number;r:number;color:string;size:number;rotation:number;rotSpeed:number;phase:number;freq:number}[]>([]);
 
   useEffect(() => {
     // Grant free credits on first visit
@@ -85,11 +85,11 @@ export default function Store({ user }: { user?: any }) {
       setConfettiPieces(prev => {
         const next = prev.map(p => ({
           ...p,
-          x: p.x + p.vx + Math.sin(p.y * 0.02) * 0.8, // flutter side-to-side
+          x: p.x + p.vx + Math.sin(p.y * p.freq + p.phase) * 0.8, // unique flutter per piece
           y: p.y + p.vy,
-          vy: Math.min(p.vy + 0.04, 2.2), // very light gravity, terminal velocity 2.2
-          vx: p.vx * 0.98, // air drag
-          rotation: p.rotation + p.rotSpeed * Math.cos(p.y * 0.015), // wobble rotation
+          vy: Math.min(p.vy + 0.04, 1.8 + p.freq * 8), // slight speed variation
+          vx: p.vx * 0.98,
+          rotation: p.rotation + p.rotSpeed * Math.cos(p.y * p.freq * 0.7 + p.phase),
         })).filter(p => p.y < window.innerHeight + 80);
         if (next.length === 0) return [];
         return next;
@@ -108,12 +108,14 @@ export default function Store({ user }: { user?: any }) {
         x: Math.random() * window.innerWidth,
         y: -30 - Math.random() * 300,
         vx: (Math.random() - 0.5) * 2.5,
-        vy: Math.random() * 0.8 + 0.3, // start slow
+        vy: Math.random() * 0.8 + 0.3,
         r: 0,
         color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 10 + 8, // larger: 8-18px
+        size: Math.random() * 10 + 8,
         rotation: Math.random() * 360,
         rotSpeed: (Math.random() - 0.5) * 6,
+        phase: Math.random() * Math.PI * 2, // unique phase offset
+        freq: 0.01 + Math.random() * 0.03, // unique flutter frequency
       });
     }
     setConfettiPieces(pieces);
@@ -223,41 +225,8 @@ export default function Store({ user }: { user?: any }) {
       )}
 
       {/* ═══ Header ═══ */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5, marginBottom: 4 }}>LYNX AI</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>Store</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Plan Tier Badge */}
-          <button onClick={openPlanModal} style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
-            background: `${planColor}15`,
-            border: `1px solid ${planColor}30`,
-          }}>
-            {economy.plan === 'ultra' ? <Crown size={13} color={planColor} /> : economy.plan === 'pro' ? <Star size={13} color={planColor} /> : <Sparkles size={13} color={planColor} />}
-            <span style={{ fontSize: 11, fontWeight: 800, color: planColor, letterSpacing: 0.5 }}>{planLabel}</span>
-          </button>
-          {/* AI Credits */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            padding: '6px 12px', borderRadius: 20,
-            background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)',
-          }}>
-            <BrainCircuit size={14} color="#06B6D4" />
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>{economy.aiCredits}</span>
-          </div>
-          {/* Coins */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            padding: '6px 12px', borderRadius: 20,
-            background: 'rgba(200,168,78,0.08)', border: '1px solid rgba(200,168,78,0.2)',
-          }}>
-            <LynxCoin size={15} />
-            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary)' }}>{economy.coins}</span>
-          </div>
-        </div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>Store</div>
       </div>
 
       {/* ═══ Upgrade Banner ═══ */}

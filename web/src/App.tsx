@@ -11,6 +11,7 @@ import { ReportsPage } from './pages/ReportsGrid';
 import AuthPage from './pages/AuthPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import TabBar, { LynxBubbleIcon } from './components/TabBar';
+import TopNavbar from './components/TopNavbar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import { pullFromCloud, pushToCloud, retryPendingUploads, setActiveUserId } from './lib/sync';
 import { claimDailyLogin, recordStreakActivity } from './lib/economy';
@@ -235,6 +236,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {!scanning && !chatVisible && !showRemedies && !showReports && <TopNavbar />}
       {renderPage()}
 
       {/* ═══ Chat overlay — animated ═══ */}
