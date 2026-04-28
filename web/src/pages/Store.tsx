@@ -57,7 +57,7 @@ export default function Store({ user }: { user?: any }) {
   const avatarUrl: string | undefined = user?.user_metadata?.avatar_url;
   const [economy, setEconomy] = useState(getEconomy());
   const [shopSection, setShopSection] = useState<StoreCategory | 'deals'>('deals');
-  const [billing, setBilling] = useState<BillingCycle>('monthly');
+  const [billing, setBilling] = useState<BillingCycle>('weekly');
   const [purchasedId, setPurchasedId] = useState<string | null>(null);
   const [dealTimer, setDealTimer] = useState('');
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -219,12 +219,8 @@ export default function Store({ user }: { user?: any }) {
               ))}
             </div>
 
-            {/* Plan Cards — Horizontal swipable */}
-            <div style={{
-              display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 40,
-              scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch',
-              margin: '0 -20px', padding: '0 20px 40px',
-            }}>
+            {/* Plan Cards — Vertical stack */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 40 }}>
               <PlanCard tier="free" billing={billing} currentPlan={economy.plan} discount={0} />
               <PlanCard tier="basic" billing={billing} currentPlan={economy.plan} discount={15} />
               <PlanCard tier="pro" billing={billing} currentPlan={economy.plan} discount={15} />
@@ -428,20 +424,17 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
 
   return (
     <div style={{
-      minWidth: 260, maxWidth: 280, flexShrink: 0,
-      scrollSnapAlign: 'center',
       position: 'relative',
       animation: isUltra ? 'plan-pulse 3s ease-in-out infinite' : 'none',
     }}>
       {/* BEST VALUE badge */}
       {isUltra && (
         <div style={{
-          position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
-          padding: '4px 14px', borderRadius: 8,
+          position: 'absolute', top: 12, right: 12, zIndex: 10,
+          padding: '4px 10px', borderRadius: 6,
           background: `linear-gradient(135deg, ${tierColor}, #FBBF24)`,
-          fontSize: 9, fontWeight: 900, color: '#000', letterSpacing: 1.2,
-          boxShadow: `0 2px 12px ${tierColor}50`,
-          whiteSpace: 'nowrap',
+          fontSize: 9, fontWeight: 900, color: '#000', letterSpacing: 1,
+          boxShadow: `0 2px 8px ${tierColor}40`,
         }}>BEST VALUE</div>
       )}
 
@@ -529,7 +522,7 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
             boxShadow: `0 0 16px ${tierColor}30`,
             transition: 'all 0.2s',
           }}>
-            {isUltra ? '👑 UPGRADE TO ULTRA' : isPro ? '⭐ UPGRADE TO PRO' : '⚡ GET BASIC'}
+            {isUltra ? 'UPGRADE TO ULTRA' : isPro ? 'UPGRADE TO PRO' : 'GET BASIC'}
           </button>
         )}
         {isActive && !isFree && (
