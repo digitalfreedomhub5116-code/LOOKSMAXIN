@@ -3,7 +3,7 @@ import Dashboard from './pages/Dashboard';
 import FaceScan from './pages/FaceScan';
 import Programs from './pages/Programs';
 import Ranks from './pages/Ranks';
-import Courses from './pages/Courses';
+import Store from './pages/Store';
 import LynxChat from './pages/LynxChat';
 import Profile from './pages/Profile';
 import RemediesPage from './pages/RemediesPage';
@@ -223,7 +223,7 @@ export default function App() {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} onViewAllRemedies={() => setShowRemedies(true)} onViewAllReports={() => setShowReports(true)} />;
       case 'programs': return <Programs />;
       case 'ranks': return <Ranks />;
-      case 'vault': return <Courses />;
+      case 'vault': return <Store />;
       case 'profile': return <Profile onLogout={handleLogout} user={sessionUser} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
     }

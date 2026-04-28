@@ -1,11 +1,11 @@
 import type { Tab } from '../App';
-import { Home, LayoutGrid, Trophy, BookOpen, User } from 'lucide-react';
+import { Home, LayoutGrid, Trophy, ShoppingBag, User } from 'lucide-react';
 
 const tabs: { id: Tab; icon: typeof Home; label: string }[] = [
   { id: 'dashboard', icon: Home, label: 'Home' },
   { id: 'programs', icon: LayoutGrid, label: 'Programs' },
   { id: 'ranks', icon: Trophy, label: 'Ranks' },
-  { id: 'vault', icon: BookOpen, label: 'Courses' },
+  { id: 'vault', icon: ShoppingBag, label: 'Store' },
   { id: 'profile', icon: User, label: 'Profile' },
 ];
 
