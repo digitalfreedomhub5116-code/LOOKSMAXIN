@@ -266,7 +266,7 @@ export default function App() {
         if (openPlans) setTimeout(() => setOpenPlans(false), 100);
         return <Store user={sessionUser} initialShowPlans={show} />;
       }
-      case 'profile': return <Profile onLogout={handleLogout} user={sessionUser} />;
+      case 'profile': return <Profile onLogout={handleLogout} user={sessionUser} onNavigate={(t, opts) => { setTab(t); if (opts?.showPlans) setOpenPlans(true); }} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
     }
   };
