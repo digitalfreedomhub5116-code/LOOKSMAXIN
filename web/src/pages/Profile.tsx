@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { User, Settings, ChevronRight, Star, BarChart3, Shield, LogOut, Mail } from 'lucide-react';
 import { getScanCount } from '../lib/api';
+import { getEquipped } from '../lib/economy';
+import { getItemById } from '../data/storeItems';
 
 const MENU = [
   { icon: <BarChart3 size={18} />, label: 'Advanced Stats', sub: 'Detailed analytics' },
@@ -43,28 +45,64 @@ export default function Profile({ onLogout, user: sessionUser }: { onLogout: () 
     }
   };
 
+  // Get equipped border for profile ring
+  const equipped = getEquipped();
+  const borderItem = equipped.border ? getItemById(equipped.border) : null;
+  const borderConfig = borderItem?.borderConfig;
+  const borderGrad = borderConfig
+    ? `linear-gradient(135deg, ${borderConfig.colors.join(', ')})`
+    : 'linear-gradient(135deg, rgba(142,161,188,0.3), rgba(142,161,188,0.3))';
+  const borderGlow = borderConfig?.glowColor || 'var(--primary-glow)';
+  const hasBorder = !!borderConfig;
+
   return (
     <div className="page">
-      {/* Avatar */}
+      {/* Avatar with equipped border */}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        {userInfo?.avatar ? (
-          <img src={userInfo.avatar} alt="Avatar" style={{
-            width: 80, height: 80, borderRadius: '50%',
-            border: '2px solid rgba(142,161,188,0.3)',
-            boxShadow: '0 0 20px var(--primary-glow)',
-            margin: '0 auto 14px', display: 'block', objectFit: 'cover',
-          }} />
-        ) : (
+        <div style={{
+          position: 'relative', width: 96, height: 96,
+          margin: '0 auto 14px', display: 'inline-block',
+        }}>
+          {/* Border ring */}
           <div style={{
-            width: 80, height: 80, borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 14px', border: '2px solid rgba(142,161,188,0.3)',
-            boxShadow: '0 0 20px var(--primary-glow)',
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            background: borderGrad,
+            padding: 3,
+            boxShadow: hasBorder ? `0 0 20px ${borderGlow}, 0 0 40px ${borderGlow}` : '0 0 20px var(--primary-glow)',
+            animation: borderConfig?.animated ? 'border-pulse 2s ease-in-out infinite' : 'none',
           }}>
-            <User size={32} color="#fff" />
+            <div style={{
+              width: '100%', height: '100%', borderRadius: '50%',
+              background: 'var(--bg)',
+            }} />
           </div>
-        )}
+          {/* Avatar image */}
+          {userInfo?.avatar ? (
+            <img src={userInfo.avatar} alt="Avatar" style={{
+              position: 'absolute', top: 5, left: 5,
+              width: 86, height: 86, borderRadius: '50%',
+              objectFit: 'cover',
+            }} />
+          ) : (
+            <div style={{
+              position: 'absolute', top: 5, left: 5,
+              width: 86, height: 86, borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <User size={32} color="#fff" />
+            </div>
+          )}
+          {/* Image-based border overlay */}
+          {borderItem?.imageBorder && (
+            <img src={borderItem.imageBorder} alt="" style={{
+              position: 'absolute', inset: -8, width: 'calc(100% + 16px)', height: 'calc(100% + 16px)',
+              pointerEvents: 'none', objectFit: 'contain',
+              animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
+              filter: `drop-shadow(0 0 6px ${borderGlow})`,
+            }} />
+          )}
+        </div>
         <div className="h1" style={{ marginBottom: 2 }}>{userInfo?.name || 'Champion'}</div>
         <div className="label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
           <Mail size={12} /> {userInfo?.email || '...'}

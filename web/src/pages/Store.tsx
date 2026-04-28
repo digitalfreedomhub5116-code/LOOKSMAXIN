@@ -9,7 +9,7 @@ import {
   Infinity, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { ALL_STORE_ITEMS, getItemsByCategory, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
-import { getEconomy, purchaseItem, equipItem, grantFreeCredits, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
+import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyEquippedTheme, DEV_UNLOCK_ALL, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
 import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/StoreComponents';
 
 /* ═══ Category accent colors ═══ */
@@ -139,7 +139,12 @@ export default function Store({ user }: { user?: any }) {
 
   const handleEquip = (slot: keyof EquippedItems, itemId: string) => {
     const newId = economy.equipped[slot] === itemId ? null : itemId;
-    setEconomy(equipItem(slot, newId));
+    const newEco = equipItem(slot, newId);
+    setEconomy(newEco);
+    // If equipping a theme, apply it instantly
+    if (slot === 'theme') {
+      applyEquippedTheme();
+    }
   };
 
   const planLabel = economy.plan === 'free' ? 'Trial' : economy.plan === 'pro' ? 'Pro' : 'Ultra';
@@ -320,9 +325,9 @@ export default function Store({ user }: { user?: any }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {getTodaysDeals().map(d => (
               <GlowCard key={d.item.id} item={d.item} discount={d.discount}
-                owned={economy.owned.includes(d.item.id)}
+                owned={DEV_UNLOCK_ALL || economy.owned.includes(d.item.id)}
                 equipped={economy.equipped[d.item.category as keyof EquippedItems] === d.item.id}
-                canAfford={economy.coins >= Math.round(d.item.price * (1 - d.discount / 100))}
+                canAfford={DEV_UNLOCK_ALL || economy.coins >= Math.round(d.item.price * (1 - d.discount / 100))}
                 onBuy={() => { const p = purchaseItem(d.item.id, Math.round(d.item.price * (1 - d.discount / 100))); if (p) { setEconomy(p); setPurchasedId(d.item.id); setTimeout(() => setPurchasedId(null), 1500); } }}
                 onEquip={d.item.category !== 'consumable' ? () => handleEquip(d.item.category as keyof EquippedItems, d.item.id) : undefined}
                 avatarUrl={avatarUrl}
@@ -334,12 +339,12 @@ export default function Store({ user }: { user?: any }) {
 
       {/* ═══ Category Items ═══ */}
       {shopSection !== 'deals' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: (shopSection === 'border' || shopSection === 'theme') ? '1fr 1fr' : '1fr 1fr', gap: 12 }}>
           {getItemsByCategory(shopSection).map(item => (
             <GlowCard key={item.id} item={item}
-              owned={economy.owned.includes(item.id)}
+              owned={DEV_UNLOCK_ALL || economy.owned.includes(item.id)}
               equipped={economy.equipped[shopSection === 'consumable' ? 'border' : shopSection as keyof EquippedItems] === item.id}
-              canAfford={economy.coins >= item.price}
+              canAfford={DEV_UNLOCK_ALL || economy.coins >= item.price}
               onBuy={() => handlePurchase(item)}
               onEquip={item.category !== 'consumable' ? () => handleEquip(item.category as keyof EquippedItems, item.id) : undefined}
               avatarUrl={avatarUrl}

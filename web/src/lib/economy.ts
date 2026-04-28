@@ -197,6 +197,37 @@ export function equipItem(slot: keyof EquippedItems, itemId: string | null): Eco
   return save(s);
 }
 
+/**
+ * Apply the currently equipped theme's CSS variables to document root.
+ * Call this on app init and whenever a theme is equipped.
+ */
+export function applyEquippedTheme(): void {
+  const s = getEconomy();
+  if (!s.equipped.theme) {
+    // Reset to default gold theme
+    const defaults: Record<string, string> = {
+      '--primary': '#C8A84E', '--primary-rgb': '200,168,78',
+      '--surface': '#12141a', '--bg': '#0a0a0f',
+      '--border': 'rgba(200,168,78,0.08)',
+    };
+    Object.entries(defaults).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    return;
+  }
+  // Find the theme item and apply its vars
+  try {
+    const { getItemById } = require('../data/storeItems');
+    const item = getItemById(s.equipped.theme);
+    if (item?.themeVars) {
+      Object.entries(item.themeVars).forEach(([k, v]) => {
+        document.documentElement.style.setProperty(k, v as string);
+      });
+    }
+  } catch { /* ignore */ }
+}
+
+/** DEV FLAG: Set to true to auto-unlock all items for testing */
+export const DEV_UNLOCK_ALL = true;
+
 export function getEquipped(): EquippedItems {
   return getEconomy().equipped;
 }
