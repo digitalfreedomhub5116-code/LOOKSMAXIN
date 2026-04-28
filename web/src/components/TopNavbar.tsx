@@ -3,14 +3,13 @@
  * Shows: LYNX AI logo + Plan Badge, Streak, Coins
  */
 import { useState, useEffect } from 'react';
-import { Flame, Crown, Star, Zap, Shield } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import { getEconomy, getStreak, type PlanTier } from '../lib/economy';
 import { LynxCoin } from './StoreComponents';
 import LynxLogo from './LynxLogo';
 
 const PLAN_LABELS: Record<PlanTier, string> = { free: 'TRIAL', basic: 'BASIC', pro: 'PRO', ultra: 'ULTRA' };
 const PLAN_COLORS: Record<PlanTier, string> = { free: '#94A3B8', basic: '#22C55E', pro: '#8B5CF6', ultra: '#F59E0B' };
-const PLAN_ICONS: Record<PlanTier, typeof Crown> = { free: Shield, basic: Zap, pro: Star, ultra: Crown };
 
 export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void }) {
   const [economy, setEconomy] = useState(getEconomy());
@@ -24,7 +23,6 @@ export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void })
   const plan = economy.plan;
   const label = PLAN_LABELS[plan];
   const color = PLAN_COLORS[plan];
-  const Icon = PLAN_ICONS[plan];
 
   return (
     <div style={{
@@ -39,8 +37,8 @@ export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void })
         <button
           onClick={onPlanClick}
           style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '3px 10px 3px 7px',
+            display: 'flex', alignItems: 'center',
+            padding: '3px 10px',
             borderRadius: 20,
             border: `1px solid ${color}40`,
             background: `${color}15`,
@@ -48,7 +46,6 @@ export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void })
             transition: 'all 0.2s',
           }}
         >
-          <Icon size={12} color={color} strokeWidth={2.5} />
           <span style={{
             fontSize: 10, fontWeight: 800, color,
             letterSpacing: 1, lineHeight: 1,
@@ -58,15 +55,12 @@ export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void })
 
       {/* Right: Streak + Coins */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        {/* Streak */}
         {streak.current > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <Flame size={22} color="#F59E0B" fill="#F59E0B" />
             <span style={{ fontSize: 18, fontWeight: 800, color: '#F59E0B' }}>{streak.current}</span>
           </div>
         )}
-
-        {/* Coins */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <LynxCoin size={22} />
           <span style={{ fontSize: 18, fontWeight: 800, color: '#C8A84E' }}>{economy.coins}</span>
