@@ -577,23 +577,26 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
 
             {item.category === 'border' && item.imageBorder ? (
               <div style={{ position: 'relative', width: 90, height: 90 }}>
+                {/* Profile pic — sized to match SVG BorderRing avatar */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
-                  width: 52, height: 52, borderRadius: '50%',
+                  width: 66, height: 66, borderRadius: '50%',
                   background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
                   transform: 'translate(-50%, -50%)', zIndex: 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   overflow: 'hidden',
+                  border: '2px solid rgba(255,255,255,0.08)',
                 }}>
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                   ) : (
-                    <svg width="42" height="42" viewBox="0 0 40 40">
+                    <svg width="50" height="50" viewBox="0 0 40 40">
                       <circle cx="20" cy="16" r="7" fill="#555568" />
                       <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
                     </svg>
                   )}
                 </div>
+                {/* Border effect overlay */}
                 <img
                   src={item.imageBorder}
                   alt={item.name}
