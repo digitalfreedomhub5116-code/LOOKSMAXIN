@@ -51,11 +51,12 @@ const PLAN_PRICING: Record<PlanTier, Record<BillingCycle, { price: number; credi
 export default function Store({ user }: { user?: any }) {
   const avatarUrl: string | undefined = user?.user_metadata?.avatar_url;
   const [economy, setEconomy] = useState(getEconomy());
-  const [activeTab, setActiveTab] = useState<'plans' | 'shop'>('plans');
   const [shopSection, setShopSection] = useState<StoreCategory | 'deals'>('deals');
   const [billing, setBilling] = useState<BillingCycle>('monthly');
   const [purchasedId, setPurchasedId] = useState<string | null>(null);
   const [dealTimer, setDealTimer] = useState('');
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [confettiPieces, setConfettiPieces] = useState<{x:number;y:number;vx:number;vy:number;r:number;color:string;size:number;rotation:number;rotSpeed:number}[]>([]);
 
   useEffect(() => {
     // Grant free credits on first visit
@@ -76,6 +77,53 @@ export default function Store({ user }: { user?: any }) {
     return () => clearInterval(id);
   }, []);
 
+  // ═══ Confetti physics animation ═══
+  useEffect(() => {
+    if (confettiPieces.length === 0) return;
+    let frame: number;
+    const animate = () => {
+      setConfettiPieces(prev => {
+        const next = prev.map(p => ({
+          ...p,
+          x: p.x + p.vx,
+          y: p.y + p.vy,
+          vy: p.vy + 0.15, // gravity
+          vx: p.vx * 0.995, // air drag
+          rotation: p.rotation + p.rotSpeed,
+        })).filter(p => p.y < window.innerHeight + 50);
+        if (next.length === 0) return [];
+        return next;
+      });
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [confettiPieces.length > 0]);
+
+  const spawnConfetti = () => {
+    const colors = ['#C8A84E', '#D4B04A', '#F5D76E', '#1a1a2e', '#2d2d3e', '#FFD700', '#B8960C', '#E8C84A', '#000', '#333'];
+    const pieces: typeof confettiPieces = [];
+    for (let i = 0; i < 80; i++) {
+      pieces.push({
+        x: Math.random() * window.innerWidth,
+        y: -20 - Math.random() * 200,
+        vx: (Math.random() - 0.5) * 6,
+        vy: Math.random() * 3 + 1,
+        r: 0,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: Math.random() * 8 + 4,
+        rotation: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 12,
+      });
+    }
+    setConfettiPieces(pieces);
+  };
+
+  const openPlanModal = () => {
+    setShowPlanModal(true);
+    spawnConfetti();
+  };
+
   const handlePurchase = (item: StoreItem) => {
     if (economy.owned.includes(item.id)) return;
     const result = purchaseItem(item.id, item.price);
@@ -87,15 +135,108 @@ export default function Store({ user }: { user?: any }) {
     setEconomy(equipItem(slot, newId));
   };
 
+  const planLabel = economy.plan === 'free' ? 'Trial' : economy.plan === 'pro' ? 'Pro' : 'Ultra';
+  const planColor = economy.plan === 'free' ? '#94A3B8' : economy.plan === 'pro' ? '#C8A84E' : '#F59E0B';
+
   return (
     <div className="page" style={{ paddingBottom: 100 }}>
+      {/* ═══ Confetti overlay ═══ */}
+      {confettiPieces.length > 0 && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 9999 }}>
+          {confettiPieces.map((p, i) => (
+            <div key={i} style={{
+              position: 'absolute', left: p.x, top: p.y,
+              width: p.size, height: p.size * 0.6,
+              background: p.color,
+              borderRadius: p.size > 8 ? 2 : 1,
+              transform: `rotate(${p.rotation}deg)`,
+              opacity: 0.9,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* ═══ Plan Modal ═══ */}
+      {showPlanModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', zIndex: 9998,
+          display: 'flex', flexDirection: 'column', overflow: 'auto',
+          animation: 'fadeIn 0.3s ease-out',
+        }}>
+          <div style={{ padding: '20px', maxWidth: 440, margin: '0 auto', width: '100%' }}>
+            {/* Modal header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5, marginBottom: 2 }}>LYNX AI</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>Choose Your Plan</div>
+              </div>
+              <button onClick={() => setShowPlanModal(false)} style={{
+                width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>✕</button>
+            </div>
+
+            {/* 15% OFF Banner */}
+            <div style={{
+              padding: '10px 16px', borderRadius: 10, marginBottom: 16,
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04))',
+              border: '1px solid rgba(34,197,94,0.2)',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ fontSize: 18 }}>🎉</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#22C55E' }}>15% OFF — Opening Bonus!</div>
+                <div style={{ fontSize: 10, color: 'rgba(34,197,94,0.7)' }}>Limited time discount on all plans</div>
+              </div>
+            </div>
+
+            {/* Billing Toggle */}
+            <div style={{
+              display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden',
+              border: '1px solid rgba(200,168,78,0.15)', background: 'rgba(0,0,0,0.3)', padding: 3,
+            }}>
+              {(['weekly', 'monthly', 'yearly'] as BillingCycle[]).map(b => (
+                <button key={b} onClick={() => setBilling(b)} style={{
+                  flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer', borderRadius: 8,
+                  background: billing === b ? 'rgba(200,168,78,0.2)' : 'transparent',
+                  color: billing === b ? '#fff' : 'var(--text-muted)',
+                  fontSize: 11, fontWeight: 700, letterSpacing: 0.3, transition: 'all 0.2s', textTransform: 'capitalize',
+                }}>
+                  {b}
+                  {b === 'yearly' && <span style={{ display: 'block', fontSize: 8, color: '#22C55E', fontWeight: 800, marginTop: 1 }}>SAVE 60%</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Plan Cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 40 }}>
+              <PlanCard tier="free" billing={billing} currentPlan={economy.plan} discount={0} />
+              <PlanCard tier="pro" billing={billing} currentPlan={economy.plan} discount={15} />
+              <PlanCard tier="ultra" billing={billing} currentPlan={economy.plan} discount={15} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ Header ═══ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5, marginBottom: 4 }}>LYNX AI</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>Store</div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Plan Tier Badge */}
+          <button onClick={openPlanModal} style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '6px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
+            background: `${planColor}15`,
+            border: `1px solid ${planColor}30`,
+          }}>
+            {economy.plan === 'ultra' ? <Crown size={13} color={planColor} /> : economy.plan === 'pro' ? <Star size={13} color={planColor} /> : <Sparkles size={13} color={planColor} />}
+            <span style={{ fontSize: 11, fontWeight: 800, color: planColor, letterSpacing: 0.5 }}>{planLabel}</span>
+          </button>
           {/* AI Credits */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 5,
@@ -103,9 +244,7 @@ export default function Store({ user }: { user?: any }) {
             background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)',
           }}>
             <BrainCircuit size={14} color="#06B6D4" />
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>
-              {economy.aiCredits}
-            </span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>{economy.aiCredits}</span>
           </div>
           {/* Coins */}
           <div style={{
@@ -119,139 +258,127 @@ export default function Store({ user }: { user?: any }) {
         </div>
       </div>
 
-      {/* ═══ Plans / Shop Toggle ═══ */}
-      <div style={{
-        display: 'flex', gap: 0, marginBottom: 24, borderRadius: 12, overflow: 'hidden',
-        border: '1px solid var(--border)', background: 'var(--surface)',
-      }}>
-        {(['plans', 'shop'] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} style={{
-            flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
-            background: activeTab === t ? 'rgba(200,168,78,0.12)' : 'transparent',
-            color: activeTab === t ? 'var(--primary)' : 'var(--text-muted)',
-            fontSize: 13, fontWeight: 700, letterSpacing: 0.5,
-            borderBottom: activeTab === t ? '2px solid var(--primary)' : '2px solid transparent',
-            transition: 'all 0.2s',
-          }}>
-            {t === 'plans' ? '⚡ Plans' : '🛍️ Shop'}
-          </button>
-        ))}
-      </div>
-
-      {/* ═══ PLANS TAB ═══ */}
-      {activeTab === 'plans' && (
-        <div>
-          {/* Billing Toggle */}
+      {/* ═══ Upgrade Banner ═══ */}
+      {economy.plan === 'free' && (
+        <button onClick={openPlanModal} style={{
+          width: '100%', border: 'none', cursor: 'pointer', borderRadius: 14, marginBottom: 24,
+          position: 'relative', overflow: 'hidden', textAlign: 'left',
+          padding: 0, background: 'transparent',
+        }}>
           <div style={{
-            display: 'flex', gap: 0, marginBottom: 24, borderRadius: 10, overflow: 'hidden',
-            border: '1px solid rgba(200,168,78,0.15)', background: 'rgba(0,0,0,0.3)',
-            padding: 3,
+            position: 'relative', overflow: 'hidden', borderRadius: 14,
+            border: '1.5px solid rgba(200,168,78,0.25)',
           }}>
-            {(['weekly', 'monthly', 'yearly'] as BillingCycle[]).map(b => (
-              <button key={b} onClick={() => setBilling(b)} style={{
-                flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer',
-                borderRadius: 8,
-                background: billing === b ? 'rgba(200,168,78,0.2)' : 'transparent',
-                color: billing === b ? '#fff' : 'var(--text-muted)',
-                fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
-                transition: 'all 0.2s', textTransform: 'capitalize',
+            {/* Background image */}
+            <img src="/upgrade-banner.png" alt="" style={{
+              width: '100%', height: 100, objectFit: 'cover', display: 'block',
+              filter: 'brightness(0.6)',
+            }} />
+            {/* Content overlay */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)',
+              display: 'flex', alignItems: 'center', padding: '0 20px',
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <Crown size={16} color="#C8A84E" />
+                  <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>Upgrade to Pro</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+                  Unlock unlimited scans, AI chat & premium cosmetics
+                </div>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '6px 14px', borderRadius: 20,
+                background: 'linear-gradient(135deg, #C8A84E, #A08030)',
+                boxShadow: '0 0 12px rgba(200,168,78,0.3)',
               }}>
-                {b}
-                {b === 'yearly' && <span style={{ display: 'block', fontSize: 8, color: '#22C55E', fontWeight: 800, marginTop: 1 }}>SAVE 60%</span>}
-              </button>
-            ))}
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#000' }}>15% OFF</span>
+                <ChevronRight size={14} color="#000" />
+              </div>
+            </div>
           </div>
-
-          {/* Plan Cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <PlanCard tier="free" billing={billing} currentPlan={economy.plan} />
-            <PlanCard tier="pro" billing={billing} currentPlan={economy.plan} />
-            <PlanCard tier="ultra" billing={billing} currentPlan={economy.plan} />
-          </div>
-        </div>
+        </button>
       )}
 
-      {/* ═══ SHOP TAB ═══ */}
-      {activeTab === 'shop' && (
-        <div>
-          {/* Category Pills */}
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 20, margin: '0 -20px', padding: '0 20px 8px' }}>
-            {([
-              { id: 'deals' as const, label: 'Deals', icon: Clock },
-              { id: 'border' as const, label: 'Borders', icon: Frame },
-              { id: 'theme' as const, label: 'Themes', icon: Palette },
-            ]).map(s => {
-              const isActive = shopSection === s.id;
-              const color = CAT_COLORS[s.id] || '#C8A84E';
-              return (
-                <button key={s.id} onClick={() => setShopSection(s.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '8px 14px', borderRadius: 10, border: 'none',
-                  background: isActive ? `${color}18` : 'var(--surface)',
-                  color: isActive ? color : 'var(--text-muted)',
-                  fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
-                  transition: 'all 0.2s',
-                }}>
-                  <s.icon size={13} /> {s.label}
-                </button>
-              );
-            })}
+      {/* ═══ Category Pills ═══ */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 20, margin: '0 -20px', padding: '0 20px 8px' }}>
+        {([
+          { id: 'deals' as const, label: 'Deals', icon: Clock },
+          { id: 'border' as const, label: 'Borders', icon: Frame },
+          { id: 'theme' as const, label: 'Themes', icon: Palette },
+        ]).map(s => {
+          const isActive = shopSection === s.id;
+          const color = CAT_COLORS[s.id] || '#C8A84E';
+          return (
+            <button key={s.id} onClick={() => setShopSection(s.id)} style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '8px 14px', borderRadius: 10, border: 'none',
+              background: isActive ? `${color}18` : 'var(--surface)',
+              color: isActive ? color : 'var(--text-muted)',
+              fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              border: isActive ? `1.5px solid ${color}40` : '1.5px solid transparent',
+              transition: 'all 0.2s', whiteSpace: 'nowrap',
+            }}>
+              <s.icon size={14} />
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ═══ Deals Section ═══ */}
+      {shopSection === 'deals' && (
+        <>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '8px 0', marginBottom: 16, borderRadius: 8,
+            background: 'rgba(200,168,78,0.06)', border: '1px solid rgba(200,168,78,0.1)',
+          }}>
+            <Clock size={13} color="var(--primary)" />
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>Refreshes in <span style={{ color: 'var(--primary)' }}>{dealTimer}</span></span>
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {getTodaysDeals().map(d => (
+              <GlowCard key={d.item.id} item={d.item} discount={d.discount}
+                owned={economy.owned.includes(d.item.id)}
+                equipped={economy.equipped[d.item.category as keyof EquippedItems] === d.item.id}
+                canAfford={economy.coins >= Math.round(d.item.price * (1 - d.discount / 100))}
+                onBuy={() => { const p = purchaseItem(d.item.id, Math.round(d.item.price * (1 - d.discount / 100))); if (p) { setEconomy(p); setPurchasedId(d.item.id); setTimeout(() => setPurchasedId(null), 1500); } }}
+                onEquip={d.item.category !== 'consumable' ? () => handleEquip(d.item.category as keyof EquippedItems, d.item.id) : undefined}
+                avatarUrl={avatarUrl}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
-          {/* Deals */}
-          {shopSection === 'deals' && (
-            <div>
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                padding: '10px 16px', borderRadius: 12, marginBottom: 16,
-                background: 'linear-gradient(135deg, rgba(200,168,78,0.08) 0%, rgba(200,168,78,0.02) 100%)',
-                border: '1px solid rgba(200,168,78,0.12)',
-              }}>
-                <Clock size={13} color="var(--primary)" />
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>
-                  Refreshes in <span style={{ color: 'var(--primary)' }}>{dealTimer}</span>
-                </span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {getTodaysDeals(4).map(({ item, discount }) => (
-                  <GlowCard key={item.id} item={item} discount={discount}
-                    owned={economy.owned.includes(item.id)}
-                    canAfford={economy.coins >= Math.round(item.price * (1 - discount / 100))}
-                    onBuy={() => { const p = Math.round(item.price * (1 - discount / 100)); const r = purchaseItem(item.id, p); if (r) { setEconomy(r); setPurchasedId(item.id); setTimeout(() => setPurchasedId(null), 1500); } }}
-                    avatarUrl={avatarUrl}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Category Items */}
-          {shopSection !== 'deals' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {getItemsByCategory(shopSection).map(item => (
-                <GlowCard key={item.id} item={item}
-                  owned={economy.owned.includes(item.id)}
-                  equipped={economy.equipped[shopSection === 'consumable' ? 'border' : shopSection as keyof EquippedItems] === item.id}
-                  canAfford={economy.coins >= item.price}
-                  onBuy={() => handlePurchase(item)}
-                  onEquip={item.category !== 'consumable' ? () => handleEquip(item.category as keyof EquippedItems, item.id) : undefined}
-                  avatarUrl={avatarUrl}
-                />
-              ))}
-            </div>
-          )}
+      {/* ═══ Category Items ═══ */}
+      {shopSection !== 'deals' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {getItemsByCategory(shopSection).map(item => (
+            <GlowCard key={item.id} item={item}
+              owned={economy.owned.includes(item.id)}
+              equipped={economy.equipped[shopSection === 'consumable' ? 'border' : shopSection as keyof EquippedItems] === item.id}
+              canAfford={economy.coins >= item.price}
+              onBuy={() => handlePurchase(item)}
+              onEquip={item.category !== 'consumable' ? () => handleEquip(item.category as keyof EquippedItems, item.id) : undefined}
+              avatarUrl={avatarUrl}
+            />
+          ))}
         </div>
       )}
     </div>
   );
-}
 
 /* ═══════════════════════════════════
    Plan Card — Liftoff-inspired
    ═══════════════════════════════════ */
-function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: BillingCycle; currentPlan: PlanTier }) {
+function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier; billing: BillingCycle; currentPlan: PlanTier; discount?: number }) {
   const info = PLAN_PRICING[tier][billing];
+  const discountedPrice = discount > 0 ? Math.round(info.price * (1 - discount / 100)) : info.price;
   const config = PLAN_CONFIG[tier];
   const isActive = tier === currentPlan;
   const isFree = tier === 'free';
@@ -365,7 +492,7 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
               {isUltra ? <Crown size={20} color="#C8A84E" /> : isPro ? <Star size={18} color="#C8A84E" /> : <Sparkles size={16} color="var(--text-muted)" />}
               <div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
-                  {tier}
+                  {isFree ? 'TRIAL' : tier}
                 </div>
                 {isActive && (
                   <div style={{ fontSize: 9, fontWeight: 700, color: '#22C55E', letterSpacing: 0.5 }}>CURRENT PLAN</div>
@@ -377,7 +504,8 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
                 <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>Free</div>
               ) : (
                 <>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>₹{info.price}</div>
+                  {discount > 0 && <div style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'line-through' }}>₹{info.price}</div>}
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>₹{discountedPrice}</div>
                   <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{info.label}</div>
                 </>
               )}

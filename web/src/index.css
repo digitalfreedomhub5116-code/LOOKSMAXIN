@@ -1306,3 +1306,7 @@ html, body, #root {
   from { filter: hue-rotate(0deg) brightness(1.1); }
   to { filter: hue-rotate(360deg) brightness(1.1); }
 }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
