@@ -478,7 +478,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
         <div style={{
           clipPath,
           background: `linear-gradient(160deg, ${catColor}40 0%, ${catColor}22 25%, #111828 55%, #0d1118 100%)`,
-          position: 'relative', overflow: 'hidden',
+          position: 'relative',
           textAlign: 'center',
           padding: '16px 10px 14px',
           minHeight: 210,
