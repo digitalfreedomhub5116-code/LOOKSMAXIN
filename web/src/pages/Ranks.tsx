@@ -22,8 +22,6 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
       <div style={{
         position: 'relative', width: outerSize, height: outerSize,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        borderRadius: '50%',
-        boxShadow: `0 0 16px ${glow}, 0 0 32px ${glow}`,
       }}>
         {/* Aura glow layer */}
         {hasAura && borderItem.auraConfig && (
