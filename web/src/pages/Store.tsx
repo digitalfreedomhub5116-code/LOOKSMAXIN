@@ -158,16 +158,21 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
     // If equipping a border, push to leaderboard so others see it
     if (slot === 'border') {
       localStorage.removeItem('lynx_lb_last_push'); // Force re-push
-      const streak = getStreak();
-      const userId = user?.id;
-      if (userId) {
-        pushStreakToLeaderboard(
-          userId, streak.current,
-          user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Player',
-          user?.user_metadata?.avatar_url,
-          newId,
-        ).catch(() => {});
-      }
+      // Get user from Supabase auth directly (don't rely on props)
+      import('../lib/api').then(({ supabase }) => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session?.user) { console.warn('[LB] No session for border push'); return; }
+          const u = session.user;
+          const streak = getStreak();
+          console.log('[LB] Pushing border change:', newId);
+          pushStreakToLeaderboard(
+            u.id, streak.current,
+            u.user_metadata?.full_name || u.email?.split('@')[0] || 'Player',
+            u.user_metadata?.avatar_url,
+            newId,
+          ).catch(e => console.warn('[LB] Border push failed:', e));
+        });
+      });
     }
   };
 
