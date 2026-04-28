@@ -443,7 +443,7 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
 }
 
 /* ═══════════════════════════════════
-   Glow Card — Liftoff-quality premium card
+   Glow Card — Liftoff-matching premium card
    ═══════════════════════════════════ */
 function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, avatarUrl }: {
   item: StoreItem; discount?: number; owned?: boolean; equipped?: boolean;
@@ -464,63 +464,66 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
   )`;
 
   return (
-    /* Glow wrapper — drop-shadow for proper glow outside clip-path */
+    /* Glow wrapper */
     <div style={{
-      filter: `drop-shadow(0 0 10px ${catColor}35) drop-shadow(0 4px 12px rgba(0,0,0,0.5))`,
+      filter: `drop-shadow(0 0 12px ${catColor}40) drop-shadow(0 4px 16px rgba(0,0,0,0.6))`,
     }}>
-      {/* Thick gradient border layer */}
+      {/* Thick gradient border — 3px visible */}
       <div style={{
         clipPath,
-        padding: 2.5,
-        background: `linear-gradient(160deg, ${catColor}AA, ${catColor}40, ${catColor}80)`,
+        padding: 3,
+        background: `linear-gradient(160deg, ${catColor}CC, ${catColor}50 40%, ${catColor}90 80%, ${catColor}CC)`,
       }}>
-        {/* Inner card — VIBRANT colored background */}
+        {/* Inner card — RICH colored background like Liftoff */}
         <div style={{
           clipPath,
-          background: `linear-gradient(160deg, ${catColor}30 0%, ${catColor}12 30%, #0e1018 70%, #0c0e14 100%)`,
+          background: `linear-gradient(160deg, ${catColor}40 0%, ${catColor}22 25%, #111828 55%, #0d1118 100%)`,
           position: 'relative', overflow: 'hidden',
           textAlign: 'center',
+          padding: '16px 10px 14px',
+          minHeight: 210,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
 
-          {/* ─── THICK Diagonal Shine Streaks (Liftoff-style) ─── */}
+          {/* ─── PROMINENT Diagonal Shine Streaks ─── */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
             pointerEvents: 'none', zIndex: 1, overflow: 'hidden',
           }}>
             {/* Primary thick shine */}
             <div style={{
-              position: 'absolute', top: '-60%', left: '-20%',
-              width: '50%', height: '220%',
-              background: 'linear-gradient(72deg, transparent 38%, rgba(255,255,255,0.06) 44%, rgba(255,255,255,0.12) 48%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.12) 52%, rgba(255,255,255,0.06) 56%, transparent 62%)',
-              transform: 'rotate(22deg)',
+              position: 'absolute', top: '-80%', left: '-25%',
+              width: '55%', height: '260%',
+              background: 'linear-gradient(72deg, transparent 36%, rgba(255,255,255,0.06) 42%, rgba(255,255,255,0.14) 46%, rgba(255,255,255,0.22) 48%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.06) 54%, transparent 60%)',
+              transform: 'rotate(25deg)',
             }} />
             {/* Secondary shine */}
             <div style={{
-              position: 'absolute', top: '-60%', left: '15%',
-              width: '35%', height: '220%',
-              background: 'linear-gradient(72deg, transparent 42%, rgba(255,255,255,0.04) 46%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 54%, transparent 58%)',
-              transform: 'rotate(22deg)',
+              position: 'absolute', top: '-80%', left: '12%',
+              width: '40%', height: '260%',
+              background: 'linear-gradient(72deg, transparent 40%, rgba(255,255,255,0.04) 44%, rgba(255,255,255,0.12) 47%, rgba(255,255,255,0.18) 49%, rgba(255,255,255,0.12) 51%, rgba(255,255,255,0.04) 54%, transparent 58%)',
+              transform: 'rotate(25deg)',
             }} />
-            {/* Tertiary subtle */}
+            {/* Tertiary thin */}
             <div style={{
-              position: 'absolute', top: '-60%', left: '45%',
-              width: '25%', height: '220%',
-              background: 'linear-gradient(72deg, transparent 44%, rgba(255,255,255,0.03) 48%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.03) 52%, transparent 56%)',
-              transform: 'rotate(22deg)',
+              position: 'absolute', top: '-80%', left: '42%',
+              width: '28%', height: '260%',
+              background: 'linear-gradient(72deg, transparent 44%, rgba(255,255,255,0.03) 47%, rgba(255,255,255,0.08) 49%, rgba(255,255,255,0.03) 51%, transparent 54%)',
+              transform: 'rotate(25deg)',
             }} />
           </div>
 
           {/* ─── Top edge glow line ─── */}
           <div style={{
-            position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1,
-            background: `linear-gradient(90deg, transparent, ${catColor}90, transparent)`,
+            position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1.5,
+            background: `linear-gradient(90deg, transparent, ${catColor}BB, transparent)`,
             zIndex: 2,
           }} />
 
-          {/* ─── Discount badge (top-right) ─── */}
+          {/* ─── Discount badge (top-left) ─── */}
           {discount && (
             <div style={{
-              position: 'absolute', top: 6, right: 6, zIndex: 3,
+              position: 'absolute', top: 8, left: 8, zIndex: 3,
               padding: '3px 8px', borderRadius: 6,
               background: '#22C55E', fontSize: 9, fontWeight: 900, color: '#000',
               boxShadow: '0 0 10px rgba(34,197,94,0.5)',
@@ -529,38 +532,54 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
             </div>
           )}
 
-          {/* ─── Name & Category (CENTERED, larger) ─── */}
+          {/* ─── Info badge (top-right) like Liftoff ─── */}
           <div style={{
-            padding: '14px 12px 6px', position: 'relative', zIndex: 2,
+            position: 'absolute', top: 8, right: 8, zIndex: 3,
+            width: 22, height: 22, borderRadius: 6,
+            background: `${catColor}30`, border: `1px solid ${catColor}50`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 900, color: catColor,
+            cursor: 'pointer',
           }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 2 }}>
+            i
+          </div>
+
+          {/* ─── Name & Category (CENTERED, large bold) ─── */}
+          <div style={{ position: 'relative', zIndex: 2, marginBottom: 10 }}>
+            <div style={{
+              fontSize: 15, fontWeight: 900, color: '#fff',
+              lineHeight: 1.2, marginBottom: 3,
+              textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            }}>
               {item.name}
             </div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: catColor, textTransform: 'capitalize' }}>
+            <div style={{
+              fontSize: 11, fontWeight: 600, color: catColor,
+              textTransform: 'capitalize', opacity: 0.9,
+            }}>
               {item.tier} {item.category}
             </div>
           </div>
 
-          {/* ─── Preview area (LARGER, with glow) ─── */}
+          {/* ─── Preview area (MUCH LARGER — 50% of card) ─── */}
           <div style={{
-            height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative', zIndex: 2, padding: '4px 0',
+            flex: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', zIndex: 2, width: '100%', minHeight: 100,
           }}>
             {/* Radial glow behind preview */}
             <div style={{
               position: 'absolute', top: '50%', left: '50%',
-              width: 80, height: 80, borderRadius: '50%',
-              background: `radial-gradient(circle, ${catColor}20 0%, transparent 70%)`,
+              width: 110, height: 110, borderRadius: '50%',
+              background: `radial-gradient(circle, ${catColor}25 0%, ${catColor}08 50%, transparent 70%)`,
               transform: 'translate(-50%, -50%)',
             }} />
 
             {item.category === 'border' && item.imageBorder ? (
-              /* Transparent PNG border — user's pfp underneath */
-              <div style={{ position: 'relative', width: 80, height: 80 }}>
-                {/* User's real profile pic */}
+              <div style={{ position: 'relative', width: 100, height: 100 }}>
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
-                  width: 48, height: 48, borderRadius: '50%',
+                  width: 58, height: 58, borderRadius: '50%',
                   background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
                   transform: 'translate(-50%, -50%)', zIndex: 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -569,13 +588,12 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <svg width="38" height="38" viewBox="0 0 40 40">
+                    <svg width="46" height="46" viewBox="0 0 40 40">
                       <circle cx="20" cy="16" r="7" fill="#555568" />
                       <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
                     </svg>
                   )}
                 </div>
-                {/* Transparent border image on top */}
                 <img
                   src={item.imageBorder}
                   alt={item.name}
@@ -583,49 +601,47 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     position: 'absolute', top: '50%', left: '50%',
                     width: '100%', height: '100%',
                     transform: 'translate(-50%, -50%)',
-                    objectFit: 'contain',
-                    zIndex: 2,
-                    pointerEvents: 'none',
+                    objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
                   }}
                 />
               </div>
             ) : item.category === 'border' && item.borderConfig ? (
-              <BorderRing config={item.borderConfig} size={70} profileUrl={avatarUrl} />
+              <BorderRing config={item.borderConfig} size={90} profileUrl={avatarUrl} />
             ) : null}
             {item.category === 'theme' && item.themeVars && (
-              <div style={{ width: '85%' }}><ThemeSwatch themeVars={item.themeVars} /></div>
+              <div style={{ width: '90%' }}><ThemeSwatch themeVars={item.themeVars} /></div>
             )}
             {item.category === 'title' && item.titleConfig && <TitleBadge name={item.name} config={item.titleConfig} />}
             {item.category === 'consumable' && (() => {
               const I = CONSUMABLE_ICONS[item.id] || Zap;
               return (
                 <div style={{
-                  width: 52, height: 52, borderRadius: 14,
+                  width: 60, height: 60, borderRadius: 16,
                   background: `radial-gradient(circle, ${catColor}25 0%, transparent 70%)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <I size={26} color={catColor} />
+                  <I size={30} color={catColor} />
                 </div>
               );
             })()}
             {item.rankRequired && (
               <div style={{
-                position: 'absolute', top: 2, right: 8, padding: '2px 6px',
-                background: 'rgba(0,0,0,0.8)', fontSize: 8, fontWeight: 700, color: '#F59E0B',
-                border: '1px solid rgba(245,158,11,0.2)', borderRadius: 4,
+                position: 'absolute', top: 0, right: 4, padding: '2px 7px',
+                background: 'rgba(0,0,0,0.85)', fontSize: 8, fontWeight: 700, color: '#F59E0B',
+                border: '1px solid rgba(245,158,11,0.3)', borderRadius: 4,
               }}>
                 {item.rankRequired}
               </div>
             )}
           </div>
 
-          {/* ─── Bottom: Pill Price Badge (CENTERED, Liftoff-style) ─── */}
-          <div style={{ padding: '6px 12px 12px', position: 'relative', zIndex: 2 }}>
+          {/* ─── Bottom: Styled Price Badge (Liftoff-style) ─── */}
+          <div style={{ position: 'relative', zIndex: 2, marginTop: 10, width: '100%' }}>
             {owned ? (
               onEquip ? (
                 <button onClick={onEquip} style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4,
-                  padding: '7px 20px', border: 'none', cursor: 'pointer',
+                  padding: '8px 24px', border: 'none', cursor: 'pointer',
                   borderRadius: 20,
                   background: equipped
                     ? `linear-gradient(135deg, ${catColor}, ${catColor}CC)`
@@ -642,19 +658,19 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
             ) : (
               <button onClick={onBuy} disabled={!canAfford} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,
-                padding: '7px 18px', borderRadius: 20, cursor: canAfford ? 'pointer' : 'default',
+                padding: '8px 22px', borderRadius: 20, cursor: canAfford ? 'pointer' : 'default',
                 background: canAfford
-                  ? `linear-gradient(135deg, ${catColor}30, ${catColor}10)`
+                  ? `linear-gradient(135deg, ${catColor}35, ${catColor}15)`
                   : 'rgba(255,255,255,0.04)',
-                border: canAfford ? `1.5px solid ${catColor}50` : '1.5px solid rgba(255,255,255,0.08)',
+                border: canAfford ? `2px solid ${catColor}60` : '2px solid rgba(255,255,255,0.08)',
                 color: canAfford ? '#fff' : 'var(--text-muted)',
-                fontSize: 12, fontWeight: 800,
-                boxShadow: canAfford ? `0 0 10px ${catColor}20` : 'none',
+                fontSize: 13, fontWeight: 800,
+                boxShadow: canAfford ? `0 0 12px ${catColor}25` : 'none',
                 transition: 'all 0.2s',
               }}>
                 {discount && <span style={{ textDecoration: 'line-through', opacity: 0.35, fontSize: 10 }}>{item.price}</span>}
-                {canAfford ? <LynxCoin size={14} /> : <Lock size={11} />}
-                <span>{finalPrice}</span>
+                {canAfford ? <LynxCoin size={15} /> : <Lock size={12} />}
+                <span style={{ fontSize: 14 }}>{finalPrice}</span>
               </button>
             )}
           </div>
