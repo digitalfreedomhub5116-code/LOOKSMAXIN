@@ -63,7 +63,12 @@ export function BorderRing({ config, size = 64, profileUrl }: { config: BorderCo
     }
   }
 
+  const glowFilter = config.glowColor
+    ? `drop-shadow(0 0 8px ${config.glowColor}) drop-shadow(0 0 16px ${config.glowColor})`
+    : 'none';
+
   return (
+    <div style={{ filter: glowFilter, display: 'inline-block' }}>
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={animationStyle}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2={String(size)} y2={String(size)} gradientUnits="userSpaceOnUse">
@@ -120,6 +125,7 @@ export function BorderRing({ config, size = 64, profileUrl }: { config: BorderCo
         )}
       </g>
     </svg>
+    </div>
   );
 }
 
