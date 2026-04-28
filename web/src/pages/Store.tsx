@@ -462,7 +462,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
           )
         ) : (
           <button onClick={onBuy} disabled={!canAfford} style={{
-            width: '100%', padding: '8px 0', borderRadius: 10, border: 'none',
+            width: '100%', padding: '8px 0', borderRadius: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             background: canAfford
               ? `linear-gradient(135deg, ${catColor}20, ${catColor}08)`
