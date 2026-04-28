@@ -478,7 +478,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
         <div style={{
           clipPath,
           background: `linear-gradient(160deg, ${catColor}40 0%, ${catColor}22 25%, #111828 55%, #0d1118 100%)`,
-          position: 'relative',
+          position: 'relative', overflow: 'hidden',
           textAlign: 'center',
           padding: '16px 10px 14px',
           minHeight: 210,
@@ -636,7 +636,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     `inset 0 0 20px 6px ${item.auraConfig.colors[1]}25`,
                   ].join(', '),
                   animation: item.auraConfig.animated
-                    ? `pulse-glow ${item.auraConfig.pulseSpeed || 3}s ease-in-out infinite, aura-rotate ${8}s linear infinite`
+                    ? `aura-rotate 8s linear infinite`
                     : undefined,
                   zIndex: 1,
                 }} />
@@ -648,7 +648,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   border: `1.5px solid ${item.auraConfig.colors[1]}50`,
                   boxShadow: `0 0 12px 3px ${item.auraConfig.colors[1]}40, 0 0 30px 8px ${item.auraConfig.colors[2] || item.auraConfig.colors[0]}20`,
                   animation: item.auraConfig.animated
-                    ? `pulse-glow ${(item.auraConfig.pulseSpeed || 3) + 1}s ease-in-out infinite 0.5s`
+                    ? `pulse-glow ${(item.auraConfig.pulseSpeed || 3)}s ease-in-out infinite`
                     : undefined,
                   zIndex: 1,
                 }} />
