@@ -1,11 +1,12 @@
 /**
  * TopNavbar — Global persistent header across all tabs.
- * Shows: App name, Streak, Coins
+ * Shows: LYNX AI logo, Streak, Coins
  */
 import { useState, useEffect } from 'react';
 import { Flame } from 'lucide-react';
 import { getEconomy, getStreak } from '../lib/economy';
 import { LynxCoin } from './StoreComponents';
+import LynxLogo from './LynxLogo';
 
 export default function TopNavbar() {
   const [economy, setEconomy] = useState(getEconomy());
@@ -23,10 +24,8 @@ export default function TopNavbar() {
       background: 'linear-gradient(180deg, rgba(10,10,15,0.95) 0%, transparent 100%)',
       position: 'sticky', top: 0, zIndex: 100,
     }}>
-      {/* Left: App name */}
-      <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary)', letterSpacing: 1.5 }}>
-        LYNX AI
-      </div>
+      {/* Left: Logo */}
+      <LynxLogo size={26} />
 
       {/* Right: Streak + Coins */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
