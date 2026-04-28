@@ -14,7 +14,8 @@ import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import TopNavbar from './components/TopNavbar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import { pullFromCloud, pushToCloud, retryPendingUploads, setActiveUserId } from './lib/sync';
-import { claimDailyLogin, recordStreakActivity, applyEquippedTheme } from './lib/economy';
+import { claimDailyLogin, recordStreakActivity, applyThemeVars, getEquipped } from './lib/economy';
+import { getItemById } from './data/storeItems';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
@@ -36,7 +37,9 @@ export default function App() {
 
   // Apply equipped theme on app init
   useEffect(() => {
-    applyEquippedTheme();
+    const equipped = getEquipped();
+    const themeItem = equipped.theme ? getItemById(equipped.theme) : null;
+    applyThemeVars(themeItem?.themeVars || null);
   }, []);
 
   // Flush pending sync data before page unload (tab close, refresh, navigate away)

@@ -9,7 +9,7 @@ import {
   Infinity, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { ALL_STORE_ITEMS, getItemsByCategory, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
-import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyEquippedTheme, DEV_UNLOCK_ALL, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
+import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyThemeVars, DEV_UNLOCK_ALL, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
 import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/StoreComponents';
 
 /* ═══ Category accent colors ═══ */
@@ -143,7 +143,8 @@ export default function Store({ user }: { user?: any }) {
     setEconomy(newEco);
     // If equipping a theme, apply it instantly
     if (slot === 'theme') {
-      applyEquippedTheme();
+      const themeItem = newId ? ALL_STORE_ITEMS.find(i => i.id === newId) : null;
+      applyThemeVars(themeItem?.themeVars || null);
     }
   };
 
