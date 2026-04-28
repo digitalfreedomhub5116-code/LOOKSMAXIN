@@ -440,7 +440,7 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
 }
 
 /* ═══════════════════════════════════
-   Glow Card — Liftoff-style chipped corners
+   Glow Card — Liftoff-quality premium card
    ═══════════════════════════════════ */
 function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }: {
   item: StoreItem; discount?: number; owned?: boolean; equipped?: boolean;
@@ -460,98 +460,110 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
   )`;
 
   return (
-    /* Outer glow wrapper — NO clip-path so drop-shadow renders properly */
+    /* Glow wrapper — drop-shadow for proper glow outside clip-path */
     <div style={{
-      filter: `drop-shadow(0 0 8px ${catColor}30) drop-shadow(0 2px 8px rgba(0,0,0,0.4))`,
+      filter: `drop-shadow(0 0 10px ${catColor}35) drop-shadow(0 4px 12px rgba(0,0,0,0.5))`,
     }}>
-      {/* Border layer — clipped, gradient background acts as border */}
+      {/* Thick gradient border layer */}
       <div style={{
         clipPath,
-        padding: 1.5,
-        background: `linear-gradient(145deg, ${catColor}70, ${catColor}20, ${catColor}50)`,
+        padding: 2.5,
+        background: `linear-gradient(160deg, ${catColor}AA, ${catColor}40, ${catColor}80)`,
       }}>
-        {/* Inner card */}
+        {/* Inner card — VIBRANT colored background */}
         <div style={{
           clipPath,
-          background: `linear-gradient(160deg, ${catColor}10 0%, #0d0d0f 40%, #111114 100%)`,
+          background: `linear-gradient(160deg, ${catColor}30 0%, ${catColor}12 30%, #0e1018 70%, #0c0e14 100%)`,
           position: 'relative', overflow: 'hidden',
+          textAlign: 'center',
         }}>
-          {/* ─── Diagonal Shine Streaks ─── */}
+
+          {/* ─── THICK Diagonal Shine Streaks (Liftoff-style) ─── */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
             pointerEvents: 'none', zIndex: 1, overflow: 'hidden',
           }}>
+            {/* Primary thick shine */}
             <div style={{
-              position: 'absolute', top: '-50%', left: '-10%',
-              width: '40%', height: '200%',
-              background: 'linear-gradient(70deg, transparent 42%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.04) 52%, transparent 58%)',
-              transform: 'rotate(25deg)',
+              position: 'absolute', top: '-60%', left: '-20%',
+              width: '50%', height: '220%',
+              background: 'linear-gradient(72deg, transparent 38%, rgba(255,255,255,0.06) 44%, rgba(255,255,255,0.12) 48%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.12) 52%, rgba(255,255,255,0.06) 56%, transparent 62%)',
+              transform: 'rotate(22deg)',
             }} />
+            {/* Secondary shine */}
             <div style={{
-              position: 'absolute', top: '-50%', left: '25%',
-              width: '20%', height: '200%',
-              background: 'linear-gradient(70deg, transparent 46%, rgba(255,255,255,0.02) 49%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 51%, transparent 54%)',
-              transform: 'rotate(25deg)',
+              position: 'absolute', top: '-60%', left: '15%',
+              width: '35%', height: '220%',
+              background: 'linear-gradient(72deg, transparent 42%, rgba(255,255,255,0.04) 46%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 54%, transparent 58%)',
+              transform: 'rotate(22deg)',
+            }} />
+            {/* Tertiary subtle */}
+            <div style={{
+              position: 'absolute', top: '-60%', left: '45%',
+              width: '25%', height: '220%',
+              background: 'linear-gradient(72deg, transparent 44%, rgba(255,255,255,0.03) 48%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.03) 52%, transparent 56%)',
+              transform: 'rotate(22deg)',
             }} />
           </div>
 
           {/* ─── Top edge glow line ─── */}
           <div style={{
             position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1,
-            background: `linear-gradient(90deg, transparent, ${catColor}60, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${catColor}90, transparent)`,
             zIndex: 2,
           }} />
 
-          {/* ─── Corner accent dot ─── */}
-          <div style={{
-            position: 'absolute', top: chipSize - 3, right: 0, width: 5, height: 5,
-            background: catColor, borderRadius: '50%', opacity: 0.6,
-            boxShadow: `0 0 6px ${catColor}`,
-            zIndex: 2,
-          }} />
-
-          {/* ─── Item Name & Category (top section) ─── */}
-          <div style={{
-            padding: discount ? '28px 12px 4px' : '10px 12px 4px',
-            position: 'relative', zIndex: 2,
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{item.name}</div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: catColor, opacity: 0.8, textTransform: 'capitalize', marginTop: 1 }}>
-              {item.tier} {item.category}
-            </div>
-          </div>
-
-          {/* ─── Discount badge (positioned after name reservation) ─── */}
+          {/* ─── Discount badge (top-right) ─── */}
           {discount && (
             <div style={{
               position: 'absolute', top: 6, right: 6, zIndex: 3,
-              padding: '2px 7px', borderRadius: 4,
+              padding: '3px 8px', borderRadius: 6,
               background: '#22C55E', fontSize: 9, fontWeight: 900, color: '#000',
-              boxShadow: '0 0 8px rgba(34,197,94,0.35)',
+              boxShadow: '0 0 10px rgba(34,197,94,0.5)',
             }}>
               -{discount}%
             </div>
           )}
 
-          {/* ─── Preview area ─── */}
+          {/* ─── Name & Category (CENTERED, larger) ─── */}
           <div style={{
-            height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative', zIndex: 2,
+            padding: '14px 12px 6px', position: 'relative', zIndex: 2,
           }}>
-            {item.category === 'border' && item.borderConfig && <BorderRing config={item.borderConfig} size={58} />}
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 2 }}>
+              {item.name}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: catColor, textTransform: 'capitalize' }}>
+              {item.tier} {item.category}
+            </div>
+          </div>
+
+          {/* ─── Preview area (LARGER, with glow) ─── */}
+          <div style={{
+            height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', zIndex: 2, padding: '4px 0',
+          }}>
+            {/* Radial glow behind preview */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: 80, height: 80, borderRadius: '50%',
+              background: `radial-gradient(circle, ${catColor}20 0%, transparent 70%)`,
+              transform: 'translate(-50%, -50%)',
+            }} />
+
+            {item.category === 'border' && item.borderConfig && <BorderRing config={item.borderConfig} size={70} />}
             {item.category === 'theme' && item.themeVars && (
-              <div style={{ width: '80%' }}><ThemeSwatch themeVars={item.themeVars} size="small" /></div>
+              <div style={{ width: '85%' }}><ThemeSwatch themeVars={item.themeVars} /></div>
             )}
             {item.category === 'title' && item.titleConfig && <TitleBadge name={item.name} config={item.titleConfig} />}
             {item.category === 'consumable' && (() => {
               const I = CONSUMABLE_ICONS[item.id] || Zap;
               return (
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  background: `radial-gradient(circle, ${catColor}20 0%, transparent 70%)`,
+                  width: 52, height: 52, borderRadius: 14,
+                  background: `radial-gradient(circle, ${catColor}25 0%, transparent 70%)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <I size={22} color={catColor} />
+                  <I size={26} color={catColor} />
                 </div>
               );
             })()}
@@ -566,40 +578,42 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
             )}
           </div>
 
-          {/* ─── Bottom: Price / Equip ─── */}
-          <div style={{ padding: '4px 10px 10px', position: 'relative', zIndex: 2 }}>
+          {/* ─── Bottom: Pill Price Badge (CENTERED, Liftoff-style) ─── */}
+          <div style={{ padding: '6px 12px 12px', position: 'relative', zIndex: 2 }}>
             {owned ? (
               onEquip ? (
                 <button onClick={onEquip} style={{
-                  width: '100%', padding: '7px 0', border: 'none', cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '7px 20px', border: 'none', cursor: 'pointer',
+                  borderRadius: 20,
                   background: equipped
                     ? `linear-gradient(135deg, ${catColor}, ${catColor}CC)`
-                    : `${catColor}15`,
+                    : `rgba(255,255,255,0.08)`,
                   color: equipped ? '#000' : catColor,
-                  fontSize: 10, fontWeight: 800, letterSpacing: 0.5,
-                  clipPath: `polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))`,
+                  fontSize: 11, fontWeight: 800, letterSpacing: 0.5,
+                  boxShadow: equipped ? `0 0 14px ${catColor}50` : 'none',
                 }}>
                   {equipped ? '✓ EQUIPPED' : 'EQUIP'}
                 </button>
               ) : (
-                <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#22C55E', padding: '7px 0' }}>✓ Owned</div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#22C55E' }}>✓ Owned</span>
               )
             ) : (
               <button onClick={onBuy} disabled={!canAfford} style={{
-                width: '100%', padding: '7px 0',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '7px 18px', borderRadius: 20, cursor: canAfford ? 'pointer' : 'default',
                 background: canAfford
-                  ? `linear-gradient(135deg, ${catColor}25, ${catColor}0A)`
-                  : 'rgba(255,255,255,0.03)',
+                  ? `linear-gradient(135deg, ${catColor}30, ${catColor}10)`
+                  : 'rgba(255,255,255,0.04)',
+                border: canAfford ? `1.5px solid ${catColor}50` : '1.5px solid rgba(255,255,255,0.08)',
                 color: canAfford ? '#fff' : 'var(--text-muted)',
-                fontSize: 11, fontWeight: 800, cursor: canAfford ? 'pointer' : 'default',
-                border: canAfford ? `1px solid ${catColor}35` : '1px solid rgba(255,255,255,0.06)',
-                clipPath: `polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))`,
+                fontSize: 12, fontWeight: 800,
+                boxShadow: canAfford ? `0 0 10px ${catColor}20` : 'none',
                 transition: 'all 0.2s',
               }}>
-                {discount && <span style={{ textDecoration: 'line-through', opacity: 0.4, fontSize: 9 }}>{item.price}</span>}
-                {canAfford ? <LynxCoin size={13} /> : <Lock size={10} />}
-                {finalPrice}
+                {discount && <span style={{ textDecoration: 'line-through', opacity: 0.35, fontSize: 10 }}>{item.price}</span>}
+                {canAfford ? <LynxCoin size={14} /> : <Lock size={11} />}
+                <span>{finalPrice}</span>
               </button>
             )}
           </div>
@@ -608,4 +622,5 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }
     </div>
   );
 }
+
 
