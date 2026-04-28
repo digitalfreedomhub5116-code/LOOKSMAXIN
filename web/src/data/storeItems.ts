@@ -128,6 +128,13 @@ const BORDERS: StoreItem[] = [
 
 /* ═══ THEMES ═══ */
 const THEMES: StoreItem[] = [
+  // Default (free)
+  {
+    id: 'theme-default', name: 'Default Gold', category: 'theme', tier: 'basic', price: 0,
+    description: 'The original Lynx gold — classic and bold.',
+    themeVars: { '--primary': '#C8A84E', '--primary-rgb': '200,168,78', '--surface': '#12141a', '--bg': '#0a0a0f', '--border': 'rgba(200,168,78,0.08)', '--accent-gradient': 'linear-gradient(135deg, #C8A84E, #D4B04A)' },
+  },
+
   // Color (100 LC)
   {
     id: 'theme-crimson', name: 'Crimson Night', category: 'theme', tier: 'color', price: 100,
@@ -234,6 +241,33 @@ const THEMES: StoreItem[] = [
     id: 'theme-autumn', name: 'Autumn Ember', category: 'theme', tier: 'seasonal', price: 150,
     description: 'Burnt orange-brown — cozy and warm.', seasonal: true,
     themeVars: { '--primary': '#EA580C', '--primary-rgb': '234,88,12', '--surface': '#1a1008', '--bg': '#0a0804', '--border': 'rgba(234,88,12,0.12)' },
+  },
+
+  // ═══ PREMIUM GRADIENT THEMES (600 LC) ═══
+  {
+    id: 'theme-grad-inferno', name: 'Inferno Gradient', category: 'theme', tier: 'legendary', price: 600,
+    description: 'Fire-to-gold gradient — molten power.',
+    themeVars: { '--primary': '#EF4444', '--primary-rgb': '239,68,68', '--surface': '#1a0c06', '--bg': '#0c0402', '--border': 'rgba(239,68,68,0.15)', '--accent-gradient': 'linear-gradient(135deg, #EF4444, #F59E0B, #FBBF24)' },
+  },
+  {
+    id: 'theme-grad-ocean', name: 'Deep Ocean Gradient', category: 'theme', tier: 'legendary', price: 600,
+    description: 'Cyan-to-indigo depths — serene and powerful.',
+    themeVars: { '--primary': '#06B6D4', '--primary-rgb': '6,182,212', '--surface': '#04101a', '--bg': '#020810', '--border': 'rgba(6,182,212,0.15)', '--accent-gradient': 'linear-gradient(135deg, #06B6D4, #3B82F6, #6366F1)' },
+  },
+  {
+    id: 'theme-grad-aurora', name: 'Northern Lights', category: 'theme', tier: 'legendary', price: 600,
+    description: 'Green-cyan-purple aurora shimmer — ethereal.',
+    themeVars: { '--primary': '#34D399', '--primary-rgb': '52,211,153', '--surface': '#061a14', '--bg': '#020e0a', '--border': 'rgba(52,211,153,0.15)', '--accent-gradient': 'linear-gradient(135deg, #34D399, #06B6D4, #8B5CF6)' },
+  },
+  {
+    id: 'theme-grad-sunset', name: 'Sunset Blaze', category: 'theme', tier: 'legendary', price: 600,
+    description: 'Pink-orange-gold sunset sky — warm luxury.',
+    themeVars: { '--primary': '#FB7185', '--primary-rgb': '251,113,133', '--surface': '#1a0a10', '--bg': '#0c0408', '--border': 'rgba(251,113,133,0.15)', '--accent-gradient': 'linear-gradient(135deg, #FB7185, #F97316, #FBBF24)' },
+  },
+  {
+    id: 'theme-grad-toxic', name: 'Toxic Neon', category: 'theme', tier: 'legendary', price: 600,
+    description: 'Electric green-to-cyan — radioactive energy.',
+    themeVars: { '--primary': '#22C55E', '--primary-rgb': '34,197,94', '--surface': '#061a0c', '--bg': '#020e04', '--border': 'rgba(34,197,94,0.15)', '--accent-gradient': 'linear-gradient(135deg, #22C55E, #06B6D4, #3B82F6)' },
   },
 ];
 
