@@ -14,10 +14,8 @@ import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/Sto
 
 /* ═══ Category accent colors ═══ */
 const CAT_COLORS: Record<string, string> = {
-  border: '#06B6D4',
+  border: '#D4A843',
   theme: '#8B5CF6',
-  consumable: '#F59E0B',
-  title: '#EC4899',
   deals: '#C8A84E',
 };
 
@@ -182,8 +180,6 @@ export default function Store({ user }: { user?: any }) {
               { id: 'deals' as const, label: 'Deals', icon: Clock },
               { id: 'border' as const, label: 'Borders', icon: Frame },
               { id: 'theme' as const, label: 'Themes', icon: Palette },
-              { id: 'consumable' as const, label: 'Boosts', icon: Zap },
-              { id: 'title' as const, label: 'Titles', icon: Tag },
             ]).map(s => {
               const isActive = shopSection === s.id;
               const color = CAT_COLORS[s.id] || '#C8A84E';
