@@ -69,6 +69,14 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
     setEconomy(e);
   }, []);
 
+  // Spawn confetti when opened via navbar plan badge
+  useEffect(() => {
+    if (initialShowPlans) {
+      // Small delay so the modal renders first
+      setTimeout(() => spawnConfetti(), 200);
+    }
+  }, [initialShowPlans]);
+
   useEffect(() => {
     const tick = () => {
       const now = new Date();
