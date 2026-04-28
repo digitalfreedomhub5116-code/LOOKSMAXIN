@@ -33,12 +33,14 @@ export function LynxCoin({ size = 20 }: { size?: number }) {
   );
 }
 
-/* ═══ Border Ring Preview ═══ */
-export function BorderRing({ config, size = 64 }: { config: BorderConfig; size?: number }) {
+/* ═══ Border Ring Preview (with profile pic like Liftoff) ═══ */
+export function BorderRing({ config, size = 64, profileUrl }: { config: BorderConfig; size?: number; profileUrl?: string }) {
   const r = size / 2 - config.strokeWidth;
   const cx = size / 2;
   const cy = size / 2;
   const gradId = `border-${config.colors.join('-').replace(/[^a-zA-Z0-9]/g, '')}`;
+  const clipId = `clip-${gradId}`;
+  const avatarR = r - 4;
 
   const animationStyle: React.CSSProperties = {};
   if (config.animated) {
@@ -69,12 +71,22 @@ export function BorderRing({ config, size = 64 }: { config: BorderConfig; size?:
             <stop key={i} offset={`${(i / Math.max(config.colors.length - 1, 1)) * 100}%`} stopColor={c} />
           ))}
         </linearGradient>
+        <clipPath id={clipId}>
+          <circle cx={cx} cy={cy} r={avatarR} />
+        </clipPath>
+        {/* Realistic default avatar gradient */}
+        <radialGradient id={`avatar-bg-${gradId}`} cx="50%" cy="35%" r="60%">
+          <stop offset="0%" stopColor="#3a3a4a" />
+          <stop offset="100%" stopColor="#1a1a24" />
+        </radialGradient>
       </defs>
-      {/* Glow */}
+
+      {/* Glow ring */}
       {config.glowColor && (
         <circle cx={cx} cy={cy} r={r + 2} fill="none" stroke={config.glowColor} strokeWidth={6} opacity={config.glowIntensity || 0.3} />
       )}
-      {/* Ring */}
+
+      {/* Border ring */}
       <circle
         cx={cx} cy={cy} r={r}
         fill="none"
@@ -83,13 +95,30 @@ export function BorderRing({ config, size = 64 }: { config: BorderConfig; size?:
         strokeLinecap="round"
         strokeDasharray={config.animated && config.animationType === 'dash' ? '8 4' : undefined}
       />
-      {/* User icon placeholder */}
-      <circle cx={cx} cy={cy} r={r - 6} fill="rgba(255,255,255,0.05)" />
-      <circle cx={cx} cy={cy - 2} r={6} fill="rgba(255,255,255,0.15)" />
-      <path
-        d={`M ${cx - 10} ${cy + 14} Q ${cx - 10} ${cy + 4}, ${cx} ${cy + 4} Q ${cx + 10} ${cy + 4}, ${cx + 10} ${cy + 14}`}
-        fill="rgba(255,255,255,0.1)"
-      />
+
+      {/* Profile picture area (clipped circle) */}
+      <g clipPath={`url(#${clipId})`}>
+        {profileUrl ? (
+          /* Real user profile pic */
+          <image href={profileUrl} x={cx - avatarR} y={cy - avatarR} width={avatarR * 2} height={avatarR * 2} preserveAspectRatio="xMidYMid slice" />
+        ) : (
+          /* Premium default avatar — face with depth (like Liftoff) */
+          <>
+            {/* Background */}
+            <circle cx={cx} cy={cy} r={avatarR} fill={`url(#avatar-bg-${gradId})`} />
+            {/* Head */}
+            <circle cx={cx} cy={cy - avatarR * 0.12} r={avatarR * 0.3} fill="#555568" />
+            {/* Head highlight */}
+            <ellipse cx={cx - avatarR * 0.06} cy={cy - avatarR * 0.22} rx={avatarR * 0.14} ry={avatarR * 0.08} fill="rgba(255,255,255,0.08)" />
+            {/* Shoulders/body */}
+            <ellipse cx={cx} cy={cy + avatarR * 0.65} rx={avatarR * 0.55} ry={avatarR * 0.45} fill="#4a4a5a" />
+            {/* Body highlight */}
+            <ellipse cx={cx} cy={cy + avatarR * 0.5} rx={avatarR * 0.3} ry={avatarR * 0.15} fill="rgba(255,255,255,0.04)" />
+            {/* Subtle inner ring */}
+            <circle cx={cx} cy={cy} r={avatarR - 1} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          </>
+        )}
+      </g>
     </svg>
   );
 }
