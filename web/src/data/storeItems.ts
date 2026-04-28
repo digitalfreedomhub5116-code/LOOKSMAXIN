@@ -111,19 +111,19 @@ const BORDERS: StoreItem[] = [
   {
     id: 'border-fire-img', name: 'Fire Ring', category: 'border', tier: 'elemental', price: 350,
     description: 'Blazing flames engulfing your profile — pure fire.',
-    imageBorder: '/borders/fire.png',
+    imageBorder: '/borders/fire-transparent.png',
     borderConfig: { colors: ['#FF4500', '#FF8C00'], strokeWidth: 3, animated: false, glowColor: 'rgba(255,69,0,0.4)', glowIntensity: 0.7 },
   },
   {
     id: 'border-ice-img', name: 'Ice Crown', category: 'border', tier: 'elemental', price: 350,
     description: 'Frozen crystalline frost wrapping your avatar.',
-    imageBorder: '/borders/ice.png',
+    imageBorder: '/borders/ice-transparent.png',
     borderConfig: { colors: ['#00BFFF', '#E0FFFF'], strokeWidth: 3, animated: false, glowColor: 'rgba(0,191,255,0.4)', glowIntensity: 0.6 },
   },
   {
     id: 'border-lightning-img', name: 'Lightning Arc', category: 'border', tier: 'elemental', price: 350,
     description: 'Electric bolts crackling around your portrait.',
-    imageBorder: '/borders/lightning.png',
+    imageBorder: '/borders/lightning-transparent.png',
     borderConfig: { colors: ['#7C3AED', '#3B82F6'], strokeWidth: 3, animated: false, glowColor: 'rgba(124,58,237,0.4)', glowIntensity: 0.7 },
   },
 
