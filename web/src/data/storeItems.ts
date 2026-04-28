@@ -5,7 +5,7 @@
 
 /* ═══ Types ═══ */
 export type StoreCategory = 'border' | 'theme' | 'consumable' | 'title' | 'banner';
-export type ItemTier = 'basic' | 'color' | 'elemental' | 'special' | 'prismatic' | 'seasonal' | 'premium' | 'rank-gated';
+export type ItemTier = 'basic' | 'color' | 'elemental' | 'special' | 'prismatic' | 'seasonal' | 'premium' | 'legendary' | 'rank-gated';
 
 export interface StoreItem {
   id: string;
@@ -22,6 +22,14 @@ export interface StoreItem {
   imageBorder?: string;
   /** For borders: CSS animation on the image overlay */
   imageAnimated?: boolean;
+  /** For borders: CSS aura glow config (no image needed) */
+  auraConfig?: {
+    colors: string[];       // glow colors
+    blur: number;           // blur radius in px
+    spread: number;         // spread radius in px
+    animated?: boolean;     // hue-rotate animation
+    pulseSpeed?: number;    // pulse animation speed in seconds
+  };
   /** For titles: display styling */
   titleConfig?: TitleConfig;
   /** For consumables: effect */
@@ -142,6 +150,25 @@ const BORDERS: StoreItem[] = [
     borderConfig: { colors: ['#C084FC', '#A855F7'], strokeWidth: 3, animated: false, glowColor: 'rgba(192,132,252,0.4)', glowIntensity: 0.7 },
   },
 
+  // CSS Aura Glow Borders (pure CSS — no PNG needed)
+  {
+    id: 'border-aura-void', name: 'Void Aura', category: 'border', tier: 'legendary', price: 600,
+    description: 'A swirling void of purple and blue energy radiating from your profile.',
+    auraConfig: { colors: ['#7C3AED', '#3B82F6', '#A855F7', '#6366F1'], blur: 12, spread: 3, animated: true, pulseSpeed: 3 },
+    borderConfig: { colors: ['#7C3AED', '#A855F7'], strokeWidth: 3, animated: false, glowColor: 'rgba(124,58,237,0.5)', glowIntensity: 0.8 },
+  },
+  {
+    id: 'border-aura-solar', name: 'Solar Flare', category: 'border', tier: 'legendary', price: 600,
+    description: 'Blazing golden-orange plasma aura scorching around your avatar.',
+    auraConfig: { colors: ['#F59E0B', '#EF4444', '#F97316', '#FBBF24'], blur: 14, spread: 4, animated: true, pulseSpeed: 2.5 },
+    borderConfig: { colors: ['#F59E0B', '#EF4444'], strokeWidth: 3, animated: false, glowColor: 'rgba(245,158,11,0.5)', glowIntensity: 0.8 },
+  },
+  {
+    id: 'border-aura-toxic', name: 'Toxic Haze', category: 'border', tier: 'premium', price: 450,
+    description: 'Radioactive green mist pulsing with biohazard energy.',
+    auraConfig: { colors: ['#22C55E', '#10B981', '#84CC16', '#34D399'], blur: 10, spread: 3, animated: true, pulseSpeed: 4 },
+    borderConfig: { colors: ['#22C55E', '#10B981'], strokeWidth: 3, animated: false, glowColor: 'rgba(34,197,94,0.5)', glowIntensity: 0.7 },
+  },
   // Premium (500 LC)
   {
     id: 'border-holo', name: 'Holographic', category: 'border', tier: 'premium', price: 500,

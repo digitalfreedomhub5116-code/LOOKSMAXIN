@@ -609,6 +609,43 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   }}
                 />
               </div>
+            ) : item.category === 'border' && item.auraConfig ? (
+              /* CSS Aura Glow Border — pure layered box-shadows */
+              <div style={{ position: 'relative', width: 110, height: 110 }}>
+                {/* Aura glow rings */}
+                {item.auraConfig.colors.map((color, i) => (
+                  <div key={i} style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    width: 78 + i * 6, height: 78 + i * 6, borderRadius: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    border: `2px solid ${color}60`,
+                    boxShadow: `0 0 ${item.auraConfig!.blur + i * 4}px ${item.auraConfig!.spread}px ${color}80, inset 0 0 ${item.auraConfig!.blur}px ${color}30`,
+                    animation: item.auraConfig!.animated
+                      ? `pulse-glow ${item.auraConfig!.pulseSpeed || 3}s ease-in-out infinite ${i * 0.4}s, aura-rotate ${6 + i * 2}s linear infinite`
+                      : undefined,
+                    zIndex: 1,
+                  }} />
+                ))}
+                {/* Pfp in center */}
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: 72, height: 72, borderRadius: '50%',
+                  background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
+                  transform: 'translate(-50%, -50%)', zIndex: 3,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden',
+                  boxShadow: `0 0 ${item.auraConfig.blur}px ${item.auraConfig.colors[0]}60`,
+                }}>
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ) : (
+                    <svg width="56" height="56" viewBox="0 0 40 40">
+                      <circle cx="20" cy="16" r="7" fill="#555568" />
+                      <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
+                    </svg>
+                  )}
+                </div>
+              </div>
             ) : item.category === 'border' && item.borderConfig ? (
               <BorderRing config={item.borderConfig} size={90} profileUrl={avatarUrl} />
             ) : null}
