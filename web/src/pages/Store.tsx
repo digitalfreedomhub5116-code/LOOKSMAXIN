@@ -223,6 +223,7 @@ export default function Store({ user }: { user?: any }) {
                     owned={economy.owned.includes(item.id)}
                     canAfford={economy.coins >= Math.round(item.price * (1 - discount / 100))}
                     onBuy={() => { const p = Math.round(item.price * (1 - discount / 100)); const r = purchaseItem(item.id, p); if (r) { setEconomy(r); setPurchasedId(item.id); setTimeout(() => setPurchasedId(null), 1500); } }}
+                    avatarUrl={avatarUrl}
                   />
                 ))}
               </div>
@@ -239,6 +240,7 @@ export default function Store({ user }: { user?: any }) {
                   canAfford={economy.coins >= item.price}
                   onBuy={() => handlePurchase(item)}
                   onEquip={item.category !== 'consumable' ? () => handleEquip(item.category as keyof EquippedItems, item.id) : undefined}
+                  avatarUrl={avatarUrl}
                 />
               ))}
             </div>
@@ -443,9 +445,10 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
 /* ═══════════════════════════════════
    Glow Card — Liftoff-quality premium card
    ═══════════════════════════════════ */
-function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }: {
+function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, avatarUrl }: {
   item: StoreItem; discount?: number; owned?: boolean; equipped?: boolean;
   canAfford: boolean; onBuy: () => void; onEquip?: () => void;
+  avatarUrl?: string;
 }) {
   const catColor = CAT_COLORS[item.category] || '#C8A84E';
   const finalPrice = discount ? Math.round(item.price * (1 - discount / 100)) : item.price;
