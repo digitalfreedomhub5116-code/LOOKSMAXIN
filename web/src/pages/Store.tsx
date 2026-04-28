@@ -478,7 +478,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
         <div style={{
           clipPath,
           background: `linear-gradient(160deg, ${catColor}40 0%, ${catColor}22 25%, #111828 55%, #0d1118 100%)`,
-          position: 'relative', overflow: 'hidden',
+          position: 'relative',
           textAlign: 'center',
           padding: '16px 10px 14px',
           minHeight: 210,
@@ -610,31 +610,57 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                 />
               </div>
             ) : item.category === 'border' && item.auraConfig ? (
-              /* CSS Aura Glow Border — pure layered box-shadows */
-              <div style={{ position: 'relative', width: 110, height: 110 }}>
-                {/* Aura glow rings */}
-                {item.auraConfig.colors.map((color, i) => (
-                  <div key={i} style={{
-                    position: 'absolute', top: '50%', left: '50%',
-                    width: 78 + i * 6, height: 78 + i * 6, borderRadius: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    border: `2px solid ${color}60`,
-                    boxShadow: `0 0 ${item.auraConfig!.blur + i * 4}px ${item.auraConfig!.spread}px ${color}80, inset 0 0 ${item.auraConfig!.blur}px ${color}30`,
-                    animation: item.auraConfig!.animated
-                      ? `pulse-glow ${item.auraConfig!.pulseSpeed || 3}s ease-in-out infinite ${i * 0.4}s, aura-rotate ${6 + i * 2}s linear infinite`
-                      : undefined,
-                    zIndex: 1,
-                  }} />
-                ))}
+              /* CSS Aura Glow Border — vivid neon plasma */
+              <div style={{ position: 'relative', width: 110, height: 110, overflow: 'visible' }}>
+                {/* Ambient radial glow behind everything */}
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: 120, height: 120, borderRadius: '50%',
+                  background: `radial-gradient(circle, ${item.auraConfig.colors[0]}30 0%, ${item.auraConfig.colors[1]}15 40%, transparent 70%)`,
+                  transform: 'translate(-50%, -50%)',
+                  animation: item.auraConfig.animated ? `pulse-glow ${item.auraConfig.pulseSpeed || 3}s ease-in-out infinite` : undefined,
+                }} />
+                {/* Main aura ring — stacked box-shadows for vivid neon */}
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: 82, height: 82, borderRadius: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  border: `3px solid ${item.auraConfig.colors[0]}CC`,
+                  boxShadow: [
+                    `0 0 6px 2px ${item.auraConfig.colors[0]}AA`,
+                    `0 0 14px 4px ${item.auraConfig.colors[0]}70`,
+                    `0 0 24px 6px ${item.auraConfig.colors[1]}50`,
+                    `0 0 40px 10px ${item.auraConfig.colors[2] || item.auraConfig.colors[0]}35`,
+                    `0 0 60px 14px ${item.auraConfig.colors[3] || item.auraConfig.colors[1]}20`,
+                    `inset 0 0 10px 3px ${item.auraConfig.colors[0]}40`,
+                    `inset 0 0 20px 6px ${item.auraConfig.colors[1]}25`,
+                  ].join(', '),
+                  animation: item.auraConfig.animated
+                    ? `pulse-glow ${item.auraConfig.pulseSpeed || 3}s ease-in-out infinite, aura-rotate ${8}s linear infinite`
+                    : undefined,
+                  zIndex: 1,
+                }} />
+                {/* Secondary outer glow ring */}
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: 90, height: 90, borderRadius: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  border: `1.5px solid ${item.auraConfig.colors[1]}50`,
+                  boxShadow: `0 0 12px 3px ${item.auraConfig.colors[1]}40, 0 0 30px 8px ${item.auraConfig.colors[2] || item.auraConfig.colors[0]}20`,
+                  animation: item.auraConfig.animated
+                    ? `pulse-glow ${(item.auraConfig.pulseSpeed || 3) + 1}s ease-in-out infinite 0.5s`
+                    : undefined,
+                  zIndex: 1,
+                }} />
                 {/* Pfp in center */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
                   width: 72, height: 72, borderRadius: '50%',
-                  background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
+                  background: 'radial-gradient(circle, #2a2a3a, #1a1a24)',
                   transform: 'translate(-50%, -50%)', zIndex: 3,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   overflow: 'hidden',
-                  boxShadow: `0 0 ${item.auraConfig.blur}px ${item.auraConfig.colors[0]}60`,
+                  boxShadow: `0 0 8px ${item.auraConfig.colors[0]}80, inset 0 0 6px ${item.auraConfig.colors[0]}30`,
                 }}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
