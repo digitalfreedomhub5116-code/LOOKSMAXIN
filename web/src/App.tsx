@@ -67,9 +67,13 @@ export default function App() {
           setSessionUser(session.user);
           accessTokenRef.current = session.access_token;
           try {
-            await pullFromCloud();
+            await pullFromCloud(session.user.id);
             setLatestScores(loadLatestScores());
             setFaceImage(loadFaceImage());
+            console.log('[Auth] Post-pull state:', {
+              hasScores: !!loadLatestScores(),
+              hasFace: !!loadFaceImage(),
+            });
             // Retry any failed face uploads from previous sessions
             retryPendingUploads().catch(() => {});
           } catch (e) {
@@ -87,9 +91,13 @@ export default function App() {
         setSessionUser(session?.user || null);
         accessTokenRef.current = session?.access_token || null;
         try {
-          await pullFromCloud();
+          await pullFromCloud(session?.user?.id);
           setLatestScores(loadLatestScores());
           setFaceImage(loadFaceImage());
+          console.log('[Auth] Post-pull state (SIGNED_IN):', {
+            hasScores: !!loadLatestScores(),
+            hasFace: !!loadFaceImage(),
+          });
           retryPendingUploads().catch(() => {});
         } catch {}
         return;

@@ -159,14 +159,26 @@ if (typeof window !== 'undefined') {
 // ═══════════════════════════════════════
 //  PULL — Conditional fetch (minimum egress)
 // ═══════════════════════════════════════
-export async function pullFromCloud(): Promise<boolean> {
-  const userId = await getUserId();
-  if (!userId || !isOnline()) return false;
+/**
+ * Pull data from Supabase cloud into localStorage.
+ * @param overrideUserId - Pass userId directly when calling from auth events
+ *   to avoid getSession() race conditions on fresh login.
+ */
+export async function pullFromCloud(overrideUserId?: string): Promise<boolean> {
+  const userId = overrideUserId || await getUserId();
+  if (!userId) {
+    console.warn('[Sync] Pull skipped — no userId');
+    return false;
+  }
+  if (!isOnline()) {
+    console.warn('[Sync] Pull skipped — offline');
+    return false;
+  }
 
   try {
     const meta = loadMeta();
 
-    // First-time on this device? Always do full pull (no freshness skip)
+    // First-time on this device (or after logout)? Always do full pull
     const isFirstSync = !meta.lastSyncedAt;
 
     if (!isFirstSync) {
@@ -179,26 +191,26 @@ export async function pullFromCloud(): Promise<boolean> {
 
       if (freshErr) {
         console.warn('[Sync] Freshness check failed:', freshErr.message);
-        return false;
-      }
-
-      // No cloud record yet — nothing to pull
-      if (!freshness) return true;
-
-      // Cloud hasn't changed since our last sync — skip full pull (saves bandwidth)
-      if (freshness.updated_at) {
+        // Don't return false — fall through to full pull as safety
+      } else if (freshness?.updated_at && meta.lastSyncedAt) {
         const cloudTime = new Date(freshness.updated_at).getTime();
-        const localTime = new Date(meta.lastSyncedAt!).getTime();
+        const localTime = new Date(meta.lastSyncedAt).getTime();
         if (cloudTime <= localTime) {
           console.log('[Sync] Cloud unchanged — skip pull');
           return true;
         }
+      }
+      // If freshness is null, no cloud record yet
+      if (!freshness) {
+        console.log('[Sync] No cloud record found');
+        return true;
       }
     } else {
       console.log('[Sync] First sync on this device — forcing full pull');
     }
 
     // Step 2: Full pull (only when actually needed)
+    console.log('[Sync] Fetching full data from cloud...');
     const { data, error } = await supabase
       .from(TABLE)
       .select('*')
@@ -206,21 +218,35 @@ export async function pullFromCloud(): Promise<boolean> {
       .single();
 
     if (error || !data) {
-      if (error?.code === 'PGRST116') return true; // No rows = first time user
+      if (error?.code === 'PGRST116') {
+        console.log('[Sync] No rows — first time user');
+        return true;
+      }
       console.warn('[Sync] Pull failed:', error?.message);
       return false;
     }
 
-    // Step 3: Per-field conflict resolution (cloud vs local)
+    console.log('[Sync] Cloud data received:', {
+      has_scores: !!data.latest_scores,
+      has_face_url: !!data.face_url,
+      scan_count: Array.isArray(data.scan_history) ? data.scan_history.length : 0,
+      has_progress: !!data.plan_progress && Object.keys(data.plan_progress).length > 0,
+      has_chat: Array.isArray(data.chat_history) ? data.chat_history.length : 0,
+      has_remedies: Array.isArray(data.saved_remedies) ? data.saved_remedies.length : 0,
+    });
+
+    // Step 3: Apply cloud data to localStorage
+    // After logout, localStorage is empty — always apply cloud data
     const cloudFieldTs: Record<string, string> = data.field_updated_at || {};
     const localFieldTs = meta.fieldTimestamps;
+    let restoredCount = 0;
 
-    mergeField('latest_scores', data.latest_scores, cloudFieldTs, localFieldTs, FIELD_LS_MAP.latest_scores, 'object');
-    mergeField('face_url', data.face_url, cloudFieldTs, localFieldTs, FIELD_LS_MAP.face_url, 'string');
-    mergeField('scan_history', data.scan_history, cloudFieldTs, localFieldTs, FIELD_LS_MAP.scan_history, 'array_merge');
-    mergeField('plan_progress', data.plan_progress, cloudFieldTs, localFieldTs, FIELD_LS_MAP.plan_progress, 'object');
-    mergeField('chat_history', data.chat_history, cloudFieldTs, localFieldTs, FIELD_LS_MAP.chat_history, 'array');
-    mergeField('saved_remedies', data.saved_remedies, cloudFieldTs, localFieldTs, FIELD_LS_MAP.saved_remedies, 'array');
+    restoredCount += applyCloudField('latest_scores', data.latest_scores, cloudFieldTs, localFieldTs, FIELD_LS_MAP.latest_scores, 'object');
+    restoredCount += applyCloudField('face_url', data.face_url, cloudFieldTs, localFieldTs, FIELD_LS_MAP.face_url, 'string');
+    restoredCount += applyCloudField('scan_history', data.scan_history, cloudFieldTs, localFieldTs, FIELD_LS_MAP.scan_history, 'array_merge');
+    restoredCount += applyCloudField('plan_progress', data.plan_progress, cloudFieldTs, localFieldTs, FIELD_LS_MAP.plan_progress, 'object');
+    restoredCount += applyCloudField('chat_history', data.chat_history, cloudFieldTs, localFieldTs, FIELD_LS_MAP.chat_history, 'array');
+    restoredCount += applyCloudField('saved_remedies', data.saved_remedies, cloudFieldTs, localFieldTs, FIELD_LS_MAP.saved_remedies, 'array');
 
     // Update sync metadata
     meta.lastSyncedAt = new Date().toISOString();
@@ -232,7 +258,7 @@ export async function pullFromCloud(): Promise<boolean> {
     });
     saveMeta(meta);
 
-    console.log('[Sync] ✅ Pull complete');
+    console.log(`[Sync] ✅ Pull complete — restored ${restoredCount} field(s)`);
     return true;
   } catch (e) {
     console.warn('[Sync] Pull exception:', e);
@@ -240,36 +266,61 @@ export async function pullFromCloud(): Promise<boolean> {
   }
 }
 
-// Per-field merge with timestamp-based conflict resolution
-function mergeField(
+/**
+ * Apply a single cloud field to localStorage.
+ * Returns 1 if the field was restored, 0 if skipped.
+ * KEY FIX: If localStorage is empty for this field (e.g. after logout),
+ * ALWAYS apply cloud data regardless of timestamps.
+ */
+function applyCloudField(
   field: string,
   cloudValue: any,
   cloudTs: Record<string, string>,
   localTs: Record<string, string>,
   lsKey: string,
   type: 'object' | 'string' | 'array' | 'array_merge'
-) {
-  if (cloudValue === null || cloudValue === undefined) return;
-  if (type === 'array' && Array.isArray(cloudValue) && cloudValue.length === 0) return;
-  if (type === 'object' && typeof cloudValue === 'object' && Object.keys(cloudValue).length === 0) return;
+): number {
+  // Skip null/empty cloud values
+  if (cloudValue === null || cloudValue === undefined) {
+    console.log(`[Sync]   ${field}: cloud is null — skip`);
+    return 0;
+  }
+  if (type === 'array' && Array.isArray(cloudValue) && cloudValue.length === 0) {
+    console.log(`[Sync]   ${field}: cloud array empty — skip`);
+    return 0;
+  }
+  if (type === 'object' && typeof cloudValue === 'object' && Object.keys(cloudValue).length === 0) {
+    console.log(`[Sync]   ${field}: cloud object empty — skip`);
+    return 0;
+  }
 
-  const cloudTime = cloudTs[field] ? new Date(cloudTs[field]).getTime() : 0;
-  const localTime = localTs[field] ? new Date(localTs[field]).getTime() : 0;
+  // Check if local data exists — if not, ALWAYS apply cloud (this is the post-logout case)
+  const localValue = localStorage.getItem(lsKey);
+  const localIsEmpty = !localValue || localValue === '[]' || localValue === '{}' || localValue === 'null';
 
-  // If local is newer, keep local data
-  if (localTime > cloudTime) return;
+  if (!localIsEmpty) {
+    // Local has data — use timestamp comparison for conflict resolution
+    const cloudTime = cloudTs[field] ? new Date(cloudTs[field]).getTime() : 0;
+    const localTime = localTs[field] ? new Date(localTs[field]).getTime() : 0;
+    if (localTime > cloudTime) {
+      console.log(`[Sync]   ${field}: local is newer — keep local`);
+      return 0;
+    }
+  }
 
-  // Cloud is newer — use cloud data
+  // Apply cloud data
   if (type === 'string') {
     localStorage.setItem(lsKey, cloudValue as string);
   } else if (type === 'array_merge' && Array.isArray(cloudValue)) {
-    // Scan history: merge and deduplicate by timestamp
-    const local = safeParseArr(localStorage.getItem(lsKey));
+    const local = safeParseArr(localValue);
     const merged = mergeByTimestamp(cloudValue, local);
     localStorage.setItem(lsKey, JSON.stringify(merged.slice(0, 20)));
   } else {
     localStorage.setItem(lsKey, JSON.stringify(cloudValue));
   }
+
+  console.log(`[Sync]   ✅ ${field}: restored from cloud`);
+  return 1;
 }
 
 // ═══════════════════════════════════════
