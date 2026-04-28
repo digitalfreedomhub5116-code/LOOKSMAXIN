@@ -1,21 +1,16 @@
 /**
- * Leaderboard — Real-time streak leaderboard via Supabase.
+ * Leaderboard — Real-time streak leaderboard via Supabase REST API.
  *
- * Table: `leaderboard` (created via SQL below)
- * ┌──────────────┬──────────────┬────────────┬────────┬────────────┐
- * │ user_id (PK) │ display_name │ avatar_url │ streak │ updated_at │
- * └──────────────┴──────────────┴────────────┴────────┴────────────┘
- *
- * Minimum-egress design:
- * 1. Upsert only when streak changes (not every page load)
- * 2. Fetch top 50 only when Ranks tab is opened
- * 3. Cache results for 60s to avoid re-fetches
- * 4. Select only needed columns (no *)
+ * Uses raw fetch() instead of Supabase JS client for reliability.
+ * The JS client's query builder sometimes hangs on new tables —
+ * raw REST calls give us proper HTTP errors and timeouts.
  */
 import { supabase } from './api';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_g2L0rujZkZS_mpbC3BhSQA_-Kns1bc0';
 const TABLE = 'leaderboard';
-const CACHE_TTL_MS = 60_000; // 60 seconds
+const CACHE_TTL_MS = 60_000;
 const LS_LAST_PUSHED_STREAK = 'lynx_lb_last_streak';
 
 export interface LeaderboardEntry {
@@ -26,13 +21,22 @@ export interface LeaderboardEntry {
   updated_at: string;
 }
 
-// ─── Cache ───
 let cachedEntries: LeaderboardEntry[] = [];
 let cacheTimestamp = 0;
 
+/** Get the current session's access token for authenticated requests */
+async function getAccessToken(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Push the current user's streak to the leaderboard.
- * Only actually writes if the streak value has changed since last push.
+ * Uses Supabase REST API directly for reliability.
  */
 export async function pushStreakToLeaderboard(
   userId: string,
@@ -40,26 +44,40 @@ export async function pushStreakToLeaderboard(
   displayName: string,
   avatarUrl?: string | null,
 ): Promise<void> {
-  // Skip if streak hasn't changed since last push
   const lastPushed = localStorage.getItem(LS_LAST_PUSHED_STREAK);
   if (lastPushed === String(streak)) return;
 
-  try {
-    const { error } = await supabase.from(TABLE).upsert({
-      user_id: userId,
-      display_name: displayName || 'Player',
-      avatar_url: avatarUrl || null,
-      streak,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' });
+  const token = await getAccessToken();
+  if (!token) {
+    console.warn('[Leaderboard] No auth token — skipping push');
+    return;
+  }
 
-    if (error) {
-      console.warn('[Leaderboard] Push failed:', error.message);
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        display_name: displayName || 'Player',
+        avatar_url: avatarUrl || null,
+        streak,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('[Leaderboard] Push failed:', res.status, errText);
       return;
     }
 
     localStorage.setItem(LS_LAST_PUSHED_STREAK, String(streak));
-    // Invalidate cache so next fetch gets fresh data
     cacheTimestamp = 0;
     console.log('[Leaderboard] ✅ Pushed streak:', streak);
   } catch (err) {
@@ -69,8 +87,7 @@ export async function pushStreakToLeaderboard(
 
 /**
  * Fetch the top 50 players by streak.
- * Results are cached for 60s to minimize egress.
- * Includes an 8s timeout to prevent infinite loading.
+ * Uses raw fetch() with AbortController for reliable timeout.
  */
 export async function fetchLeaderboard(forceRefresh = false): Promise<LeaderboardEntry[]> {
   const now = Date.now();
@@ -78,45 +95,44 @@ export async function fetchLeaderboard(forceRefresh = false): Promise<Leaderboar
     return cachedEntries;
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
   try {
-    // Wrap in a real promise with timeout
-    const result = await new Promise<{ data: LeaderboardEntry[] | null; error: any }>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Leaderboard fetch timed out')), 8000);
+    const token = await getAccessToken();
+    const headers: Record<string, string> = {
+      'apikey': SUPABASE_KEY,
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      supabase
-        .from(TABLE)
-        .select('user_id, display_name, avatar_url, streak, updated_at')
-        .order('streak', { ascending: false })
-        .limit(50)
-        .then((res) => {
-          clearTimeout(timer);
-          resolve(res);
-        })
-        .catch((err) => {
-          clearTimeout(timer);
-          reject(err);
-        });
-    });
+    const url = `${SUPABASE_URL}/rest/v1/${TABLE}?select=user_id,display_name,avatar_url,streak,updated_at&order=streak.desc&limit=50`;
+    const res = await fetch(url, { headers, signal: controller.signal });
+    clearTimeout(timer);
 
-    if (result.error) {
-      console.warn('[Leaderboard] Fetch failed:', result.error.message, result.error.details, result.error.hint);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('[Leaderboard] Fetch failed:', res.status, errText);
       return cachedEntries;
     }
 
-    cachedEntries = (result.data || []) as LeaderboardEntry[];
+    const data: LeaderboardEntry[] = await res.json();
+    cachedEntries = data;
     cacheTimestamp = now;
     console.log('[Leaderboard] ✅ Fetched', cachedEntries.length, 'entries');
     return cachedEntries;
-  } catch (err) {
-    console.warn('[Leaderboard] Fetch error:', err);
+  } catch (err: any) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') {
+      console.warn('[Leaderboard] Fetch timed out (8s)');
+    } else {
+      console.warn('[Leaderboard] Fetch error:', err);
+    }
     return cachedEntries;
   }
 }
 
-/**
- * Get the current user's rank in the leaderboard.
- * Returns 0 if not found.
- */
+/** Get the current user's rank from cache. Returns 0 if not found. */
 export function getUserRank(userId: string): number {
   const idx = cachedEntries.findIndex(e => e.user_id === userId);
   return idx >= 0 ? idx + 1 : 0;
