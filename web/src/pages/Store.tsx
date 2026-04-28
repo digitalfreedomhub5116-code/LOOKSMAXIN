@@ -85,12 +85,12 @@ export default function Store({ user }: { user?: any }) {
       setConfettiPieces(prev => {
         const next = prev.map(p => ({
           ...p,
-          x: p.x + p.vx,
+          x: p.x + p.vx + Math.sin(p.y * 0.02) * 0.8, // flutter side-to-side
           y: p.y + p.vy,
-          vy: p.vy + 0.15, // gravity
-          vx: p.vx * 0.995, // air drag
-          rotation: p.rotation + p.rotSpeed,
-        })).filter(p => p.y < window.innerHeight + 50);
+          vy: Math.min(p.vy + 0.04, 2.2), // very light gravity, terminal velocity 2.2
+          vx: p.vx * 0.98, // air drag
+          rotation: p.rotation + p.rotSpeed * Math.cos(p.y * 0.015), // wobble rotation
+        })).filter(p => p.y < window.innerHeight + 80);
         if (next.length === 0) return [];
         return next;
       });
@@ -101,19 +101,19 @@ export default function Store({ user }: { user?: any }) {
   }, [confettiPieces.length > 0]);
 
   const spawnConfetti = () => {
-    const colors = ['#C8A84E', '#D4B04A', '#F5D76E', '#1a1a2e', '#2d2d3e', '#FFD700', '#B8960C', '#E8C84A', '#000', '#333'];
+    const colors = ['#FFD700', '#C8A84E', '#F5D76E', '#E8C84A', '#B8960C', '#1a1a2e', '#2d2d44', '#111'];
     const pieces: typeof confettiPieces = [];
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 60; i++) {
       pieces.push({
         x: Math.random() * window.innerWidth,
-        y: -20 - Math.random() * 200,
-        vx: (Math.random() - 0.5) * 6,
-        vy: Math.random() * 3 + 1,
+        y: -30 - Math.random() * 300,
+        vx: (Math.random() - 0.5) * 2.5,
+        vy: Math.random() * 0.8 + 0.3, // start slow
         r: 0,
         color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 8 + 4,
+        size: Math.random() * 10 + 8, // larger: 8-18px
         rotation: Math.random() * 360,
-        rotSpeed: (Math.random() - 0.5) * 12,
+        rotSpeed: (Math.random() - 0.5) * 6,
       });
     }
     setConfettiPieces(pieces);
@@ -146,11 +146,13 @@ export default function Store({ user }: { user?: any }) {
           {confettiPieces.map((p, i) => (
             <div key={i} style={{
               position: 'absolute', left: p.x, top: p.y,
-              width: p.size, height: p.size * 0.6,
+              width: p.size, height: p.size * 0.5,
               background: p.color,
-              borderRadius: p.size > 8 ? 2 : 1,
-              transform: `rotate(${p.rotation}deg)`,
-              opacity: 0.9,
+              borderRadius: 2,
+              transform: `rotate(${p.rotation}deg) scaleY(${0.5 + Math.abs(Math.sin(p.rotation * 0.017)) * 0.5})`,
+              opacity: 1,
+              boxShadow: p.color.startsWith('#FF') || p.color.startsWith('#C8') || p.color.startsWith('#F5') || p.color.startsWith('#E8')
+                ? `0 0 4px ${p.color}60` : 'none',
             }} />
           ))}
         </div>
@@ -160,7 +162,7 @@ export default function Store({ user }: { user?: any }) {
       {showPlanModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)', zIndex: 9998,
+          background: '#0a0a0f', zIndex: 9998,
           display: 'flex', flexDirection: 'column', overflow: 'auto',
           animation: 'fadeIn 0.3s ease-out',
         }}>
@@ -386,17 +388,13 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
   const isPro = tier === 'pro';
   const isUltra = tier === 'ultra';
 
-  const borderColor = isFree ? 'rgba(255,255,255,0.08)' : isPro ? 'rgba(200,168,78,0.35)' : 'rgba(200,168,78,0.5)';
+  // Pro = purple highlight, Ultra = gold, Trial = muted
+  const proColor = '#8B5CF6';
   const bgGradient = isFree
     ? 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
     : isPro
-      ? 'linear-gradient(145deg, rgba(200,168,78,0.08) 0%, rgba(200,168,78,0.02) 100%)'
+      ? `linear-gradient(145deg, ${proColor}14 0%, ${proColor}06 100%)`
       : 'linear-gradient(145deg, rgba(200,168,78,0.15) 0%, rgba(200,168,78,0.04) 100%)';
-  const glowShadow = isFree
-    ? 'none'
-    : isPro
-      ? '0 0 30px rgba(200,168,78,0.08), inset 0 1px 0 rgba(255,255,255,0.05)'
-      : '0 0 40px rgba(200,168,78,0.15), inset 0 1px 0 rgba(255,255,255,0.08)';
 
   const features: string[] = [];
   if (isFree) {
@@ -411,23 +409,35 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
 
   const chipSize = 16;
   const clipPath = `polygon(0 0, calc(100% - ${chipSize}px) 0, 100% ${chipSize}px, 100% 100%, ${chipSize}px 100%, 0 calc(100% - ${chipSize}px))`;
-  const accentColor = isFree ? 'rgba(255,255,255,0.15)' : 'rgba(200,168,78,0.5)';
+  const accentColor = isFree ? 'rgba(255,255,255,0.15)' : isPro ? `${proColor}80` : 'rgba(200,168,78,0.5)';
 
   return (
     /* Glow wrapper — no clip-path so drop-shadow renders outside */
     <div style={{
       filter: isFree ? 'none' : isPro
-        ? 'drop-shadow(0 0 10px rgba(200,168,78,0.12))'
+        ? `drop-shadow(0 0 14px ${proColor}25)`
         : 'drop-shadow(0 0 16px rgba(200,168,78,0.2))',
+      animation: isPro ? 'plan-pulse 3s ease-in-out infinite' : 'none',
+      position: 'relative',
     }}>
+      {/* BEST VALUE badge for Pro */}
+      {isPro && (
+        <div style={{
+          position: 'absolute', top: -10, right: 20, zIndex: 10,
+          padding: '4px 12px', borderRadius: 6,
+          background: `linear-gradient(135deg, ${proColor}, #A78BFA)`,
+          fontSize: 9, fontWeight: 900, color: '#fff', letterSpacing: 1,
+          boxShadow: `0 2px 10px ${proColor}50`,
+        }}>BEST VALUE</div>
+      )}
       {/* Border layer — clipped */}
       <div style={{
         clipPath,
-        padding: isFree ? 1 : isUltra ? 2 : 1.5,
+        padding: isFree ? 1 : isPro ? 2 : 2,
         background: isFree
           ? 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03))'
           : isPro
-            ? 'linear-gradient(145deg, rgba(200,168,78,0.5), rgba(200,168,78,0.1), rgba(200,168,78,0.3))'
+            ? `linear-gradient(145deg, ${proColor}90, ${proColor}30, ${proColor}60)`
             : 'linear-gradient(145deg, rgba(200,168,78,0.7), rgba(200,168,78,0.2), rgba(200,168,78,0.5))',
       }}>
         {/* Inner card */}
@@ -531,7 +541,7 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, position: 'relative', zIndex: 1 }}>
             {features.map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Check size={13} color={isFree ? 'var(--text-muted)' : '#C8A84E'} strokeWidth={3} />
+                <Check size={13} color={isFree ? 'var(--text-muted)' : isPro ? '#8B5CF6' : '#C8A84E'} strokeWidth={3} />
                 <span style={{ fontSize: 12, color: isFree ? 'var(--text-muted)' : 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{f}</span>
               </div>
             ))}
@@ -543,11 +553,13 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
               width: '100%', padding: '12px 0', border: 'none', cursor: 'pointer',
               background: isUltra
                 ? 'linear-gradient(135deg, #C8A84E, #D4B04A, #A08030)'
-                : 'linear-gradient(135deg, rgba(200,168,78,0.25), rgba(200,168,78,0.1))',
-              color: isUltra ? '#000' : '#fff',
+                : isPro
+                  ? 'linear-gradient(135deg, #8B5CF6, #A78BFA)'
+                  : 'linear-gradient(135deg, rgba(200,168,78,0.25), rgba(200,168,78,0.1))',
+              color: '#fff',
               fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
               clipPath: `polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))`,
-              boxShadow: isUltra ? '0 0 24px rgba(200,168,78,0.3)' : '0 0 12px rgba(200,168,78,0.1)',
+              boxShadow: isUltra ? '0 0 24px rgba(200,168,78,0.3)' : isPro ? '0 0 20px rgba(139,92,246,0.3)' : '0 0 12px rgba(200,168,78,0.1)',
               transition: 'all 0.2s', position: 'relative', zIndex: 1,
             }}>
               {isUltra ? '👑 UPGRADE TO ULTRA' : '⭐ UPGRADE TO PRO'}

@@ -1310,3 +1310,7 @@ html, body, #root {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+@keyframes plan-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
