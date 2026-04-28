@@ -137,10 +137,13 @@ export default function App() {
     };
   }, []);
 
-  const handleScanResults = (scores: FaceScores, base64Image: string) => {
+  const handleScanResults = async (scores: FaceScores, base64Image: string) => {
     setLatestScores(scores);
-    setFaceImage(base64Image);
-    saveScores(scores, base64Image, sessionUser?.id, accessTokenRef.current || undefined);
+    setFaceImage(base64Image);  // Show immediately with base64
+    // Cloud-first: upload image, save to Supabase, then sync
+    await saveScores(scores, base64Image, sessionUser?.id, accessTokenRef.current || undefined);
+    // Re-read face image — saveScores may have replaced base64 with Supabase URL
+    setFaceImage(loadFaceImage());
   };
 
   const handleLogout = async () => {
@@ -152,10 +155,10 @@ export default function App() {
       ]);
     } catch {}
 
-    // Step 2: Try Supabase sign out (2s max)
+    // Step 2: Sign out GLOBALLY — logs out ALL other devices (single-session enforcement)
     try {
       await Promise.race([
-        supabase.auth.signOut({ scope: 'local' }),
+        supabase.auth.signOut({ scope: 'global' }),
         new Promise(r => setTimeout(r, 2000)),
       ]);
     } catch {}

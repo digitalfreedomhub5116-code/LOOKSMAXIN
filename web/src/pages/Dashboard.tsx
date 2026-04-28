@@ -6,6 +6,7 @@ import * as progress from '../data/planProgress';
 import SkinRemediesSection from './SkinRemedies';
 import RecentReports from './ReportsGrid';
 import AISuggestions from './AISuggestions';
+import { getImageSrc } from '../lib/imageUtils';
 
 interface DashboardProps {
   onScan: () => void;
@@ -55,10 +56,8 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
     key, label: key.charAt(0).toUpperCase() + key.slice(1), ...t,
   })) : [];
 
-  // Determine face image src — handles both base64 and URL
-  const faceImgSrc = faceImage
-    ? (faceImage.startsWith('http') ? faceImage : `data:image/jpeg;base64,${faceImage}`)
-    : null;
+  // Determine face image src — handles base64, URLs, and data: URIs
+  const faceImgSrc = getImageSrc(faceImage);
 
   return (
     <div className="page" style={{ paddingBottom: 100 }}>

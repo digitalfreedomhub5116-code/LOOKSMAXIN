@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, Trash2, ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Pin } from 'lucide-react';
 import { getScanHistory, deleteReport, type ScanRecord, type FaceScores, type TraitDetail } from '../lib/api';
+import { getImageSrc } from '../lib/imageUtils';
 
 /* ─── helpers ─── */
 function getTier(s: number) {
@@ -78,7 +79,7 @@ function PinnedCard({ report, tilt, onDelete }: {
   const [viewing, setViewing] = useState(false);
   const score = report.scores.overall;
   const tier = getTier(score);
-  const img = report.faceImage;
+  const img = getImageSrc(report.faceImage);
 
   return (
     <>
@@ -107,7 +108,7 @@ function PinnedCard({ report, tilt, onDelete }: {
           <div style={{ height: 110, position: 'relative', overflow: 'hidden', background: 'var(--surface-light)' }}>
             {img ? (
               <img
-                src={img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}`}
+                src={img}
                 alt="Face scan"
                 style={{
                   width: '100%', height: '100%', objectFit: 'cover',
@@ -182,7 +183,7 @@ function PinnedCard({ report, tilt, onDelete }: {
 function ReportDetail({ report, onClose }: { report: ScanRecord; onClose: () => void }) {
   const s = report.scores;
   const tier = getTier(s.overall);
-  const img = report.faceImage;
+  const img = getImageSrc(report.faceImage);
   const [expanded, setExpanded] = useState(false);
 
   const TRAITS = s.traits
@@ -219,7 +220,7 @@ function ReportDetail({ report, onClose }: { report: ScanRecord; onClose: () => 
           <div style={{ height: 240, position: 'relative', overflow: 'hidden' }}>
             {img ? (
               <img
-                src={img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}`}
+                src={img}
                 alt="Face scan"
                 style={{
                   width: '100%', height: '100%', objectFit: 'cover',

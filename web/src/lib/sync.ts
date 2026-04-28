@@ -100,43 +100,8 @@ async function getUserId(): Promise<string | null> {
 
 // ═══════════════════════════════════════
 //  Face image upload to Supabase Storage
+//  (REMOVED — now handled by api.ts cloud-first upload)
 // ═══════════════════════════════════════
-async function uploadFaceToStorage(userId: string, base64Data: string): Promise<string | null> {
-  try {
-    // Convert base64 to Blob
-    const parts = base64Data.split(',');
-    const mime = parts[0]?.match(/:(.*?);/)?.[1] || 'image/jpeg';
-    const byteString = atob(parts[1]);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-    const blob = new Blob([ab], { type: mime });
-
-    const ext = mime === 'image/png' ? 'png' : 'jpg';
-    const filePath = `${userId}/latest.${ext}`;
-
-    // Upload (upsert to overwrite previous)
-    const { error } = await supabase.storage
-      .from('face-scans')
-      .upload(filePath, blob, { upsert: true, contentType: mime });
-
-    if (error) {
-      console.warn('[Sync] Storage upload error:', error.message);
-      return null;
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('face-scans')
-      .getPublicUrl(filePath);
-
-    console.log('[Sync] ✅ Face image uploaded to Storage');
-    return publicUrl + '?t=' + Date.now(); // Cache bust
-  } catch (e) {
-    console.warn('[Sync] Face upload exception:', e);
-    return null;
-  }
-}
 
 // ═══════════════════════════════════════
 //  Network awareness
@@ -366,25 +331,23 @@ async function flushDirtyFields(): Promise<boolean> {
 
       if (field === 'face_url') {
         const val = localStorage.getItem(lsKey);
-        if (val && val.startsWith('data:')) {
-          // Upload base64 to Supabase Storage and store the public URL
-          try {
-            const url = await uploadFaceToStorage(userId, val);
-            if (url) {
-              payload[field] = url;
-              localStorage.setItem(lsKey, url); // Replace base64 with URL locally too
-            }
-          } catch (e) {
-            console.warn('[Sync] Face upload failed:', e);
-          }
-        } else if (val && val.length < 2000) {
+        // Only sync if it's a URL (not huge base64)
+        if (val && (val.startsWith('http') || val.length < 2000)) {
           payload[field] = val;
         }
       } else if (field === 'scan_history') {
         const arr = safeParseArr(localStorage.getItem(lsKey));
         if (arr.length > 0) {
-          // Strip base64 face images to minimize egress
-          payload[field] = arr.map((r: any) => ({ ...r, faceImage: undefined }));
+          // Keep faceImage URLs in history (they're small URLs now, not base64)
+          // Only strip actual base64 data to minimize payload
+          payload[field] = arr.map((r: any) => {
+            const entry = { ...r };
+            // Strip base64 images but keep URLs
+            if (entry.faceImage && entry.faceImage.startsWith('data:')) {
+              delete entry.faceImage;
+            }
+            return entry;
+          });
         }
       } else if (field === 'chat_history') {
         const arr = safeParseArr(localStorage.getItem(lsKey));
@@ -513,23 +476,7 @@ function mergeByTimestamp(primary: any[], secondary: any[]): any[] {
  * and retries the upload to Supabase Storage.
  */
 export async function retryPendingUploads(): Promise<void> {
-  try {
-    const userId = await getUserId();
-    if (!userId || !isOnline()) return;
-
-    const faceUrl = localStorage.getItem(FIELD_LS_MAP.face_url);
-    if (faceUrl && faceUrl.startsWith('data:')) {
-      console.log('[Sync] Found pending face upload — retrying...');
-      const url = await uploadFaceToStorage(userId, faceUrl);
-      if (url) {
-        localStorage.setItem(FIELD_LS_MAP.face_url, url);
-        // Push the URL to cloud
-        markDirty('face_url');
-        await flushDirtyFields();
-        console.log('[Sync] ✅ Pending face upload completed');
-      }
-    }
-  } catch (e) {
-    console.warn('[Sync] Retry pending uploads failed:', e);
-  }
+  // No-op: Image uploads are now handled synchronously in api.ts saveScores
+  // This function is kept for API compatibility
+  console.log('[Sync] retryPendingUploads — no-op (cloud-first uploads handle this)');
 }
