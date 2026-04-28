@@ -22,6 +22,8 @@ export interface StoreItem {
   imageBorder?: string;
   /** For borders: CSS animation on the image overlay */
   imageAnimated?: boolean;
+  /** For borders: Lottie JSON path */
+  lottieBorder?: string;
   /** For borders: CSS aura glow config (no image needed) */
   auraConfig?: {
     colors: string[];       // glow colors
@@ -121,6 +123,14 @@ const BORDERS: StoreItem[] = [
     description: 'Radioactive green mist pulsing with biohazard energy.',
     auraConfig: { colors: ['#22C55E', '#10B981', '#84CC16', '#34D399'], blur: 10, spread: 3, animated: true, pulseSpeed: 4 },
     borderConfig: { colors: ['#22C55E', '#10B981'], strokeWidth: 3, animated: false, glowColor: 'rgba(34,197,94,0.5)', glowIntensity: 0.7 },
+  },
+
+  // Lottie Animated Borders
+  {
+    id: 'border-lottie-celestial', name: 'Celestial Flame', category: 'border', tier: 'legendary', price: 800,
+    description: 'A mesmerizing animated flame ring from another realm.',
+    lottieBorder: '/borders/lottie-border.json',
+    borderConfig: { colors: ['#F59E0B', '#EF4444', '#C8A84E'], strokeWidth: 3, animated: false, glowColor: 'rgba(245,158,11,0.5)', glowIntensity: 0.8 },
   },
 ];
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { User, ChevronRight, BarChart3, Shield, LogOut, Mail, Flame, Lock, FileText, Zap, Crown } from 'lucide-react';
+import Lottie from 'lottie-react';
 import { getScanCount, loadLatestScores, type FaceScores } from '../lib/api';
 import { getEquipped, getEconomy, type PlanTier } from '../lib/economy';
 import { getItemById } from '../data/storeItems';
@@ -94,6 +95,31 @@ interface Props {
   onNavigate?: (tab: Tab, opts?: { showPlans?: boolean }) => void;
 }
 
+/* ═══ Lottie Border for Profile ═══ */
+const lottieProfCache: Record<string, any> = {};
+
+function ProfileLottieBorder({ src, glow }: { src: string; glow: string }) {
+  const [data, setData] = useState<any>(lottieProfCache[src] || null);
+
+  useEffect(() => {
+    if (lottieProfCache[src]) { setData(lottieProfCache[src]); return; }
+    fetch(src).then(r => r.json()).then(d => { lottieProfCache[src] = d; setData(d); }).catch(() => {});
+  }, [src]);
+
+  if (!data) return null;
+
+  return (
+    <div style={{
+      position: 'absolute', inset: -12,
+      width: 'calc(100% + 24px)', height: 'calc(100% + 24px)',
+      pointerEvents: 'none',
+      filter: `drop-shadow(0 0 8px ${glow})`,
+    }}>
+      <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+
 export default function Profile({ onLogout, user: sessionUser, onNavigate }: Props) {
   const [userInfo, setUserInfo] = useState<{ email: string; name: string; avatar?: string } | null>(null);
   const [scanCount, setScanCount] = useState(0);
@@ -186,6 +212,8 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
               filter: `drop-shadow(0 0 6px ${borderGlow})`,
             }} />
           )}
+          {/* Lottie border overlay */}
+          {borderItem?.lottieBorder && <ProfileLottieBorder src={borderItem.lottieBorder} glow={borderGlow} />}
         </div>
         <div className="h1" style={{ marginBottom: 2 }}>{userInfo?.name || 'Champion'}</div>
         <div className="label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>

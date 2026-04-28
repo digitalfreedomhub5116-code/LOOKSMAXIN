@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Flame, RefreshCw, User } from 'lucide-react';
+import Lottie from 'lottie-react';
 import { fetchLeaderboard, getUserRank, type LeaderboardEntry } from '../lib/leaderboard';
 import { getItemById, type StoreItem } from '../data/storeItems';
 
@@ -16,7 +17,8 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
     const glow = cfg?.glowColor || 'rgba(200,168,78,0.3)';
     const hasImage = !!borderItem.imageBorder;
     const hasAura = !!borderItem.auraConfig;
-    const outerSize = size + 16; // extra space for border/image overlay
+    const hasLottie = !!borderItem.lottieBorder;
+    const outerSize = size + 16;
 
     return (
       <div style={{
@@ -34,8 +36,8 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
           }} />
         )}
 
-        {/* Gradient ring (for SVG/gradient borders) */}
-        {cfg && !hasImage && (
+        {/* Gradient ring (for SVG/gradient borders, skip if image or lottie) */}
+        {cfg && !hasImage && !hasLottie && (
           <div style={{
             position: 'absolute', inset: 0, borderRadius: '50%',
             background: `linear-gradient(135deg, ${cfg.colors.join(', ')})`,
@@ -53,7 +55,7 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
           width: size, height: size, borderRadius: '50%',
           background: 'var(--bg)', overflow: 'hidden',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: hasImage ? 'none' : `2px solid ${glow}`,
+          border: (hasImage || hasLottie) ? 'none' : `2px solid ${glow}`,
           top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         }}>
           {url ? (
@@ -77,6 +79,9 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
             }}
           />
         )}
+
+        {/* Lottie border overlay */}
+        {hasLottie && <LottieBorderOverlay src={borderItem.lottieBorder!} size={outerSize + 8} glow={glow} />}
       </div>
     );
   }
@@ -95,6 +100,30 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
       ) : (
         <User size={size * 0.5} color="var(--text-muted)" />
       )}
+    </div>
+  );
+}
+
+/* ═══ Lottie Border Overlay ═══ */
+const lottieCache: Record<string, any> = {};
+
+function LottieBorderOverlay({ src, size, glow }: { src: string; size: number; glow: string }) {
+  const [data, setData] = useState<any>(lottieCache[src] || null);
+
+  useEffect(() => {
+    if (lottieCache[src]) { setData(lottieCache[src]); return; }
+    fetch(src).then(r => r.json()).then(d => { lottieCache[src] = d; setData(d); }).catch(() => {});
+  }, [src]);
+
+  if (!data) return null;
+
+  return (
+    <div style={{
+      position: 'absolute', inset: '50%', transform: 'translate(-50%, -50%)',
+      width: size, height: size, pointerEvents: 'none',
+      filter: `drop-shadow(0 0 6px ${glow})`,
+    }}>
+      <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
     </div>
   );
 }
