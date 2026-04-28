@@ -79,31 +79,31 @@ export async function fetchLeaderboard(forceRefresh = false): Promise<Leaderboar
   }
 
   try {
-    // Race the query against a timeout
-    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
+    // Wrap in a real promise with timeout
+    const result = await new Promise<{ data: LeaderboardEntry[] | null; error: any }>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Leaderboard fetch timed out')), 8000);
 
-    const query = supabase
-      .from(TABLE)
-      .select('user_id, display_name, avatar_url, streak, updated_at')
-      .gte('streak', 0)
-      .order('streak', { ascending: false })
-      .limit(50);
+      supabase
+        .from(TABLE)
+        .select('user_id, display_name, avatar_url, streak, updated_at')
+        .order('streak', { ascending: false })
+        .limit(50)
+        .then((res) => {
+          clearTimeout(timer);
+          resolve(res);
+        })
+        .catch((err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+    });
 
-    const result = await Promise.race([query, timeout]);
-
-    if (!result) {
-      console.warn('[Leaderboard] Fetch timed out (8s)');
+    if (result.error) {
+      console.warn('[Leaderboard] Fetch failed:', result.error.message, result.error.details, result.error.hint);
       return cachedEntries;
     }
 
-    const { data, error } = result as { data: LeaderboardEntry[] | null; error: any };
-
-    if (error) {
-      console.warn('[Leaderboard] Fetch failed:', error.message, error.details, error.hint);
-      return cachedEntries;
-    }
-
-    cachedEntries = (data || []) as LeaderboardEntry[];
+    cachedEntries = (result.data || []) as LeaderboardEntry[];
     cacheTimestamp = now;
     console.log('[Leaderboard] ✅ Fetched', cachedEntries.length, 'entries');
     return cachedEntries;
