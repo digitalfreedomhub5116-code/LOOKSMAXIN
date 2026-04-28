@@ -115,6 +115,13 @@ export default function Ranks({ userId }: { userId?: string }) {
 
   useEffect(() => { load(); }, []);
 
+  // Instant refresh when border changes in Store
+  useEffect(() => {
+    const onRefresh = () => load(true);
+    window.addEventListener('leaderboard:refresh', onRefresh);
+    return () => window.removeEventListener('leaderboard:refresh', onRefresh);
+  }, []);
+
   const myRank = userId ? getUserRank(userId) : 0;
 
   // Look up any user's border item from their equipped_border ID
