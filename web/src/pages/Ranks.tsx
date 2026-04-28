@@ -5,13 +5,43 @@
 import { useState, useEffect } from 'react';
 import { Flame, RefreshCw, User } from 'lucide-react';
 import { fetchLeaderboard, getUserRank, type LeaderboardEntry } from '../lib/leaderboard';
+import { getEquipped } from '../lib/economy';
+import { getItemById, type BorderConfig } from '../data/storeItems';
 
-function AvatarCircle({ url, size = 48, rank }: { url?: string | null; size?: number; rank?: number }) {
-  const borderColor = rank === 1 ? '#FBBF24' : rank === 2 ? '#94A3B8' : rank === 3 ? '#CD7F32' : 'rgba(255,255,255,0.1)';
+function AvatarCircle({ url, size = 48, rank, borderCfg }: { url?: string | null; size?: number; rank?: number; borderCfg?: BorderConfig | null }) {
+  const defaultColor = rank === 1 ? '#FBBF24' : rank === 2 ? '#94A3B8' : rank === 3 ? '#CD7F32' : 'rgba(255,255,255,0.1)';
+
+  // If a store border is equipped, use its gradient + glow
+  if (borderCfg) {
+    const grad = `linear-gradient(135deg, ${borderCfg.colors.join(', ')})`;
+    const glow = borderCfg.glowColor || 'rgba(200,168,78,0.3)';
+    const pad = 3;
+    return (
+      <div style={{
+        width: size + pad * 2, height: size + pad * 2, borderRadius: '50%',
+        background: grad, padding: pad, flexShrink: 0,
+        boxShadow: `0 0 14px ${glow}, 0 0 28px ${glow}`,
+        animation: borderCfg.animated ? 'border-pulse 2s ease-in-out infinite' : 'none',
+      }}>
+        <div style={{
+          width: size, height: size, borderRadius: '50%',
+          background: 'var(--bg)', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {url ? (
+            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <User size={size * 0.5} color="var(--text-muted)" />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      border: `2.5px solid ${borderColor}`,
+      border: `2.5px solid ${defaultColor}`,
       background: 'var(--surface)', overflow: 'hidden',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexShrink: 0,
@@ -42,6 +72,12 @@ export default function Ranks({ userId }: { userId?: string }) {
   useEffect(() => { load(); }, []);
 
   const myRank = userId ? getUserRank(userId) : 0;
+
+  // Get the current user's equipped border config
+  const equipped = getEquipped();
+  const borderItem = equipped.border ? getItemById(equipped.border) : null;
+  const myBorderCfg = borderItem?.borderConfig || null;
+
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
 
@@ -119,7 +155,7 @@ export default function Ranks({ userId }: { userId?: string }) {
 
                     {/* Avatar with wreath effect */}
                     <div style={{ position: 'relative' }}>
-                      <AvatarCircle url={entry.avatar_url} size={avatarSize} rank={rank} />
+                      <AvatarCircle url={entry.avatar_url} size={avatarSize} rank={rank} borderCfg={userId && entry.user_id === userId ? myBorderCfg : null} />
                       {/* Glow behind avatar for #1 */}
                       {isFirst && (
                         <div style={{
@@ -176,7 +212,7 @@ export default function Ranks({ userId }: { userId?: string }) {
                   </div>
 
                   {/* Avatar */}
-                  <AvatarCircle url={entry.avatar_url} size={40} />
+                  <AvatarCircle url={entry.avatar_url} size={40} borderCfg={isMe ? myBorderCfg : null} />
 
                   {/* Name */}
                   <div style={{ flex: 1, overflow: 'hidden' }}>
