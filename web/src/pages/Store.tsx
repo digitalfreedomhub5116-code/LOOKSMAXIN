@@ -1,14 +1,26 @@
 /**
- * Lynx AI Store
- * Full store with rotating deals, borders, themes, consumables, titles.
+ * Lynx AI Store — Premium Liftoff-inspired design
+ * Subscription plans + cosmetic shop with glowing cards.
  */
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Lock, Flame, Zap, ScanLine, Star, ShieldCheck, Palette, Frame, Tag, Clock, Check, ChevronRight } from 'lucide-react';
-import { ALL_STORE_ITEMS, getItemsByCategory, getItemById, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
-import { getEconomy, purchaseItem, equipItem, ownsItem, getEquipped, type EquippedItems } from '../lib/economy';
+import {
+  ShoppingBag, Lock, Flame, Zap, ScanLine, Star, ShieldCheck,
+  Palette, Frame, Tag, Clock, Check, Crown, BrainCircuit,
+  Infinity, ChevronRight, Sparkles,
+} from 'lucide-react';
+import { ALL_STORE_ITEMS, getItemsByCategory, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
+import { getEconomy, purchaseItem, equipItem, grantFreeCredits, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
 import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/StoreComponents';
 
-/* ═══ Consumable Icon Map ═══ */
+/* ═══ Category accent colors ═══ */
+const CAT_COLORS: Record<string, string> = {
+  border: '#06B6D4',
+  theme: '#8B5CF6',
+  consumable: '#F59E0B',
+  title: '#EC4899',
+  deals: '#C8A84E',
+};
+
 const CONSUMABLE_ICONS: Record<string, typeof Zap> = {
   'boost-2x': Zap,
   'boost-3x': Zap,
@@ -17,26 +29,48 @@ const CONSUMABLE_ICONS: Record<string, typeof Zap> = {
   'spotlight': Star,
 };
 
+/* ═══ Billing types ═══ */
+type BillingCycle = 'weekly' | 'monthly' | 'yearly';
+
+const PLAN_PRICING: Record<PlanTier, Record<BillingCycle, { price: number; credits: number | 'unlimited'; label: string }>> = {
+  free: {
+    weekly: { price: 0, credits: 200, label: 'One-time' },
+    monthly: { price: 0, credits: 200, label: 'One-time' },
+    yearly: { price: 0, credits: 200, label: 'One-time' },
+  },
+  pro: {
+    weekly: { price: 70, credits: 600, label: '/week' },
+    monthly: { price: 299, credits: 2199, label: '/month' },
+    yearly: { price: 1450, credits: 26388, label: '/year' },
+  },
+  ultra: {
+    weekly: { price: 149, credits: 1400, label: '/week' },
+    monthly: { price: 999, credits: 'unlimited', label: '/month' },
+    yearly: { price: 4300, credits: 'unlimited', label: '/year' },
+  },
+};
+
 export default function Store() {
   const [economy, setEconomy] = useState(getEconomy());
-  const [activeSection, setActiveSection] = useState<StoreCategory | 'deals'>('deals');
+  const [activeTab, setActiveTab] = useState<'plans' | 'shop'>('plans');
+  const [shopSection, setShopSection] = useState<StoreCategory | 'deals'>('deals');
+  const [billing, setBilling] = useState<BillingCycle>('monthly');
   const [purchasedId, setPurchasedId] = useState<string | null>(null);
   const [dealTimer, setDealTimer] = useState('');
 
-  // Refresh economy on mount
-  useEffect(() => setEconomy(getEconomy()), []);
+  useEffect(() => {
+    // Grant free credits on first visit
+    const e = grantFreeCredits();
+    setEconomy(e);
+  }, []);
 
-  // Deal countdown timer
   useEffect(() => {
     const tick = () => {
       const now = new Date();
-      const nextRefresh = new Date(now);
-      nextRefresh.setHours(nextRefresh.getHours() + 8 - (nextRefresh.getHours() % 8), 0, 0, 0);
-      const diff = nextRefresh.getTime() - now.getTime();
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setDealTimer(`${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`);
+      const next = new Date(now);
+      next.setHours(next.getHours() + 8 - (next.getHours() % 8), 0, 0, 0);
+      const diff = next.getTime() - now.getTime();
+      setDealTimer(`${Math.floor(diff / 3600000)}h ${String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0')}m ${String(Math.floor((diff % 60000) / 1000)).padStart(2, '0')}s`);
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -46,395 +80,402 @@ export default function Store() {
   const handlePurchase = (item: StoreItem) => {
     if (economy.owned.includes(item.id)) return;
     const result = purchaseItem(item.id, item.price);
-    if (result) {
-      setEconomy(result);
-      setPurchasedId(item.id);
-      setTimeout(() => setPurchasedId(null), 1500);
-    }
+    if (result) { setEconomy(result); setPurchasedId(item.id); setTimeout(() => setPurchasedId(null), 1500); }
   };
 
   const handleEquip = (slot: keyof EquippedItems, itemId: string) => {
-    const current = economy.equipped[slot];
-    const newId = current === itemId ? null : itemId;
-    const result = equipItem(slot, newId);
-    setEconomy(result);
+    const newId = economy.equipped[slot] === itemId ? null : itemId;
+    setEconomy(equipItem(slot, newId));
   };
-
-  const deals = getTodaysDeals(4);
-
-  const SECTIONS: { id: StoreCategory | 'deals'; label: string; icon: typeof ShoppingBag }[] = [
-    { id: 'deals', label: 'Deals', icon: Clock },
-    { id: 'border', label: 'Borders', icon: Frame },
-    { id: 'theme', label: 'Themes', icon: Palette },
-    { id: 'consumable', label: 'Boosts', icon: Zap },
-    { id: 'title', label: 'Titles', icon: Tag },
-  ];
 
   return (
     <div className="page" style={{ paddingBottom: 100 }}>
-      {/* Header */}
+      {/* ═══ Header ═══ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5, marginBottom: 4 }}>LYNX AI</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>Store</div>
         </div>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '8px 14px', borderRadius: 20,
-          background: 'rgba(200,168,78,0.08)',
-          border: '1px solid rgba(200,168,78,0.2)',
-        }}>
-          <LynxCoin size={18} />
-          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary)' }}>{economy.coins.toLocaleString()}</span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {/* AI Credits */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '6px 12px', borderRadius: 20,
+            background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)',
+          }}>
+            <BrainCircuit size={14} color="#06B6D4" />
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>
+              {economy.aiCredits}
+            </span>
+          </div>
+          {/* Coins */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '6px 12px', borderRadius: 20,
+            background: 'rgba(200,168,78,0.08)', border: '1px solid rgba(200,168,78,0.2)',
+          }}>
+            <LynxCoin size={15} />
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary)' }}>{economy.coins}</span>
+          </div>
         </div>
       </div>
 
-      {/* Category Tabs */}
+      {/* ═══ Plans / Shop Toggle ═══ */}
       <div style={{
-        display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 20,
-        margin: '0 -20px', padding: '0 20px 8px',
+        display: 'flex', gap: 0, marginBottom: 24, borderRadius: 12, overflow: 'hidden',
+        border: '1px solid var(--border)', background: 'var(--surface)',
       }}>
-        {SECTIONS.map(s => {
-          const isActive = activeSection === s.id;
-          return (
-            <button
-              key={s.id}
-              onClick={() => setActiveSection(s.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '8px 14px', borderRadius: 10, border: 'none',
-                background: isActive ? 'rgba(200,168,78,0.15)' : 'var(--surface)',
-                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
-                cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
-                borderBottom: isActive ? '2px solid var(--primary)' : '2px solid transparent',
-              }}
-            >
-              <s.icon size={13} /> {s.label}
-            </button>
-          );
-        })}
+        {(['plans', 'shop'] as const).map(t => (
+          <button key={t} onClick={() => setActiveTab(t)} style={{
+            flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
+            background: activeTab === t ? 'rgba(200,168,78,0.12)' : 'transparent',
+            color: activeTab === t ? 'var(--primary)' : 'var(--text-muted)',
+            fontSize: 13, fontWeight: 700, letterSpacing: 0.5,
+            borderBottom: activeTab === t ? '2px solid var(--primary)' : '2px solid transparent',
+            transition: 'all 0.2s',
+          }}>
+            {t === 'plans' ? '⚡ Plans' : '🛍️ Shop'}
+          </button>
+        ))}
       </div>
 
-      {/* ═══ DEALS SECTION ═══ */}
-      {activeSection === 'deals' && (
+      {/* ═══ PLANS TAB ═══ */}
+      {activeTab === 'plans' && (
         <div>
-          {/* Timer */}
+          {/* Billing Toggle */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            padding: '10px 16px', borderRadius: 12, marginBottom: 20,
-            background: 'rgba(200,168,78,0.06)',
-            border: '1px solid rgba(200,168,78,0.12)',
+            display: 'flex', gap: 0, marginBottom: 24, borderRadius: 10, overflow: 'hidden',
+            border: '1px solid rgba(200,168,78,0.15)', background: 'rgba(0,0,0,0.3)',
+            padding: 3,
           }}>
-            <Clock size={13} color="var(--primary)" />
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>
-              Deals refresh in <span style={{ color: 'var(--primary)' }}>{dealTimer}</span>
-            </span>
+            {(['weekly', 'monthly', 'yearly'] as BillingCycle[]).map(b => (
+              <button key={b} onClick={() => setBilling(b)} style={{
+                flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer',
+                borderRadius: 8,
+                background: billing === b ? 'rgba(200,168,78,0.2)' : 'transparent',
+                color: billing === b ? '#fff' : 'var(--text-muted)',
+                fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
+                transition: 'all 0.2s', textTransform: 'capitalize',
+              }}>
+                {b}
+                {b === 'yearly' && <span style={{ display: 'block', fontSize: 8, color: '#22C55E', fontWeight: 800, marginTop: 1 }}>SAVE 60%</span>}
+              </button>
+            ))}
           </div>
 
-          {/* Deal Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {deals.map(({ item, discount }) => {
-              const discountedPrice = Math.round(item.price * (1 - discount / 100));
-              const owned = economy.owned.includes(item.id);
+          {/* Plan Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <PlanCard tier="free" billing={billing} currentPlan={economy.plan} />
+            <PlanCard tier="pro" billing={billing} currentPlan={economy.plan} />
+            <PlanCard tier="ultra" billing={billing} currentPlan={economy.plan} />
+          </div>
+        </div>
+      )}
+
+      {/* ═══ SHOP TAB ═══ */}
+      {activeTab === 'shop' && (
+        <div>
+          {/* Category Pills */}
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 20, margin: '0 -20px', padding: '0 20px 8px' }}>
+            {([
+              { id: 'deals' as const, label: 'Deals', icon: Clock },
+              { id: 'border' as const, label: 'Borders', icon: Frame },
+              { id: 'theme' as const, label: 'Themes', icon: Palette },
+              { id: 'consumable' as const, label: 'Boosts', icon: Zap },
+              { id: 'title' as const, label: 'Titles', icon: Tag },
+            ]).map(s => {
+              const isActive = shopSection === s.id;
+              const color = CAT_COLORS[s.id] || '#C8A84E';
               return (
-                <DealCard
-                  key={item.id}
-                  item={item}
-                  discount={discount}
-                  discountedPrice={discountedPrice}
-                  owned={owned}
-                  justPurchased={purchasedId === item.id}
-                  canAfford={economy.coins >= discountedPrice}
-                  onBuy={() => {
-                    const result = purchaseItem(item.id, discountedPrice);
-                    if (result) { setEconomy(result); setPurchasedId(item.id); setTimeout(() => setPurchasedId(null), 1500); }
-                  }}
-                />
+                <button key={s.id} onClick={() => setShopSection(s.id)} style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '8px 14px', borderRadius: 10, border: 'none',
+                  background: isActive ? `${color}18` : 'var(--surface)',
+                  color: isActive ? color : 'var(--text-muted)',
+                  fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                  transition: 'all 0.2s',
+                }}>
+                  <s.icon size={13} /> {s.label}
+                </button>
               );
             })}
           </div>
-        </div>
-      )}
 
-      {/* ═══ BORDERS SECTION ═══ */}
-      {activeSection === 'border' && (
-        <div>
-          {renderTierGroup('Basic', getItemsByCategory('border').filter(i => i.tier === 'basic'), economy, purchasedId, handlePurchase, handleEquip, 'border')}
-          {renderTierGroup('Elemental', getItemsByCategory('border').filter(i => i.tier === 'elemental'), economy, purchasedId, handlePurchase, handleEquip, 'border')}
-          {renderTierGroup('Rank-Gated', getItemsByCategory('border').filter(i => i.tier === 'rank-gated'), economy, purchasedId, handlePurchase, handleEquip, 'border')}
-          {renderTierGroup('Premium', getItemsByCategory('border').filter(i => i.tier === 'premium'), economy, purchasedId, handlePurchase, handleEquip, 'border')}
-        </div>
-      )}
-
-      {/* ═══ THEMES SECTION ═══ */}
-      {activeSection === 'theme' && (
-        <div>
-          {renderTierGroup('Color Themes', getItemsByCategory('theme').filter(i => i.tier === 'color'), economy, purchasedId, handlePurchase, handleEquip, 'theme')}
-          {renderTierGroup('Special', getItemsByCategory('theme').filter(i => i.tier === 'special'), economy, purchasedId, handlePurchase, handleEquip, 'theme')}
-          {renderTierGroup('Prismatic', getItemsByCategory('theme').filter(i => i.tier === 'prismatic'), economy, purchasedId, handlePurchase, handleEquip, 'theme')}
-          {renderTierGroup('Seasonal', getItemsByCategory('theme').filter(i => i.tier === 'seasonal'), economy, purchasedId, handlePurchase, handleEquip, 'theme')}
-        </div>
-      )}
-
-      {/* ═══ CONSUMABLES SECTION ═══ */}
-      {activeSection === 'consumable' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {getItemsByCategory('consumable').map(item => {
-            const Icon = CONSUMABLE_ICONS[item.id] || Zap;
-            const iconColor = item.tier === 'special' ? '#EF4444' : item.tier === 'premium' ? '#C8A84E' : '#F59E0B';
-            return (
-              <div key={item.id} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '14px 16px', borderRadius: 14,
-                background: 'var(--surface)', border: '1px solid var(--border)',
+          {/* Deals */}
+          {shopSection === 'deals' && (
+            <div>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '10px 16px', borderRadius: 12, marginBottom: 16,
+                background: 'linear-gradient(135deg, rgba(200,168,78,0.08) 0%, rgba(200,168,78,0.02) 100%)',
+                border: '1px solid rgba(200,168,78,0.12)',
               }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                  background: `${iconColor}10`, border: `1.5px solid ${iconColor}30`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Icon size={20} color={iconColor} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{item.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.3 }}>{item.description}</div>
-                </div>
-                <button
-                  onClick={() => handlePurchase(item)}
-                  disabled={economy.coins < item.price}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-                    padding: '7px 12px', borderRadius: 8, border: 'none',
-                    background: economy.coins >= item.price ? 'rgba(200,168,78,0.15)' : 'rgba(255,255,255,0.04)',
-                    color: economy.coins >= item.price ? 'var(--primary)' : 'var(--text-muted)',
-                    fontSize: 11, fontWeight: 800, cursor: economy.coins >= item.price ? 'pointer' : 'default',
-                  }}
-                >
-                  <LynxCoin size={13} /> {item.price}
-                </button>
+                <Clock size={13} color="var(--primary)" />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>
+                  Refreshes in <span style={{ color: 'var(--primary)' }}>{dealTimer}</span>
+                </span>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {getTodaysDeals(4).map(({ item, discount }) => (
+                  <GlowCard key={item.id} item={item} discount={discount}
+                    owned={economy.owned.includes(item.id)}
+                    canAfford={economy.coins >= Math.round(item.price * (1 - discount / 100))}
+                    onBuy={() => { const p = Math.round(item.price * (1 - discount / 100)); const r = purchaseItem(item.id, p); if (r) { setEconomy(r); setPurchasedId(item.id); setTimeout(() => setPurchasedId(null), 1500); } }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* ═══ TITLES SECTION ═══ */}
-      {activeSection === 'title' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {getItemsByCategory('title').map(item => {
-            const owned = economy.owned.includes(item.id);
-            const equipped = economy.equipped.title === item.id;
-            return (
-              <div key={item.id} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '14px 16px', borderRadius: 14,
-                background: equipped ? 'rgba(200,168,78,0.06)' : 'var(--surface)',
-                border: equipped ? '1.5px solid rgba(200,168,78,0.25)' : '1px solid var(--border)',
-              }}>
-                <div style={{ flex: 1 }}>
-                  {item.titleConfig && <TitleBadge name={item.name} config={item.titleConfig} />}
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>{item.description}</div>
-                </div>
-                {owned ? (
-                  <button
-                    onClick={() => handleEquip('title', item.id)}
-                    style={{
-                      padding: '6px 12px', borderRadius: 8, border: 'none',
-                      background: equipped ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
-                      color: equipped ? '#000' : 'var(--text-muted)',
-                      fontSize: 10, fontWeight: 800, cursor: 'pointer',
-                    }}
-                  >
-                    {equipped ? 'EQUIPPED' : 'EQUIP'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handlePurchase(item)}
-                    disabled={economy.coins < item.price}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 4,
-                      padding: '6px 12px', borderRadius: 8, border: 'none',
-                      background: economy.coins >= item.price ? 'rgba(200,168,78,0.15)' : 'rgba(255,255,255,0.04)',
-                      color: economy.coins >= item.price ? 'var(--primary)' : 'var(--text-muted)',
-                      fontSize: 11, fontWeight: 800, cursor: economy.coins >= item.price ? 'pointer' : 'default',
-                    }}
-                  >
-                    <LynxCoin size={13} /> {item.price}
-                  </button>
-                )}
-              </div>
-            );
-          })}
+          {/* Category Items */}
+          {shopSection !== 'deals' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {getItemsByCategory(shopSection).map(item => (
+                <GlowCard key={item.id} item={item}
+                  owned={economy.owned.includes(item.id)}
+                  equipped={economy.equipped[shopSection === 'consumable' ? 'border' : shopSection as keyof EquippedItems] === item.id}
+                  canAfford={economy.coins >= item.price}
+                  onBuy={() => handlePurchase(item)}
+                  onEquip={item.category !== 'consumable' ? () => handleEquip(item.category as keyof EquippedItems, item.id) : undefined}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-/* ═══ Tier Group Renderer ═══ */
-function renderTierGroup(
-  label: string,
-  items: StoreItem[],
-  economy: ReturnType<typeof getEconomy>,
-  purchasedId: string | null,
-  onPurchase: (item: StoreItem) => void,
-  onEquip: (slot: keyof EquippedItems, id: string) => void,
-  slot: keyof EquippedItems,
-) {
-  if (items.length === 0) return null;
-  const tierPrice = items[0].price;
-  return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{label}</div>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 3,
-          padding: '3px 8px', borderRadius: 8,
-          background: 'rgba(200,168,78,0.08)',
-          fontSize: 10, fontWeight: 700, color: 'var(--primary)',
-        }}>
-          <LynxCoin size={11} /> {tierPrice}
-        </div>
-      </div>
+/* ═══════════════════════════════════
+   Plan Card — Liftoff-inspired
+   ═══════════════════════════════════ */
+function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: BillingCycle; currentPlan: PlanTier }) {
+  const info = PLAN_PRICING[tier][billing];
+  const config = PLAN_CONFIG[tier];
+  const isActive = tier === currentPlan;
+  const isFree = tier === 'free';
+  const isPro = tier === 'pro';
+  const isUltra = tier === 'ultra';
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {items.map(item => (
-          <ItemCard
-            key={item.id}
-            item={item}
-            owned={economy.owned.includes(item.id)}
-            equipped={economy.equipped[slot] === item.id}
-            justPurchased={purchasedId === item.id}
-            canAfford={economy.coins >= item.price}
-            onBuy={() => onPurchase(item)}
-            onEquip={() => onEquip(slot, item.id)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+  const borderColor = isFree ? 'rgba(255,255,255,0.08)' : isPro ? 'rgba(200,168,78,0.35)' : 'rgba(200,168,78,0.5)';
+  const bgGradient = isFree
+    ? 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
+    : isPro
+      ? 'linear-gradient(145deg, rgba(200,168,78,0.08) 0%, rgba(200,168,78,0.02) 100%)'
+      : 'linear-gradient(145deg, rgba(200,168,78,0.15) 0%, rgba(200,168,78,0.04) 100%)';
+  const glowShadow = isFree
+    ? 'none'
+    : isPro
+      ? '0 0 30px rgba(200,168,78,0.08), inset 0 1px 0 rgba(255,255,255,0.05)'
+      : '0 0 40px rgba(200,168,78,0.15), inset 0 1px 0 rgba(255,255,255,0.08)';
 
-/* ═══ Item Card ═══ */
-function ItemCard({ item, owned, equipped, justPurchased, canAfford, onBuy, onEquip }: {
-  item: StoreItem; owned: boolean; equipped: boolean; justPurchased: boolean;
-  canAfford: boolean; onBuy: () => void; onEquip: () => void;
-}) {
+  const features: string[] = [];
+  if (isFree) {
+    features.push('200 AI credits (one-time)', `${config.scanCost} credits/scan`, `${config.chatCost} credits/chat`, 'Basic borders & default theme');
+  } else if (isPro) {
+    const cr = info.credits === 'unlimited' ? 'Unlimited' : info.credits.toLocaleString();
+    features.push(`${cr} AI credits${info.label}`, `${config.scanCost} credits/scan (save 25%)`, `${config.chatCost} credits/chat (save 80%)`, 'All Color + Special themes', 'Elemental borders', '2× coin earning');
+  } else {
+    const cr = info.credits === 'unlimited' ? 'Unlimited AI credits' : `${info.credits.toLocaleString()} credits${info.label}`;
+    features.push(cr, 'Unlimited face scans', 'Unlimited AI chat', 'ALL themes & borders', '3× coin earning', '2 free Streak Shields/month');
+  }
+
   return (
     <div style={{
-      borderRadius: 14, overflow: 'hidden',
-      background: equipped ? 'rgba(200,168,78,0.06)' : 'var(--surface)',
-      border: equipped ? '1.5px solid rgba(200,168,78,0.3)' : '1px solid var(--border)',
-      transition: 'all 0.3s',
-      animation: justPurchased ? 'fadeIn 0.4s ease' : undefined,
+      padding: '20px', borderRadius: 18,
+      background: bgGradient,
+      border: `1.5px solid ${borderColor}`,
+      boxShadow: glowShadow,
+      position: 'relative', overflow: 'hidden',
     }}>
-      {/* Preview */}
+      {/* Shimmer overlay for Ultra */}
+      {isUltra && (
+        <div style={{
+          position: 'absolute', top: 0, left: '-100%', width: '200%', height: '100%',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(200,168,78,0.06) 50%, transparent 100%)',
+          animation: 'shimmer 3s ease-in-out infinite',
+          pointerEvents: 'none',
+        }} />
+      )}
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isUltra ? <Crown size={20} color="#C8A84E" /> : isPro ? <Star size={18} color="#C8A84E" /> : <Sparkles size={16} color="var(--text-muted)" />}
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
+              {tier}
+            </div>
+            {isActive && (
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#22C55E', letterSpacing: 0.5 }}>CURRENT PLAN</div>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          {isFree ? (
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>Free</div>
+          ) : (
+            <>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>₹{info.price}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{info.label}</div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* AI Credits badge */}
       <div style={{
-        height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.3)', position: 'relative',
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '8px 14px', borderRadius: 10, marginBottom: 14,
+        background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)',
       }}>
-        {item.category === 'border' && item.borderConfig && (
-          <BorderRing config={item.borderConfig} size={60} />
-        )}
+        <BrainCircuit size={16} color="#06B6D4" />
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>
+          {info.credits === 'unlimited' ? '∞' : info.credits.toLocaleString()} AI Credits
+        </span>
+        {!isFree && <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>{info.label}</span>}
+      </div>
+
+      {/* Features */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {features.map((f, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Check size={13} color={isFree ? 'var(--text-muted)' : '#C8A84E'} strokeWidth={3} />
+            <span style={{ fontSize: 12, color: isFree ? 'var(--text-muted)' : 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{f}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      {!isActive && !isFree && (
+        <button style={{
+          width: '100%', padding: '12px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+          background: isUltra
+            ? 'linear-gradient(135deg, #C8A84E, #D4B04A, #A08030)'
+            : 'linear-gradient(135deg, rgba(200,168,78,0.25), rgba(200,168,78,0.1))',
+          color: isUltra ? '#000' : '#fff',
+          fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
+          boxShadow: isUltra ? '0 0 24px rgba(200,168,78,0.3)' : '0 0 12px rgba(200,168,78,0.1)',
+          transition: 'all 0.2s',
+        }}>
+          {isUltra ? '👑 UPGRADE TO ULTRA' : '⭐ UPGRADE TO PRO'}
+        </button>
+      )}
+      {isActive && !isFree && (
+        <div style={{
+          textAlign: 'center', padding: '10px 0', fontSize: 12, fontWeight: 700,
+          color: '#22C55E', letterSpacing: 0.5,
+        }}>
+          ✓ Active
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   Glow Card — Liftoff-style item card
+   ═══════════════════════════════════ */
+function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip }: {
+  item: StoreItem; discount?: number; owned?: boolean; equipped?: boolean;
+  canAfford: boolean; onBuy: () => void; onEquip?: () => void;
+}) {
+  const catColor = CAT_COLORS[item.category] || '#C8A84E';
+  const finalPrice = discount ? Math.round(item.price * (1 - discount / 100)) : item.price;
+
+  return (
+    <div style={{
+      borderRadius: 16, overflow: 'hidden', position: 'relative',
+      background: `linear-gradient(145deg, ${catColor}0D 0%, rgba(17,17,17,0.95) 60%)`,
+      border: `1.5px solid ${catColor}30`,
+      boxShadow: `0 0 20px ${catColor}10, inset 0 1px 0 rgba(255,255,255,0.04)`,
+      transition: 'all 0.3s',
+    }}>
+      {/* Discount badge */}
+      {discount && (
+        <div style={{
+          position: 'absolute', top: 8, left: 8, zIndex: 2,
+          padding: '3px 8px', borderRadius: 6,
+          background: '#22C55E', fontSize: 9, fontWeight: 900, color: '#000',
+          boxShadow: '0 0 8px rgba(34,197,94,0.4)',
+        }}>
+          {discount}% OFF
+        </div>
+      )}
+
+      {/* Preview area */}
+      <div style={{
+        height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: `linear-gradient(180deg, ${catColor}08 0%, transparent 100%)`,
+        position: 'relative',
+      }}>
+        {item.category === 'border' && item.borderConfig && <BorderRing config={item.borderConfig} size={62} />}
         {item.category === 'theme' && item.themeVars && (
-          <div style={{ width: '100%', height: '100%', padding: 8 }}>
-            <ThemeSwatch themeVars={item.themeVars} size="small" />
+          <div style={{ width: '80%', padding: '0 12px' }}><ThemeSwatch themeVars={item.themeVars} size="small" /></div>
+        )}
+        {item.category === 'title' && item.titleConfig && <TitleBadge name={item.name} config={item.titleConfig} />}
+        {item.category === 'consumable' && (
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            background: `${catColor}15`, border: `1.5px solid ${catColor}30`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {(() => { const I = CONSUMABLE_ICONS[item.id] || Zap; return <I size={22} color={catColor} />; })()}
           </div>
         )}
         {item.rankRequired && (
           <div style={{
             position: 'absolute', top: 6, right: 6, padding: '2px 6px', borderRadius: 6,
-            background: 'rgba(0,0,0,0.7)', fontSize: 8, fontWeight: 700, color: '#F59E0B',
+            background: 'rgba(0,0,0,0.8)', fontSize: 8, fontWeight: 700, color: '#F59E0B',
+            border: '1px solid rgba(245,158,11,0.2)',
           }}>
             {item.rankRequired}
           </div>
         )}
+        {/* Top edge glow */}
+        <div style={{
+          position: 'absolute', top: 0, left: '20%', right: '20%', height: 1,
+          background: `linear-gradient(90deg, transparent, ${catColor}40, transparent)`,
+        }} />
       </div>
 
       {/* Info */}
-      <div style={{ padding: '10px 12px' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.3 }}>{item.description}</div>
+      <div style={{ padding: '10px 14px 14px' }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 2, lineHeight: 1.3 }}>{item.name}</div>
+        <div style={{ fontSize: 9, color: `${catColor}AA`, marginBottom: 10, fontWeight: 600, textTransform: 'capitalize' }}>{item.tier} {item.category}</div>
 
         {owned ? (
-          <button onClick={onEquip} style={{
-            width: '100%', padding: '6px 0', borderRadius: 8, border: 'none',
-            background: equipped ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
-            color: equipped ? '#000' : 'var(--text-muted)',
-            fontSize: 10, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s',
-          }}>
-            {equipped ? '✓ EQUIPPED' : 'EQUIP'}
-          </button>
+          onEquip ? (
+            <button onClick={onEquip} style={{
+              width: '100%', padding: '8px 0', borderRadius: 10, border: 'none',
+              background: equipped ? 'var(--primary)' : `${catColor}15`,
+              color: equipped ? '#000' : catColor,
+              fontSize: 10, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.5,
+              boxShadow: equipped ? `0 0 12px ${catColor}30` : 'none',
+            }}>
+              {equipped ? '✓ EQUIPPED' : 'EQUIP'}
+            </button>
+          ) : (
+            <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#22C55E', padding: '8px 0' }}>✓ Owned</div>
+          )
         ) : (
           <button onClick={onBuy} disabled={!canAfford} style={{
-            width: '100%', padding: '6px 0', borderRadius: 8, border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-            background: canAfford ? 'rgba(200,168,78,0.15)' : 'rgba(255,255,255,0.03)',
-            color: canAfford ? 'var(--primary)' : 'var(--text-muted)',
-            fontSize: 10, fontWeight: 800, cursor: canAfford ? 'pointer' : 'default',
-          }}>
-            {canAfford ? <><LynxCoin size={12} /> {item.price}</> : <><Lock size={10} /> {item.price}</>}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ═══ Deal Card ═══ */
-function DealCard({ item, discount, discountedPrice, owned, justPurchased, canAfford, onBuy }: {
-  item: StoreItem; discount: number; discountedPrice: number; owned: boolean;
-  justPurchased: boolean; canAfford: boolean; onBuy: () => void;
-}) {
-  return (
-    <div style={{
-      borderRadius: 14, overflow: 'hidden',
-      background: 'var(--surface)',
-      border: '1px solid rgba(200,168,78,0.2)',
-      position: 'relative',
-      boxShadow: '0 0 12px rgba(200,168,78,0.05)',
-    }}>
-      {/* Discount badge */}
-      <div style={{
-        position: 'absolute', top: 8, left: 8, zIndex: 2,
-        padding: '3px 7px', borderRadius: 6,
-        background: '#22C55E', fontSize: 9, fontWeight: 900, color: '#000',
-      }}>
-        {discount}% OFF
-      </div>
-
-      {/* Preview */}
-      <div style={{
-        height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.3)',
-      }}>
-        {item.category === 'border' && item.borderConfig && <BorderRing config={item.borderConfig} size={56} />}
-        {item.category === 'theme' && item.themeVars && (
-          <div style={{ width: '100%', height: '100%', padding: 8 }}><ThemeSwatch themeVars={item.themeVars} size="small" /></div>
-        )}
-        {item.category === 'title' && item.titleConfig && (
-          <TitleBadge name={item.name} config={item.titleConfig} />
-        )}
-      </div>
-
-      {/* Info */}
-      <div style={{ padding: '10px 12px' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{item.name}</div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'capitalize' }}>{item.category}</div>
-
-        {owned ? (
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#22C55E', textAlign: 'center' }}>✓ Owned</div>
-        ) : (
-          <button onClick={onBuy} disabled={!canAfford} style={{
-            width: '100%', padding: '6px 0', borderRadius: 8, border: 'none',
+            width: '100%', padding: '8px 0', borderRadius: 10, border: 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            background: canAfford ? 'rgba(200,168,78,0.15)' : 'rgba(255,255,255,0.03)',
-            color: canAfford ? 'var(--primary)' : 'var(--text-muted)',
-            fontSize: 10, fontWeight: 800, cursor: canAfford ? 'pointer' : 'default',
+            background: canAfford
+              ? `linear-gradient(135deg, ${catColor}20, ${catColor}08)`
+              : 'rgba(255,255,255,0.03)',
+            color: canAfford ? '#fff' : 'var(--text-muted)',
+            fontSize: 11, fontWeight: 800, cursor: canAfford ? 'pointer' : 'default',
+            border: canAfford ? `1px solid ${catColor}30` : '1px solid transparent',
+            boxShadow: canAfford ? `0 0 12px ${catColor}10` : 'none',
+            transition: 'all 0.2s',
           }}>
-            <span style={{ textDecoration: 'line-through', opacity: 0.5, fontSize: 9 }}>{item.price}</span>
-            <LynxCoin size={12} /> {discountedPrice}
+            {discount && <span style={{ textDecoration: 'line-through', opacity: 0.4, fontSize: 9 }}>{item.price}</span>}
+            {canAfford ? <LynxCoin size={13} /> : <Lock size={10} />}
+            {finalPrice}
           </button>
         )}
       </div>
