@@ -230,7 +230,7 @@ export default function Store({ user }: { user?: any }) {
           {/* Plan Tier Badge */}
           <button onClick={openPlanModal} style={{
             display: 'flex', alignItems: 'center', gap: 4,
-            padding: '6px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
+            padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
             background: `${planColor}15`,
             border: `1px solid ${planColor}30`,
           }}>
@@ -315,7 +315,7 @@ export default function Store({ user }: { user?: any }) {
           return (
             <button key={s.id} onClick={() => setShopSection(s.id)} style={{
               display: 'flex', alignItems: 'center', gap: 5,
-              padding: '8px 14px', borderRadius: 10, border: 'none',
+              padding: '8px 14px', borderRadius: 10,
               background: isActive ? `${color}18` : 'var(--surface)',
               color: isActive ? color : 'var(--text-muted)',
               fontSize: 12, fontWeight: 700, cursor: 'pointer',
