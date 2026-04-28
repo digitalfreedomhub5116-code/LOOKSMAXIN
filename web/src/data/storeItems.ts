@@ -20,6 +20,8 @@ export interface StoreItem {
   borderConfig?: BorderConfig;
   /** For borders: image path (used with mix-blend-mode: screen) */
   imageBorder?: string;
+  /** For borders: CSS animation on the image overlay */
+  imageAnimated?: boolean;
   /** For titles: display styling */
   titleConfig?: TitleConfig;
   /** For consumables: effect */
@@ -130,6 +132,7 @@ const BORDERS: StoreItem[] = [
     id: 'border-starcrown-img', name: 'Star Crown', category: 'border', tier: 'premium', price: 400,
     description: 'Celestial stars orbiting your portrait like a crown.',
     imageBorder: '/borders/rotate.png',
+    imageAnimated: true,
     borderConfig: { colors: ['#E2E8F0', '#94A3B8'], strokeWidth: 3, animated: false, glowColor: 'rgba(226,232,240,0.4)', glowIntensity: 0.5 },
   },
   {

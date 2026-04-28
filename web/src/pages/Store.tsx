@@ -604,6 +604,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     width: '140%', height: '140%',
                     transform: 'translate(-50%, -50%)',
                     objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
+                    ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
                   }}
                 />
               </div>

@@ -1294,3 +1294,7 @@ html, body, #root {
   from { filter: hue-rotate(0deg); }
   to { filter: hue-rotate(360deg); }
 }
+@keyframes spin-clockwise {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
