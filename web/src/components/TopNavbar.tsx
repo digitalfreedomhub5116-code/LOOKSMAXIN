@@ -1,14 +1,18 @@
 /**
  * TopNavbar — Global persistent header across all tabs.
- * Shows: LYNX AI logo, Streak, Coins
+ * Shows: LYNX AI logo + Plan Badge, Streak, Coins
  */
 import { useState, useEffect } from 'react';
-import { Flame } from 'lucide-react';
-import { getEconomy, getStreak } from '../lib/economy';
+import { Flame, Crown, Star, Zap, Shield } from 'lucide-react';
+import { getEconomy, getStreak, type PlanTier } from '../lib/economy';
 import { LynxCoin } from './StoreComponents';
 import LynxLogo from './LynxLogo';
 
-export default function TopNavbar() {
+const PLAN_LABELS: Record<PlanTier, string> = { free: 'TRIAL', basic: 'BASIC', pro: 'PRO', ultra: 'ULTRA' };
+const PLAN_COLORS: Record<PlanTier, string> = { free: '#94A3B8', basic: '#22C55E', pro: '#8B5CF6', ultra: '#F59E0B' };
+const PLAN_ICONS: Record<PlanTier, typeof Crown> = { free: Shield, basic: Zap, pro: Star, ultra: Crown };
+
+export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void }) {
   const [economy, setEconomy] = useState(getEconomy());
   const streak = getStreak();
 
@@ -17,6 +21,11 @@ export default function TopNavbar() {
     return () => clearInterval(id);
   }, []);
 
+  const plan = economy.plan;
+  const label = PLAN_LABELS[plan];
+  const color = PLAN_COLORS[plan];
+  const Icon = PLAN_ICONS[plan];
+
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -24,8 +33,28 @@ export default function TopNavbar() {
       background: 'linear-gradient(180deg, rgba(10,10,15,0.95) 0%, transparent 100%)',
       position: 'sticky', top: 0, zIndex: 100,
     }}>
-      {/* Left: Logo */}
-      <LynxLogo size={26} />
+      {/* Left: Logo + Plan badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <LynxLogo size={26} />
+        <button
+          onClick={onPlanClick}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '3px 10px 3px 7px',
+            borderRadius: 20,
+            border: `1px solid ${color}40`,
+            background: `${color}15`,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <Icon size={12} color={color} strokeWidth={2.5} />
+          <span style={{
+            fontSize: 10, fontWeight: 800, color,
+            letterSpacing: 1, lineHeight: 1,
+          }}>{label}</span>
+        </button>
+      </div>
 
       {/* Right: Streak + Coins */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>

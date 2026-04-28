@@ -53,14 +53,14 @@ const PLAN_PRICING: Record<PlanTier, Record<BillingCycle, { price: number; credi
   },
 };
 
-export default function Store({ user }: { user?: any }) {
+export default function Store({ user, initialShowPlans }: { user?: any; initialShowPlans?: boolean }) {
   const avatarUrl: string | undefined = user?.user_metadata?.avatar_url;
   const [economy, setEconomy] = useState(getEconomy());
   const [shopSection, setShopSection] = useState<StoreCategory | 'deals'>('deals');
   const [billing, setBilling] = useState<BillingCycle>('weekly');
   const [purchasedId, setPurchasedId] = useState<string | null>(null);
   const [dealTimer, setDealTimer] = useState('');
-  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(!!initialShowPlans);
   const [confettiPieces, setConfettiPieces] = useState<{x:number;y:number;vx:number;vy:number;r:number;color:string;size:number;rotation:number;rotSpeed:number;phase:number;freq:number}[]>([]);
 
   useEffect(() => {

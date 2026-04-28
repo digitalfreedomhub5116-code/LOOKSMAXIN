@@ -34,6 +34,12 @@ export default function App() {
   const [showRemedies, setShowRemedies] = useState(false);
   const [showReports, setShowReports] = useState(false);
   const accessTokenRef = useRef<string | null>(null);
+  const [openPlans, setOpenPlans] = useState(false);
+
+  const handlePlanClick = () => {
+    setTab('vault');
+    setOpenPlans(true);
+  };
 
   // Apply equipped theme on app init
   useEffect(() => {
@@ -236,7 +242,11 @@ export default function App() {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} onViewAllRemedies={() => setShowRemedies(true)} onViewAllReports={() => setShowReports(true)} />;
       case 'programs': return <Programs />;
       case 'ranks': return <Ranks />;
-      case 'vault': return <Store user={sessionUser} />;
+      case 'vault': {
+        const show = openPlans;
+        if (openPlans) setTimeout(() => setOpenPlans(false), 100);
+        return <Store user={sessionUser} initialShowPlans={show} />;
+      }
       case 'profile': return <Profile onLogout={handleLogout} user={sessionUser} />;
       default: return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} />;
     }
@@ -244,7 +254,7 @@ export default function App() {
 
   return (
     <div className="app">
-      {!scanning && !chatVisible && !showRemedies && !showReports && <TopNavbar />}
+      {!scanning && !chatVisible && !showRemedies && !showReports && <TopNavbar onPlanClick={handlePlanClick} />}
       {renderPage()}
 
       {/* ═══ Chat overlay — animated ═══ */}
