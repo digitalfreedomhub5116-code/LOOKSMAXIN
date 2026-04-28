@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap } from 'lucide-react';
+import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap, BrainCircuit, Crown, Star } from 'lucide-react';
+import { getEconomy } from '../lib/economy';
 import type { FaceScores } from '../lib/api';
 import { PLANS } from '../data/exercisePlans';
 import * as progress from '../data/planProgress';
@@ -63,9 +64,38 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
   return (
     <div className="page" style={{ paddingBottom: 100 }}>
       {/* ═══ HEADER ═══ */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Welcome back</div>
-      </div>
+      {(() => {
+        const eco = getEconomy();
+        const planLabel = eco.plan === 'free' ? 'Trial' : eco.plan === 'pro' ? 'Pro' : 'Ultra';
+        const planColor = eco.plan === 'free' ? '#94A3B8' : eco.plan === 'pro' ? '#8B5CF6' : '#F59E0B';
+        return (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Welcome back</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Plan Pill */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '5px 12px', borderRadius: 20,
+                background: `${planColor}12`,
+                border: `1px solid ${planColor}30`,
+              }}>
+                {eco.plan === 'ultra' ? <Crown size={13} color={planColor} /> : eco.plan === 'pro' ? <Star size={13} color={planColor} /> : null}
+                <span style={{ fontSize: 11, fontWeight: 800, color: planColor }}>{planLabel}</span>
+              </div>
+              {/* Credits Pill */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '5px 12px', borderRadius: 20,
+                background: 'rgba(6,182,212,0.08)',
+                border: '1px solid rgba(6,182,212,0.2)',
+              }}>
+                <BrainCircuit size={13} color="#06B6D4" />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#06B6D4' }}>{eco.aiCredits}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ═══ SECTION 1: GET RATED / LYNX REPORT ═══ */}
       {!scores ? (
