@@ -51,6 +51,18 @@ interface SyncMeta {
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let isPushing = false;
+let activeUserId: string | null = null;  // Cached from auth events — avoids getSession() hang
+
+/**
+ * Set the active user ID from auth events.
+ * Must be called from App.tsx on INITIAL_SESSION / SIGNED_IN.
+ * This ensures all sync operations have a reliable userId
+ * without calling getSession() which can hang.
+ */
+export function setActiveUserId(userId: string | null) {
+  activeUserId = userId;
+  console.log('[Sync] Active user set:', userId ? userId.substring(0, 8) + '...' : 'null');
+}
 
 // ═══════════════════════════════════════
 //  Meta management
@@ -89,13 +101,9 @@ function clearDirty() {
 // ═══════════════════════════════════════
 //  Auth helper
 // ═══════════════════════════════════════
-async function getUserId(): Promise<string | null> {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.user?.id ?? null;
-  } catch {
-    return null;
-  }
+function getReliableUserId(): string | null {
+  // Use cached userId from auth events (always reliable)
+  return activeUserId;
 }
 
 // ═══════════════════════════════════════
@@ -304,8 +312,11 @@ function schedulePush() {
 // Actually push only dirty fields
 async function flushDirtyFields(): Promise<boolean> {
   if (isPushing) return false; // Prevent concurrent pushes
-  const userId = await getUserId();
-  if (!userId) return false;
+  const userId = getReliableUserId();
+  if (!userId) {
+    console.warn('[Sync] Push skipped — no active userId (not logged in?)');
+    return false;
+  }
   if (!isOnline()) {
     console.log('[Sync] Offline — changes queued for later');
     return false;

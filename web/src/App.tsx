@@ -12,7 +12,7 @@ import AuthPage from './pages/AuthPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
-import { pullFromCloud, pushToCloud, retryPendingUploads } from './lib/sync';
+import { pullFromCloud, pushToCloud, retryPendingUploads, setActiveUserId } from './lib/sync';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
@@ -66,6 +66,7 @@ export default function App() {
           setAuthed(true);
           setSessionUser(session.user);
           accessTokenRef.current = session.access_token;
+          setActiveUserId(session.user.id);  // Cache userId for sync pushes
           try {
             await pullFromCloud(session.user.id);
             setLatestScores(loadLatestScores());
@@ -90,6 +91,7 @@ export default function App() {
         setAuthed(true);
         setSessionUser(session?.user || null);
         accessTokenRef.current = session?.access_token || null;
+        setActiveUserId(session?.user?.id || null);  // Cache userId for sync pushes
         try {
           await pullFromCloud(session?.user?.id);
           setLatestScores(loadLatestScores());
@@ -110,6 +112,7 @@ export default function App() {
       }
 
       if (event === 'SIGNED_OUT') {
+        setActiveUserId(null);  // Clear cached userId
         setAuthed(false);
         setSessionUser(null);
         setLatestScores(null);
