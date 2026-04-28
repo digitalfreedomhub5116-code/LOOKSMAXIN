@@ -565,7 +565,8 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
           <div style={{
             flex: 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative', zIndex: 2, width: '100%', minHeight: 100,
+            position: 'relative', zIndex: 2, width: '100%', minHeight: 110,
+            overflow: 'visible',
           }}>
             {/* Radial glow behind preview */}
             <div style={{
@@ -576,7 +577,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
             }} />
 
             {item.category === 'border' && item.imageBorder ? (
-              <div style={{ position: 'relative', width: 90, height: 90 }}>
+              <div style={{ position: 'relative', width: 110, height: 110 }}>
                 {/* Profile pic — fills to inner edge of border ring */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
@@ -589,7 +590,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                   ) : (
-                    <svg width="50" height="50" viewBox="0 0 40 40">
+                    <svg width="60" height="60" viewBox="0 0 40 40">
                       <circle cx="20" cy="16" r="7" fill="#555568" />
                       <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
                     </svg>
@@ -601,7 +602,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   alt={item.name}
                   style={{
                     position: 'absolute', top: '50%', left: '50%',
-                    width: '140%', height: '140%',
+                    width: '115%', height: '115%',
                     transform: 'translate(-50%, -50%)',
                     objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
                     ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
