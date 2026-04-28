@@ -372,6 +372,7 @@ export default function Store({ user }: { user?: any }) {
       )}
     </div>
   );
+}
 
 /* ═══════════════════════════════════
    Plan Card — Liftoff-inspired
