@@ -14,9 +14,9 @@ import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/Sto
 
 /* ═══ Category accent colors ═══ */
 const CAT_COLORS: Record<string, string> = {
-  border: '#8B7335',
+  border: '#705820ff',
   theme: '#8B5CF6',
-  deals: '#C8A84E',
+  deals: '#705820ff',
 };
 
 const CONSUMABLE_ICONS: Record<string, typeof Zap> = {
@@ -292,148 +292,148 @@ function PlanCard({ tier, billing, currentPlan }: { tier: PlanTier; billing: Bil
         ? 'drop-shadow(0 0 10px rgba(200,168,78,0.12))'
         : 'drop-shadow(0 0 16px rgba(200,168,78,0.2))',
     }}>
-    {/* Border layer — clipped */}
-    <div style={{
-      clipPath,
-      padding: isFree ? 1 : isUltra ? 2 : 1.5,
-      background: isFree
-        ? 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03))'
-        : isPro
-          ? 'linear-gradient(145deg, rgba(200,168,78,0.5), rgba(200,168,78,0.1), rgba(200,168,78,0.3))'
-          : 'linear-gradient(145deg, rgba(200,168,78,0.7), rgba(200,168,78,0.2), rgba(200,168,78,0.5))',
-    }}>
-      {/* Inner card */}
+      {/* Border layer — clipped */}
       <div style={{
         clipPath,
-        padding: '20px',
-        background: bgGradient,
-        position: 'relative', overflow: 'hidden',
+        padding: isFree ? 1 : isUltra ? 2 : 1.5,
+        background: isFree
+          ? 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03))'
+          : isPro
+            ? 'linear-gradient(145deg, rgba(200,168,78,0.5), rgba(200,168,78,0.1), rgba(200,168,78,0.3))'
+            : 'linear-gradient(145deg, rgba(200,168,78,0.7), rgba(200,168,78,0.2), rgba(200,168,78,0.5))',
       }}>
-        {/* ─── Diagonal Shine Streaks ─── */}
-        {!isFree && (
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            pointerEvents: 'none', zIndex: 0, overflow: 'hidden',
-          }}>
+        {/* Inner card */}
+        <div style={{
+          clipPath,
+          padding: '20px',
+          background: bgGradient,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          {/* ─── Diagonal Shine Streaks ─── */}
+          {!isFree && (
             <div style={{
-              position: 'absolute', top: '-50%', left: '5%',
-              width: '30%', height: '200%',
-              background: 'linear-gradient(70deg, transparent 44%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.04) 52%, transparent 56%)',
-              transform: 'rotate(25deg)',
-            }} />
-            <div style={{
-              position: 'absolute', top: '-50%', left: '35%',
-              width: '20%', height: '200%',
-              background: 'linear-gradient(70deg, transparent 46%, rgba(255,255,255,0.03) 49%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.03) 51%, transparent 54%)',
-              transform: 'rotate(25deg)',
-            }} />
-          </div>
-        )}
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              pointerEvents: 'none', zIndex: 0, overflow: 'hidden',
+            }}>
+              <div style={{
+                position: 'absolute', top: '-50%', left: '5%',
+                width: '30%', height: '200%',
+                background: 'linear-gradient(70deg, transparent 44%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.04) 52%, transparent 56%)',
+                transform: 'rotate(25deg)',
+              }} />
+              <div style={{
+                position: 'absolute', top: '-50%', left: '35%',
+                width: '20%', height: '200%',
+                background: 'linear-gradient(70deg, transparent 46%, rgba(255,255,255,0.03) 49%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.03) 51%, transparent 54%)',
+                transform: 'rotate(25deg)',
+              }} />
+            </div>
+          )}
 
-        {/* Shimmer overlay for Ultra */}
-        {isUltra && (
+          {/* Shimmer overlay for Ultra */}
+          {isUltra && (
+            <div style={{
+              position: 'absolute', top: 0, left: '-100%', width: '200%', height: '100%',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(200,168,78,0.06) 50%, transparent 100%)',
+              animation: 'shimmer 3s ease-in-out infinite',
+              pointerEvents: 'none', zIndex: 0,
+            }} />
+          )}
+
+          {/* Top edge glow */}
           <div style={{
-            position: 'absolute', top: 0, left: '-100%', width: '200%', height: '100%',
-            background: 'linear-gradient(90deg, transparent 0%, rgba(200,168,78,0.06) 50%, transparent 100%)',
-            animation: 'shimmer 3s ease-in-out infinite',
-            pointerEvents: 'none', zIndex: 0,
+            position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1,
+            background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
+            zIndex: 1,
           }} />
-        )}
 
-        {/* Top edge glow */}
-        <div style={{
-          position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1,
-          background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
-          zIndex: 1,
-        }} />
+          {/* Corner accents */}
+          <div style={{
+            position: 'absolute', top: chipSize - 3, right: 0, width: 6, height: 6,
+            background: isFree ? 'rgba(255,255,255,0.15)' : 'var(--primary)', borderRadius: '50%',
+            opacity: 0.6, boxShadow: isFree ? 'none' : '0 0 6px var(--primary)', zIndex: 1,
+          }} />
+          <div style={{
+            position: 'absolute', bottom: 0, left: chipSize - 3, width: 6, height: 6,
+            background: isFree ? 'rgba(255,255,255,0.15)' : 'var(--primary)', borderRadius: '50%',
+            opacity: 0.6, boxShadow: isFree ? 'none' : '0 0 6px var(--primary)', zIndex: 1,
+          }} />
 
-        {/* Corner accents */}
-        <div style={{
-          position: 'absolute', top: chipSize - 3, right: 0, width: 6, height: 6,
-          background: isFree ? 'rgba(255,255,255,0.15)' : 'var(--primary)', borderRadius: '50%',
-          opacity: 0.6, boxShadow: isFree ? 'none' : '0 0 6px var(--primary)', zIndex: 1,
-        }} />
-        <div style={{
-          position: 'absolute', bottom: 0, left: chipSize - 3, width: 6, height: 6,
-          background: isFree ? 'rgba(255,255,255,0.15)' : 'var(--primary)', borderRadius: '50%',
-          opacity: 0.6, boxShadow: isFree ? 'none' : '0 0 6px var(--primary)', zIndex: 1,
-        }} />
-
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isUltra ? <Crown size={20} color="#C8A84E" /> : isPro ? <Star size={18} color="#C8A84E" /> : <Sparkles size={16} color="var(--text-muted)" />}
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
-                {tier}
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {isUltra ? <Crown size={20} color="#C8A84E" /> : isPro ? <Star size={18} color="#C8A84E" /> : <Sparkles size={16} color="var(--text-muted)" />}
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
+                  {tier}
+                </div>
+                {isActive && (
+                  <div style={{ fontSize: 9, fontWeight: 700, color: '#22C55E', letterSpacing: 0.5 }}>CURRENT PLAN</div>
+                )}
               </div>
-              {isActive && (
-                <div style={{ fontSize: 9, fontWeight: 700, color: '#22C55E', letterSpacing: 0.5 }}>CURRENT PLAN</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              {isFree ? (
+                <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>Free</div>
+              ) : (
+                <>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>₹{info.price}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{info.label}</div>
+                </>
               )}
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            {isFree ? (
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>Free</div>
-            ) : (
-              <>
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>₹{info.price}</div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{info.label}</div>
-              </>
-            )}
-          </div>
-        </div>
 
-        {/* AI Credits badge */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '8px 14px', marginBottom: 14, position: 'relative', zIndex: 1,
-          background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)',
-          clipPath: `polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))`,
-        }}>
-          <BrainCircuit size={16} color="#06B6D4" />
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>
-            {info.credits === 'unlimited' ? '∞' : info.credits.toLocaleString()} AI Credits
-          </span>
-          {!isFree && <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>{info.label}</span>}
-        </div>
-
-        {/* Features */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, position: 'relative', zIndex: 1 }}>
-          {features.map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check size={13} color={isFree ? 'var(--text-muted)' : '#C8A84E'} strokeWidth={3} />
-              <span style={{ fontSize: 12, color: isFree ? 'var(--text-muted)' : 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{f}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        {!isActive && !isFree && (
-          <button style={{
-            width: '100%', padding: '12px 0', border: 'none', cursor: 'pointer',
-            background: isUltra
-              ? 'linear-gradient(135deg, #C8A84E, #D4B04A, #A08030)'
-              : 'linear-gradient(135deg, rgba(200,168,78,0.25), rgba(200,168,78,0.1))',
-            color: isUltra ? '#000' : '#fff',
-            fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
-            clipPath: `polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))`,
-            boxShadow: isUltra ? '0 0 24px rgba(200,168,78,0.3)' : '0 0 12px rgba(200,168,78,0.1)',
-            transition: 'all 0.2s', position: 'relative', zIndex: 1,
-          }}>
-            {isUltra ? '👑 UPGRADE TO ULTRA' : '⭐ UPGRADE TO PRO'}
-          </button>
-        )}
-        {isActive && !isFree && (
+          {/* AI Credits badge */}
           <div style={{
-            textAlign: 'center', padding: '10px 0', fontSize: 12, fontWeight: 700,
-            color: '#22C55E', letterSpacing: 0.5, position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', marginBottom: 14, position: 'relative', zIndex: 1,
+            background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)',
+            clipPath: `polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))`,
           }}>
-            ✓ Active
+            <BrainCircuit size={16} color="#06B6D4" />
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>
+              {info.credits === 'unlimited' ? '∞' : info.credits.toLocaleString()} AI Credits
+            </span>
+            {!isFree && <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>{info.label}</span>}
           </div>
-        )}
+
+          {/* Features */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, position: 'relative', zIndex: 1 }}>
+            {features.map((f, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Check size={13} color={isFree ? 'var(--text-muted)' : '#C8A84E'} strokeWidth={3} />
+                <span style={{ fontSize: 12, color: isFree ? 'var(--text-muted)' : 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{f}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          {!isActive && !isFree && (
+            <button style={{
+              width: '100%', padding: '12px 0', border: 'none', cursor: 'pointer',
+              background: isUltra
+                ? 'linear-gradient(135deg, #C8A84E, #D4B04A, #A08030)'
+                : 'linear-gradient(135deg, rgba(200,168,78,0.25), rgba(200,168,78,0.1))',
+              color: isUltra ? '#000' : '#fff',
+              fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
+              clipPath: `polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))`,
+              boxShadow: isUltra ? '0 0 24px rgba(200,168,78,0.3)' : '0 0 12px rgba(200,168,78,0.1)',
+              transition: 'all 0.2s', position: 'relative', zIndex: 1,
+            }}>
+              {isUltra ? '👑 UPGRADE TO ULTRA' : '⭐ UPGRADE TO PRO'}
+            </button>
+          )}
+          {isActive && !isFree && (
+            <div style={{
+              textAlign: 'center', padding: '10px 0', fontSize: 12, fontWeight: 700,
+              color: '#22C55E', letterSpacing: 0.5, position: 'relative', zIndex: 1,
+            }}>
+              ✓ Active
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 }
