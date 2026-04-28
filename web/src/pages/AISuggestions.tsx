@@ -71,7 +71,7 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
 
       {/* ═══ Remedy Cards — Horizontal Scroll ═══ */}
       {remedies.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 20 }}>
           <div style={{
             display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8,
             margin: '0 -20px', padding: '0 20px 8px',
@@ -91,7 +91,7 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
 
       {/* ═══ Quick Tips ═══ */}
       {visibleTips.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase' }}>
             Quick Tips
           </div>
@@ -105,7 +105,7 @@ export default function AISuggestions({ scores, onGoPrograms, onViewRemedy }: Pr
 
       {/* ═══ Exercise Plan Suggestions ═══ */}
       {exercisePlans.length > 0 && (
-        <div>
+        <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase' }}>
             Suggested Programs
           </div>
