@@ -127,3 +127,46 @@ export function getUserRank(userId: string): number {
   const idx = cachedEntries.findIndex(e => e.user_id === userId);
   return idx >= 0 ? idx + 1 : 0;
 }
+
+/**
+ * Self-contained border sync — call from Store when border changes.
+ * Gets auth session, streak, and pushes everything in one call.
+ */
+export async function syncBorderToLeaderboard(borderId: string | null): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) { console.warn('[LB] No session for border sync'); return; }
+
+    const u = session.user;
+    const token = session.access_token;
+
+    // Direct PATCH to update ONLY the border column (fastest, most reliable)
+    const patchUrl = `${SUPABASE_URL}/rest/v1/${TABLE}?user_id=eq.${u.id}`;
+    const res = await fetch(patchUrl, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        equipped_border: borderId || null,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('[LB] Border PATCH fail:', res.status, errText);
+      return;
+    }
+
+    // Update cache fingerprint
+    localStorage.removeItem(LS_LAST_PUSHED);
+    cacheTimestamp = 0;
+    console.log('[LB] ✅ Border synced:', borderId || 'none');
+  } catch (err) {
+    console.warn('[LB] Border sync error:', err);
+  }
+}

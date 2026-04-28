@@ -9,9 +9,9 @@ import {
   Infinity, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { ALL_STORE_ITEMS, getItemsByCategory, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
-import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyThemeVars, DEV_UNLOCK_ALL, getStreak, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
+import { getEconomy, purchaseItem, equipItem, grantFreeCredits, applyThemeVars, DEV_UNLOCK_ALL, type EquippedItems, type PlanTier, PLAN_CONFIG } from '../lib/economy';
 import { LynxCoin, BorderRing, TitleBadge, ThemeSwatch } from '../components/StoreComponents';
-import { pushStreakToLeaderboard } from '../lib/leaderboard';
+import { syncBorderToLeaderboard } from '../lib/leaderboard';
 
 /* ═══ Category accent colors ═══ */
 const CAT_COLORS: Record<string, string> = {
@@ -155,24 +155,10 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
       const themeItem = newId ? ALL_STORE_ITEMS.find(i => i.id === newId) : null;
       applyThemeVars(themeItem?.themeVars || null);
     }
-    // If equipping a border, push to leaderboard so others see it
+    // If equipping a border, sync to leaderboard instantly
     if (slot === 'border') {
-      localStorage.removeItem('lynx_lb_last_push');
-      import('../lib/api').then(({ supabase }) => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (!session?.user) return;
-          const u = session.user;
-          const streak = getStreak();
-          pushStreakToLeaderboard(
-            u.id, streak.current,
-            u.user_metadata?.full_name || u.email?.split('@')[0] || 'Player',
-            u.user_metadata?.avatar_url,
-            newId,
-          ).then(() => {
-            // Notify Ranks to refresh instantly
-            window.dispatchEvent(new Event('leaderboard:refresh'));
-          }).catch(() => {});
-        });
+      syncBorderToLeaderboard(newId).then(() => {
+        window.dispatchEvent(new Event('leaderboard:refresh'));
       });
     }
   };
