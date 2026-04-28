@@ -138,7 +138,7 @@ if (typeof window !== 'undefined') {
  *   to avoid getSession() race conditions on fresh login.
  */
 export async function pullFromCloud(overrideUserId?: string): Promise<boolean> {
-  const userId = overrideUserId || await getUserId();
+  const userId = overrideUserId || getReliableUserId();
   if (!userId) {
     console.warn('[Sync] Pull skipped — no userId');
     return false;
