@@ -66,8 +66,8 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
       {/* ═══ HEADER ═══ */}
       {(() => {
         const eco = getEconomy();
-        const planLabel = eco.plan === 'free' ? 'Trial' : eco.plan === 'pro' ? 'Pro' : 'Ultra';
-        const planColor = eco.plan === 'free' ? '#94A3B8' : eco.plan === 'pro' ? '#8B5CF6' : '#F59E0B';
+        const planLabel = eco.plan === 'free' ? 'Trial' : eco.plan === 'basic' ? 'Basic' : eco.plan === 'pro' ? 'Pro' : 'Ultra';
+        const planColor = eco.plan === 'free' ? '#94A3B8' : eco.plan === 'basic' ? '#22C55E' : eco.plan === 'pro' ? '#8B5CF6' : '#F59E0B';
         return (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Welcome back</div>
@@ -79,7 +79,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
                 background: `${planColor}12`,
                 border: `1px solid ${planColor}30`,
               }}>
-                {eco.plan === 'ultra' ? <Crown size={13} color={planColor} /> : eco.plan === 'pro' ? <Star size={13} color={planColor} /> : null}
+                {eco.plan === 'ultra' ? <Crown size={13} color={planColor} /> : eco.plan === 'pro' ? <Star size={13} color={planColor} /> : eco.plan === 'basic' ? <Zap size={13} color={planColor} /> : null}
                 <span style={{ fontSize: 11, fontWeight: 800, color: planColor }}>{planLabel}</span>
               </div>
               {/* Credits Pill */}

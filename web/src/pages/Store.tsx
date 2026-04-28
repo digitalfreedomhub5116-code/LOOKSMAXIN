@@ -32,19 +32,24 @@ type BillingCycle = 'weekly' | 'monthly' | 'yearly';
 
 const PLAN_PRICING: Record<PlanTier, Record<BillingCycle, { price: number; credits: number | 'unlimited'; label: string }>> = {
   free: {
-    weekly: { price: 0, credits: 200, label: 'One-time' },
+    weekly: { price: 0, credits: 0, label: '' },
     monthly: { price: 0, credits: 200, label: 'One-time' },
-    yearly: { price: 0, credits: 200, label: 'One-time' },
+    yearly: { price: 0, credits: 0, label: '' },
+  },
+  basic: {
+    weekly: { price: 50, credits: 500, label: '/week' },
+    monthly: { price: 199, credits: 1000, label: '/month' },
+    yearly: { price: 999, credits: 12000, label: '/year' },
   },
   pro: {
-    weekly: { price: 70, credits: 600, label: '/week' },
-    monthly: { price: 299, credits: 2199, label: '/month' },
-    yearly: { price: 1450, credits: 26388, label: '/year' },
+    weekly: { price: 99, credits: 700, label: '/week' },
+    monthly: { price: 349, credits: 2500, label: '/month' },
+    yearly: { price: 1999, credits: 30000, label: '/year' },
   },
   ultra: {
-    weekly: { price: 149, credits: 1400, label: '/week' },
-    monthly: { price: 999, credits: 'unlimited', label: '/month' },
-    yearly: { price: 4300, credits: 'unlimited', label: '/year' },
+    weekly: { price: 199, credits: 1600, label: '/week' },
+    monthly: { price: 999, credits: 6000, label: '/month' },
+    yearly: { price: 4999, credits: 'unlimited', label: '/year' },
   },
 };
 
@@ -214,9 +219,14 @@ export default function Store({ user }: { user?: any }) {
               ))}
             </div>
 
-            {/* Plan Cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 40 }}>
+            {/* Plan Cards — Horizontal swipable */}
+            <div style={{
+              display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 40,
+              scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch',
+              margin: '0 -20px', padding: '0 20px 40px',
+            }}>
               <PlanCard tier="free" billing={billing} currentPlan={economy.plan} discount={0} />
+              <PlanCard tier="basic" billing={billing} currentPlan={economy.plan} discount={15} />
               <PlanCard tier="pro" billing={billing} currentPlan={economy.plan} discount={15} />
               <PlanCard tier="ultra" billing={billing} currentPlan={economy.plan} discount={15} />
             </div>
@@ -345,208 +355,196 @@ export default function Store({ user }: { user?: any }) {
   );
 }
 
-/* ═══════════════════════════════════
-   Plan Card — Liftoff-inspired
-   ═══════════════════════════════════ */
 function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier; billing: BillingCycle; currentPlan: PlanTier; discount?: number }) {
   const info = PLAN_PRICING[tier][billing];
   const discountedPrice = discount > 0 ? Math.round(info.price * (1 - discount / 100)) : info.price;
   const config = PLAN_CONFIG[tier];
   const isActive = tier === currentPlan;
   const isFree = tier === 'free';
+  const isBasic = tier === 'basic';
   const isPro = tier === 'pro';
   const isUltra = tier === 'ultra';
 
-  // Pro = purple highlight, Ultra = gold, Trial = muted
-  const proColor = '#8B5CF6';
-  const bgGradient = isFree
-    ? 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
-    : isPro
-      ? `linear-gradient(145deg, ${proColor}14 0%, ${proColor}06 100%)`
-      : 'linear-gradient(145deg, rgba(200,168,78,0.15) 0%, rgba(200,168,78,0.04) 100%)';
+  // Per-credit cost
+  const perCredit = info.credits !== 'unlimited' && info.credits > 0 && info.price > 0
+    ? `₹${(discountedPrice / info.credits).toFixed(2)}/credit` : '';
 
+  // Color theme per tier
+  const tierColor = isFree ? '#94A3B8' : isBasic ? '#22C55E' : isPro ? '#8B5CF6' : '#F59E0B';
+
+  // Features per tier
   const features: string[] = [];
   if (isFree) {
-    features.push('200 AI credits (one-time)', `${config.scanCost} credits/scan`, `${config.chatCost} credits/chat`, 'Basic borders & default theme');
+    features.push(
+      '200 AI credits (one-time)',
+      `${config.scanCost} credits/scan`,
+      `${config.chatCost} credits/chat`,
+      'Basic face analysis',
+      'Default theme only',
+      'Community leaderboard',
+    );
+  } else if (isBasic) {
+    const cr = info.credits.toLocaleString();
+    features.push(
+      `${cr} credits${info.label}`,
+      `${config.scanCost} credits/scan`,
+      `${config.chatCost} credits/chat`,
+      'Detailed face analysis',
+      'Color themes unlocked',
+      '1.5× coin earning',
+      'Basic skin remedies',
+      'Exercise programs',
+    );
   } else if (isPro) {
     const cr = info.credits === 'unlimited' ? 'Unlimited' : info.credits.toLocaleString();
-    features.push(`${cr} AI credits${info.label}`, `${config.scanCost} credits/scan (save 25%)`, `${config.chatCost} credits/chat (save 80%)`, 'All Color + Special themes', 'Elemental borders', '2× coin earning');
+    features.push(
+      `${cr} credits${info.label}`,
+      `${config.scanCost} credits/scan (save 25%)`,
+      `${config.chatCost} credits/chat (save 80%)`,
+      'All Color + Special themes',
+      'Elemental borders',
+      '2× coin earning',
+      'Advanced AI suggestions',
+      'Priority support',
+      'Streak shield (1/month)',
+    );
   } else {
-    const cr = info.credits === 'unlimited' ? 'Unlimited AI credits' : `${info.credits.toLocaleString()} credits${info.label}`;
-    features.push(cr, 'Unlimited face scans', 'Unlimited AI chat', 'ALL themes & borders', '3× coin earning', '2 free Streak Shields/month');
+    const cr = info.credits === 'unlimited' ? 'Unlimited' : info.credits.toLocaleString();
+    features.push(
+      `${cr} credits${info.label}`,
+      `${config.scanCost} credits/scan (save 50%)`,
+      `${config.chatCost} credit/chat`,
+      'ALL themes & borders',
+      '3× coin earning',
+      '2 free Streak Shields/month',
+      'Unlimited AI chat',
+      'Exclusive Ultra badge',
+      'Early access to features',
+      'Premium AI analysis',
+    );
   }
 
-  const chipSize = 16;
-  const clipPath = `polygon(0 0, calc(100% - ${chipSize}px) 0, 100% ${chipSize}px, 100% 100%, ${chipSize}px 100%, 0 calc(100% - ${chipSize}px))`;
-  const accentColor = isFree ? 'rgba(255,255,255,0.15)' : isPro ? `${proColor}80` : 'rgba(200,168,78,0.5)';
+  const borderRadius = 16;
 
   return (
-    /* Glow wrapper — no clip-path so drop-shadow renders outside */
     <div style={{
-      filter: isFree ? 'none' : isPro
-        ? `drop-shadow(0 0 14px ${proColor}25)`
-        : 'drop-shadow(0 0 16px rgba(200,168,78,0.2))',
-      animation: isPro ? 'plan-pulse 3s ease-in-out infinite' : 'none',
+      minWidth: 260, maxWidth: 280, flexShrink: 0,
+      scrollSnapAlign: 'center',
       position: 'relative',
+      animation: isUltra ? 'plan-pulse 3s ease-in-out infinite' : 'none',
     }}>
-      {/* BEST VALUE badge for Pro */}
-      {isPro && (
+      {/* BEST VALUE badge */}
+      {isUltra && (
         <div style={{
-          position: 'absolute', top: -10, right: 20, zIndex: 10,
-          padding: '4px 12px', borderRadius: 6,
-          background: `linear-gradient(135deg, ${proColor}, #A78BFA)`,
-          fontSize: 9, fontWeight: 900, color: '#fff', letterSpacing: 1,
-          boxShadow: `0 2px 10px ${proColor}50`,
+          position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
+          padding: '4px 14px', borderRadius: 8,
+          background: `linear-gradient(135deg, ${tierColor}, #FBBF24)`,
+          fontSize: 9, fontWeight: 900, color: '#000', letterSpacing: 1.2,
+          boxShadow: `0 2px 12px ${tierColor}50`,
+          whiteSpace: 'nowrap',
         }}>BEST VALUE</div>
       )}
-      {/* Border layer — clipped */}
+
+      {/* Card */}
       <div style={{
-        clipPath,
-        padding: isFree ? 1 : isPro ? 2 : 2,
+        borderRadius,
+        border: `1.5px solid ${tierColor}35`,
         background: isFree
-          ? 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03))'
-          : isPro
-            ? `linear-gradient(145deg, ${proColor}90, ${proColor}30, ${proColor}60)`
-            : 'linear-gradient(145deg, rgba(200,168,78,0.7), rgba(200,168,78,0.2), rgba(200,168,78,0.5))',
+          ? 'linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))'
+          : `linear-gradient(160deg, ${tierColor}10, ${tierColor}04)`,
+        padding: '20px 16px',
+        position: 'relative', overflow: 'hidden',
       }}>
-        {/* Inner card */}
+        {/* Top accent line */}
         <div style={{
-          clipPath,
-          padding: '20px',
-          background: bgGradient,
-          position: 'relative', overflow: 'hidden',
-        }}>
-          {/* ─── Diagonal Shine Streaks ─── */}
-          {!isFree && (
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              pointerEvents: 'none', zIndex: 0, overflow: 'hidden',
-            }}>
-              <div style={{
-                position: 'absolute', top: '-50%', left: '5%',
-                width: '30%', height: '200%',
-                background: 'linear-gradient(70deg, transparent 44%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.04) 52%, transparent 56%)',
-                transform: 'rotate(25deg)',
-              }} />
-              <div style={{
-                position: 'absolute', top: '-50%', left: '35%',
-                width: '20%', height: '200%',
-                background: 'linear-gradient(70deg, transparent 46%, rgba(255,255,255,0.03) 49%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.03) 51%, transparent 54%)',
-                transform: 'rotate(25deg)',
-              }} />
+          position: 'absolute', top: 0, left: 20, right: 20, height: 2,
+          background: `linear-gradient(90deg, transparent, ${tierColor}, transparent)`,
+          borderRadius: '0 0 4px 4px',
+        }} />
+
+        {/* Tier name + icon */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          {isUltra ? <Crown size={20} color={tierColor} /> : isPro ? <Star size={18} color={tierColor} /> : isBasic ? <Zap size={18} color={tierColor} /> : null}
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
+              {isFree ? 'TRIAL' : tier}
             </div>
-          )}
+            {isActive && (
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#22C55E', letterSpacing: 0.5 }}>CURRENT PLAN</div>
+            )}
+          </div>
+        </div>
 
-          {/* Shimmer overlay for Ultra */}
-          {isUltra && (
-            <div style={{
-              position: 'absolute', top: 0, left: '-100%', width: '200%', height: '100%',
-              background: 'linear-gradient(90deg, transparent 0%, rgba(200,168,78,0.06) 50%, transparent 100%)',
-              animation: 'shimmer 3s ease-in-out infinite',
-              pointerEvents: 'none', zIndex: 0,
-            }} />
-          )}
-
-          {/* Top edge glow */}
-          <div style={{
-            position: 'absolute', top: 0, left: chipSize, right: chipSize, height: 1,
-            background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
-            zIndex: 1,
-          }} />
-
-          {/* Corner accents */}
-          <div style={{
-            position: 'absolute', top: chipSize - 3, right: 0, width: 6, height: 6,
-            background: isFree ? 'rgba(255,255,255,0.15)' : 'var(--primary)', borderRadius: '50%',
-            opacity: 0.6, boxShadow: isFree ? 'none' : '0 0 6px var(--primary)', zIndex: 1,
-          }} />
-          <div style={{
-            position: 'absolute', bottom: 0, left: chipSize - 3, width: 6, height: 6,
-            background: isFree ? 'rgba(255,255,255,0.15)' : 'var(--primary)', borderRadius: '50%',
-            opacity: 0.6, boxShadow: isFree ? 'none' : '0 0 6px var(--primary)', zIndex: 1,
-          }} />
-
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {isUltra ? <Crown size={20} color="#C8A84E" /> : isPro ? <Star size={18} color="#C8A84E" /> : <Sparkles size={16} color="var(--text-muted)" />}
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
-                  {isFree ? 'TRIAL' : tier}
-                </div>
-                {isActive && (
-                  <div style={{ fontSize: 9, fontWeight: 700, color: '#22C55E', letterSpacing: 0.5 }}>CURRENT PLAN</div>
-                )}
+        {/* Price */}
+        <div style={{ marginBottom: 14 }}>
+          {isFree ? (
+            <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>Free</div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                {discount > 0 && <span style={{ fontSize: 14, color: 'var(--text-muted)', textDecoration: 'line-through' }}>₹{info.price}</span>}
+                <span style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>₹{discountedPrice}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{info.label}</span>
               </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              {isFree ? (
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>Free</div>
-              ) : (
-                <>
-                  {discount > 0 && <div style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'line-through' }}>₹{info.price}</div>}
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>₹{discountedPrice}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{info.label}</div>
-                </>
+              {perCredit && (
+                <div style={{ fontSize: 10, color: tierColor, fontWeight: 700, marginTop: 2 }}>{perCredit}</div>
               )}
-            </div>
-          </div>
-
-          {/* AI Credits badge */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '8px 14px', marginBottom: 14, position: 'relative', zIndex: 1,
-            background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)',
-            clipPath: `polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))`,
-          }}>
-            <BrainCircuit size={16} color="#06B6D4" />
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#06B6D4' }}>
-              {info.credits === 'unlimited' ? '∞' : info.credits.toLocaleString()} AI Credits
-            </span>
-            {!isFree && <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>{info.label}</span>}
-          </div>
-
-          {/* Features */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, position: 'relative', zIndex: 1 }}>
-            {features.map((f, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Check size={13} color={isFree ? 'var(--text-muted)' : isPro ? '#8B5CF6' : '#C8A84E'} strokeWidth={3} />
-                <span style={{ fontSize: 12, color: isFree ? 'var(--text-muted)' : 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{f}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA */}
-          {!isActive && !isFree && (
-            <button style={{
-              width: '100%', padding: '12px 0', border: 'none', cursor: 'pointer',
-              background: isUltra
-                ? 'linear-gradient(135deg, #C8A84E, #D4B04A, #A08030)'
-                : isPro
-                  ? 'linear-gradient(135deg, #8B5CF6, #A78BFA)'
-                  : 'linear-gradient(135deg, rgba(200,168,78,0.25), rgba(200,168,78,0.1))',
-              color: '#fff',
-              fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
-              clipPath: `polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))`,
-              boxShadow: isUltra ? '0 0 24px rgba(200,168,78,0.3)' : isPro ? '0 0 20px rgba(139,92,246,0.3)' : '0 0 12px rgba(200,168,78,0.1)',
-              transition: 'all 0.2s', position: 'relative', zIndex: 1,
-            }}>
-              {isUltra ? '👑 UPGRADE TO ULTRA' : '⭐ UPGRADE TO PRO'}
-            </button>
-          )}
-          {isActive && !isFree && (
-            <div style={{
-              textAlign: 'center', padding: '10px 0', fontSize: 12, fontWeight: 700,
-              color: '#22C55E', letterSpacing: 0.5, position: 'relative', zIndex: 1,
-            }}>
-              ✓ Active
-            </div>
+            </>
           )}
         </div>
+
+        {/* Credits badge */}
+        {(info.credits > 0 || info.credits === 'unlimited') && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '6px 12px', marginBottom: 14,
+            background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.12)',
+            borderRadius: 8,
+          }}>
+            <BrainCircuit size={14} color="#06B6D4" />
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#06B6D4' }}>
+              {info.credits === 'unlimited' ? '∞' : info.credits.toLocaleString()} credits
+            </span>
+          </div>
+        )}
+
+        {/* Features */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
+          {features.map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+              <Check size={12} color={isFree ? 'var(--text-muted)' : tierColor} strokeWidth={3} style={{ marginTop: 2, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: isFree ? 'var(--text-muted)' : 'rgba(255,255,255,0.8)', fontWeight: 500, lineHeight: 1.3 }}>{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        {!isActive && !isFree && (
+          <button style={{
+            width: '100%', padding: '11px 0', border: 'none', cursor: 'pointer',
+            borderRadius: 10,
+            background: `linear-gradient(135deg, ${tierColor}, ${tierColor}CC)`,
+            color: isUltra ? '#000' : '#fff',
+            fontSize: 12, fontWeight: 800, letterSpacing: 0.5,
+            boxShadow: `0 0 16px ${tierColor}30`,
+            transition: 'all 0.2s',
+          }}>
+            {isUltra ? '👑 UPGRADE TO ULTRA' : isPro ? '⭐ UPGRADE TO PRO' : '⚡ GET BASIC'}
+          </button>
+        )}
+        {isActive && !isFree && (
+          <div style={{
+            textAlign: 'center', padding: '10px 0', fontSize: 12, fontWeight: 700,
+            color: '#22C55E', letterSpacing: 0.5,
+          }}>
+            ✓ Active
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 
 /* ═══════════════════════════════════
    Glow Card — Liftoff-matching premium card

@@ -5,7 +5,7 @@
  */
 
 /* ═══ Types ═══ */
-export type PlanTier = 'free' | 'pro' | 'ultra';
+export type PlanTier = 'free' | 'basic' | 'pro' | 'ultra';
 
 export interface EconomyState {
   coins: number;
@@ -42,9 +42,10 @@ export interface PurchaseRecord {
 
 /* ═══ Plan Config ═══ */
 export const PLAN_CONFIG = {
-  free: { scanCost: 80, chatCost: 10, coinMultiplier: 1 },
-  pro:  { scanCost: 60, chatCost: 2,  coinMultiplier: 2 },
-  ultra: { scanCost: 0,  chatCost: 0,  coinMultiplier: 3 },
+  free:  { scanCost: 80, chatCost: 10, coinMultiplier: 1 },
+  basic: { scanCost: 70, chatCost: 8,  coinMultiplier: 1.5 },
+  pro:   { scanCost: 60, chatCost: 2,  coinMultiplier: 2 },
+  ultra: { scanCost: 40, chatCost: 1,  coinMultiplier: 3 },
 } as const;
 
 /* ═══ Constants ═══ */
