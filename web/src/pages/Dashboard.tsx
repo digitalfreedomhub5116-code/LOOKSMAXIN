@@ -128,8 +128,16 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
           <div style={{ padding: '16px 20px 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1.5 }}>OVERALL LYNX SCORE</div>
-              <button onClick={onScan} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <RefreshCw size={14} color="var(--text-muted)" />
+              <button onClick={onScan} style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 8,
+                background: 'rgba(200,168,78,0.1)',
+                border: '1px solid rgba(200,168,78,0.25)',
+                cursor: 'pointer', transition: 'all 0.2s',
+                fontSize: 10, fontWeight: 700, color: 'var(--primary)',
+                letterSpacing: 0.5,
+              }}>
+                <RefreshCw size={11} color="var(--primary)" /> Rescan
               </button>
             </div>
 
