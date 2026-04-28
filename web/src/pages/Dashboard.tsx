@@ -6,6 +6,7 @@ import * as progress from '../data/planProgress';
 import SkinRemediesSection from './SkinRemedies';
 import RecentReports from './ReportsGrid';
 import AISuggestions from './AISuggestions';
+import StreakWidget from '../components/StreakWidget';
 import { getImageSrc } from '../lib/imageUtils';
 
 interface DashboardProps {
@@ -249,6 +250,9 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
 
       {/* ═══ RECENT REPORTS ═══ */}
       <RecentReports key={`reports-${scanVersion.current}`} onViewAll={onViewAllReports || (() => {})} />
+
+      {/* ═══ STREAK ═══ */}
+      <StreakWidget />
 
       {/* ═══ EXERCISES SECTION ═══ */}
       <ActivePlanCard onGoPrograms={onGoPrograms} />
