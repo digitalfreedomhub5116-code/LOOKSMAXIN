@@ -577,15 +577,14 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
 
             {item.category === 'border' && item.imageBorder ? (
               <div style={{ position: 'relative', width: 90, height: 90 }}>
-                {/* Profile pic — sized to match SVG BorderRing avatar */}
+                {/* Profile pic — fills to inner edge of border ring */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
-                  width: 66, height: 66, borderRadius: '50%',
+                  width: 80, height: 80, borderRadius: '50%',
                   background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
                   transform: 'translate(-50%, -50%)', zIndex: 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   overflow: 'hidden',
-                  border: '2px solid rgba(255,255,255,0.08)',
                 }}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
