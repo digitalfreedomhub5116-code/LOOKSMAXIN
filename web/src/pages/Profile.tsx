@@ -42,8 +42,8 @@ function scoreColor(score: number): string {
 
 /* ═══ Circular Progress Ring ═══ */
 function TraitRing({ score, label }: { score: number; label: string }) {
-  const size = 48;
-  const stroke = 3;
+  const size = 40;
+  const stroke = 2.5;
   const radius = (size - stroke * 2) / 2;
   const circ = 2 * Math.PI * radius;
   const pct = Math.max(0, Math.min(100, score));
@@ -51,12 +51,12 @@ function TraitRing({ score, label }: { score: number; label: string }) {
   const color = scoreColor(score);
 
   return (
-    <div style={{ textAlign: 'center', width: 48, flexShrink: 0 }}>
-      <div style={{ position: 'relative', width: 44, height: 44, margin: '0 auto 3px' }}>
-        <svg width={44} height={44} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={22} cy={22} r={radius}
+    <div style={{ textAlign: 'center', width: 40, flexShrink: 0 }}>
+      <div style={{ position: 'relative', width: 36, height: 36, margin: '0 auto 3px' }}>
+        <svg width={36} height={36} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={18} cy={18} r={radius}
             fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
-          <circle cx={22} cy={22} r={radius}
+          <circle cx={18} cy={18} r={radius}
             fill="none" stroke={color} strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={circ} strokeDashoffset={offset}
@@ -68,7 +68,7 @@ function TraitRing({ score, label }: { score: number; label: string }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <span style={{
-            fontSize: 13, fontWeight: 800, color,
+            fontSize: 11, fontWeight: 800, color,
             textShadow: `0 0 10px ${color}44`,
           }}>{score}</span>
         </div>
@@ -337,19 +337,19 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             {userInfo?.avatar ? (
               <img src={userInfo.avatar} alt="" style={{
                 position: 'absolute',
-                top: borderItem?.imageBorder ? 8 : 5,
-                left: borderItem?.imageBorder ? 8 : 5,
-                width: borderItem?.imageBorder ? 80 : 86,
-                height: borderItem?.imageBorder ? 80 : 86,
+                top: borderItem?.imageBorder ? 10 : 5,
+                left: borderItem?.imageBorder ? 10 : 5,
+                width: borderItem?.imageBorder ? 76 : 86,
+                height: borderItem?.imageBorder ? 76 : 86,
                 borderRadius: '50%', objectFit: 'cover',
               }} />
             ) : (
               <div style={{
                 position: 'absolute',
-                top: borderItem?.imageBorder ? 8 : 5,
-                left: borderItem?.imageBorder ? 8 : 5,
-                width: borderItem?.imageBorder ? 80 : 86,
-                height: borderItem?.imageBorder ? 80 : 86,
+                top: borderItem?.imageBorder ? 10 : 5,
+                left: borderItem?.imageBorder ? 10 : 5,
+                width: borderItem?.imageBorder ? 76 : 86,
+                height: borderItem?.imageBorder ? 76 : 86,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #1a1a2e, #0f3460)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -391,7 +391,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
       {/* ═══════════════════════════════════════════════════ */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 4, padding: '0 12px', marginBottom: 16, marginTop: -38,
+        gap: 6, padding: '0 20px', marginBottom: 16, marginTop: -38,
         overflowX: 'auto', overflowY: 'visible',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
