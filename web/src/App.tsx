@@ -185,6 +185,19 @@ export default function App() {
             hasFace: !!loadFaceImage(),
           });
           retryPendingUploads().catch(() => {});
+          claimDailyLogin();
+          recordStreakActivity();
+          const streak = getStreak();
+          const equipped = getEquipped();
+          if (session?.user) {
+            pushStreakToLeaderboard(
+              session.user.id,
+              streak.current,
+              session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Player',
+              session.user.user_metadata?.avatar_url,
+              equipped.border,
+            ).catch(() => {});
+          }
         } catch {}
         return;
       }
@@ -220,9 +233,29 @@ export default function App() {
       setAuthed(!!session);
     });
 
+    const appStateListener = CapApp.addListener('appStateChange', async ({ isActive }) => {
+      if (isActive) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          claimDailyLogin();
+          recordStreakActivity();
+          const streak = getStreak();
+          const equipped = getEquipped();
+          pushStreakToLeaderboard(
+            session.user.id,
+            streak.current,
+            session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Player',
+            session.user.user_metadata?.avatar_url,
+            equipped.border,
+          ).catch(() => {});
+        }
+      }
+    });
+
     return () => {
       clearTimeout(safetyTimer);
       subscription.unsubscribe();
+      appStateListener.then(l => l.remove());
       stopSessionGuard();
     };
   }, []);
