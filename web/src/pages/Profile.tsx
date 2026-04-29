@@ -285,18 +285,19 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           }} />
         </div>
 
-        {/* Username Badge — centered on banner, above avatar */}
+        {/* Username Badge — bottom-left of banner */}
         <div style={{
-          position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 6,
+          position: 'absolute', bottom: 12, left: 16, zIndex: 6,
+          whiteSpace: 'nowrap',
         }}>
           <div style={{
-            padding: '5px 18px', borderRadius: 20,
+            padding: '4px 14px', borderRadius: 16,
             background: 'rgba(200,168,78,0.12)',
             border: '1px solid rgba(200,168,78,0.35)',
             backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
           }}>
             <span style={{
-              fontSize: 12, fontWeight: 700, color: '#C8A84E', letterSpacing: 0.5,
+              fontSize: 11, fontWeight: 700, color: '#C8A84E', letterSpacing: 0.5,
             }}>@{userInfo?.name || 'Champion'}</span>
           </div>
         </div>
@@ -304,8 +305,9 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
         {/* Avatar — centered, overlapping banner bottom */}
         <div style={{
           position: 'absolute', bottom: -44, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
+          overflow: 'visible',
         }}>
-          <div style={{ position: 'relative', width: 96, height: 96 }}>
+          <div style={{ position: 'relative', width: 96, height: 96, overflow: 'visible' }}>
             {/* Gradient ring — only when NO image border */}
             {!borderItem?.imageBorder && (
               <div style={{

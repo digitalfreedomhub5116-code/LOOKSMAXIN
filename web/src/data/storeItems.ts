@@ -132,6 +132,13 @@ const BORDERS: StoreItem[] = [
     imageOffsetY: 5,
     borderConfig: { colors: ['#B87333', '#C8A84E', '#DAA520'], strokeWidth: 3, animated: false, glowColor: 'rgba(184,115,51,0.5)', glowIntensity: 0.8 },
   },
+  {
+    id: 'border-phoenix', name: 'Phoenix Blaze', category: 'border', tier: 'legendary', price: 900,
+    description: 'A golden phoenix rises from the flames — reborn in glory.',
+    imageBorder: '/borders/border-phoenix.png',
+    imageScale: 1.05,
+    borderConfig: { colors: ['#DAA520', '#FF8C00', '#FFD700'], strokeWidth: 3, animated: false, glowColor: 'rgba(218,165,32,0.5)', glowIntensity: 0.8 },
+  },
 ];
 
 
@@ -372,6 +379,26 @@ const BANNERS: StoreItem[] = [
     id: 'banner-default', name: 'Lynx Default', category: 'banner', tier: 'basic', price: 0,
     description: 'The official Lynx AI banner — included free for all users.',
     bannerImage: '/banners/default.jpg',
+  },
+  {
+    id: 'banner-mclaren', name: 'McLaren Senna', category: 'banner', tier: 'premium', price: 300,
+    description: 'White McLaren Senna — pure speed, pure elegance.',
+    bannerImage: '/banners/banner1.jpg',
+  },
+  {
+    id: 'banner-hotlooks', name: 'He Looks Hot', category: 'banner', tier: 'special', price: 200,
+    description: 'Damn — turn heads wherever you go.',
+    bannerImage: '/banners/banner2.jpg',
+  },
+  {
+    id: 'banner-noenemies', name: 'No Enemies', category: 'banner', tier: 'special', price: 250,
+    description: 'You don\'t have enemies — manga katana motivation.',
+    bannerImage: '/banners/banner3.jpg',
+  },
+  {
+    id: 'banner-porsche', name: 'Porsche 911 JDM', category: 'banner', tier: 'premium', price: 350,
+    description: 'Porsche 911 meets Japanese waves and cherry blossoms.',
+    bannerImage: '/banners/banner4.jpg',
   },
 ];
 
