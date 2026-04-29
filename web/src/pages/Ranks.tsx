@@ -71,13 +71,12 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
             position: 'absolute', top: '50%', left: '50%',
             width: outerSize * (borderItem.imageScale || 1),
             height: outerSize * (borderItem.imageScale || 1),
-            transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
             pointerEvents: 'none',
             filter: `drop-shadow(0 0 6px ${glow})`,
+            animation: 'border-breathe-centered 3s ease-in-out infinite',
           }}>
             <img src={borderItem.imageBorder} alt="" style={{
               width: '100%', height: '100%', objectFit: 'contain',
-              animation: 'border-breathe-simple 3s ease-in-out infinite',
             }} />
           </div>
         ) : hasImage ? (

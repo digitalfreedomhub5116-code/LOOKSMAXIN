@@ -2,7 +2,7 @@
  * Lynx AI Store — Premium Liftoff-inspired design
  * Subscription plans + cosmetic shop with glowing cards.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import {
   ShoppingBag, Lock, Flame, Zap, ScanLine, Star, ShieldCheck,
   Palette, Frame, Tag, Clock, Check, Crown, BrainCircuit,
@@ -117,6 +117,7 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
   const [purchasedId, setPurchasedId] = useState<string | null>(null);
   const [dealTimer, setDealTimer] = useState('');
   const [showPlanModal, setShowPlanModal] = useState(!!initialShowPlans);
+  const [infoItem, setInfoItem] = useState<StoreItem | null>(null);
   const [confettiPieces, setConfettiPieces] = useState<{x:number;y:number;vx:number;vy:number;r:number;color:string;size:number;rotation:number;rotSpeed:number;phase:number;freq:number}[]>([]);
 
   useEffect(() => {
@@ -309,6 +310,16 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
         </div>
       )}
 
+      {/* ═══ Border Preview Modal ═══ */}
+      {infoItem && infoItem.category === 'border' && (
+        <BorderPreviewModal item={infoItem} avatarUrl={avatarUrl} onClose={() => setInfoItem(null)} />
+      )}
+
+      {/* ═══ Theme Preview Modal ═══ */}
+      {infoItem && infoItem.category === 'theme' && (
+        <ThemePreviewModal item={infoItem} onClose={() => setInfoItem(null)} />
+      )}
+
       {/* ═══ Header ═══ */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>Store</div>
@@ -405,6 +416,7 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
                 canAfford={DEV_UNLOCK_ALL || economy.coins >= Math.round(d.item.price * (1 - d.discount / 100))}
                 onBuy={() => { const p = purchaseItem(d.item.id, Math.round(d.item.price * (1 - d.discount / 100))); if (p) { setEconomy(p); setPurchasedId(d.item.id); setTimeout(() => setPurchasedId(null), 1500); } }}
                 onEquip={d.item.category !== 'consumable' ? () => handleEquip(d.item.category as keyof EquippedItems, d.item.id) : undefined}
+                onInfo={() => setInfoItem(d.item)}
                 avatarUrl={avatarUrl}
               />
             ))}
@@ -422,6 +434,7 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
               canAfford={DEV_UNLOCK_ALL || economy.coins >= item.price}
               onBuy={() => handlePurchase(item)}
               onEquip={item.category !== 'consumable' ? () => handleEquip(item.category as keyof EquippedItems, item.id) : undefined}
+              onInfo={() => setInfoItem(item)}
               avatarUrl={avatarUrl}
             />
           ))}
@@ -673,9 +686,9 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
 /* ═══════════════════════════════════
    Glow Card — Liftoff-matching premium card
    ═══════════════════════════════════ */
-function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, avatarUrl }: {
+function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, onInfo, avatarUrl }: {
   item: StoreItem; discount?: number; owned?: boolean; equipped?: boolean;
-  canAfford: boolean; onBuy: () => void; onEquip?: () => void;
+  canAfford: boolean; onBuy: () => void; onEquip?: () => void; onInfo?: () => void;
   avatarUrl?: string;
 }) {
   const catColor = CAT_COLORS[item.category] || '#C8A84E';
@@ -761,7 +774,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
           )}
 
           {/* ─── Info badge (top-right) like Liftoff ─── */}
-          <div style={{
+          <div onClick={(e) => { e.stopPropagation(); onInfo?.(); }} style={{
             position: 'absolute', top: 8, right: 8, zIndex: 3,
             width: 22, height: 22, borderRadius: 6,
             background: `${catColor}30`, border: `1px solid ${catColor}50`,
@@ -773,7 +786,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
           </div>
 
           {/* ─── Name & Category (CENTERED, large bold) ─── */}
-          <div style={{ position: 'relative', zIndex: 2, marginBottom: 10 }}>
+          <div style={{ position: 'relative', zIndex: 2, marginBottom: 10, marginTop: discount ? 18 : 0 }}>
             <div style={{
               fontSize: 15, fontWeight: 900, color: '#fff',
               lineHeight: 1.2, marginBottom: 3,
@@ -828,12 +841,11 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     position: 'absolute', top: '50%', left: '50%',
                     width: `${(item.imageScale || 1) * 100}%`,
                     height: `${(item.imageScale || 1) * 100}%`,
-                    transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
                     zIndex: 2, pointerEvents: 'none',
+                    animation: 'border-breathe-centered 3s ease-in-out infinite',
                   }}>
                     <img src={item.imageBorder} alt={item.name} style={{
                       width: '100%', height: '100%', objectFit: 'contain',
-                      animation: 'border-breathe-simple 3s ease-in-out infinite',
                     }} />
                   </div>
                 ) : (
@@ -998,4 +1010,307 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
   );
 }
 
+
+/* ═══════════════════════════════════
+   Border Preview Modal — big avatar with border
+   ═══════════════════════════════════ */
+function BorderPreviewModal({ item, avatarUrl, onClose }: { item: StoreItem; avatarUrl?: string; onClose: () => void }) {
+  const [lottieData, setLottieData] = useState<any>(null);
+  const glow = item.borderConfig?.glowColor || 'rgba(200,168,78,0.4)';
+  const size = 220;
+
+  useEffect(() => {
+    if (item.lottieBorder) {
+      fetch(item.lottieBorder).then(r => r.json()).then(setLottieData).catch(() => {});
+    }
+  }, [item.lottieBorder]);
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.92)', zIndex: 9999,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      animation: 'fadeIn 0.25s ease-out',
+      backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: 300, width: '80%' }}>
+        {/* Title */}
+        <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{item.name}</div>
+        <div style={{
+          fontSize: 12, fontWeight: 700, textTransform: 'capitalize', marginBottom: 24,
+          color: item.borderConfig?.colors?.[0] || '#C8A84E', opacity: 0.8,
+        }}>
+          {item.tier} Border
+        </div>
+
+        {/* Big avatar with border */}
+        <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', overflow: 'visible' }}>
+          {/* Ambient glow */}
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: size + 60, height: size + 60, borderRadius: '50%',
+            background: `radial-gradient(circle, ${glow} 0%, transparent 70%)`,
+            transform: 'translate(-50%, -50%)',
+          }} />
+
+          {/* Avatar circle */}
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: size * 0.65, height: size * 0.65, borderRadius: '50%',
+            background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
+            transform: 'translate(-50%, -50%)', zIndex: 1,
+            overflow: 'hidden',
+          }}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="80" height="80" viewBox="0 0 40 40">
+                  <circle cx="20" cy="16" r="7" fill="#555568" />
+                  <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* Image border overlay */}
+          {item.imageBorder && (
+            item.imageAnimated && item.imageAnimationType === 'pulse' ? (
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: `${(item.imageScale || 1) * 100}%`,
+                height: `${(item.imageScale || 1) * 100}%`,
+                zIndex: 2, pointerEvents: 'none',
+                animation: 'border-breathe-centered 3s ease-in-out infinite',
+              }}>
+                <img src={item.imageBorder} alt="" style={{
+                  width: '100%', height: '100%', objectFit: 'contain',
+                  filter: `drop-shadow(0 0 10px ${glow})`,
+                }} />
+              </div>
+            ) : (
+              <img src={item.imageBorder} alt="" style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: `${(item.imageScale || 1) * 100}%`,
+                height: `${(item.imageScale || 1) * 100}%`,
+                transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
+                objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
+                animation: item.imageAnimated ? 'spin-clockwise 10s linear infinite' : 'none',
+                filter: `drop-shadow(0 0 10px ${glow})`,
+              }} />
+            )
+          )}
+
+          {/* Lottie border overlay */}
+          {item.lottieBorder && lottieData && (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: size + 10, height: size + 10, borderRadius: '50%', overflow: 'hidden',
+              transform: 'translate(-50%, -50%)', zIndex: 2, pointerEvents: 'none',
+              mixBlendMode: 'screen', filter: 'brightness(1.1)',
+            }}>
+              <div style={{
+                position: 'absolute', width: '100%', height: '200%',
+                top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              }}>
+                <Lottie animationData={lottieData} loop autoplay style={{ width: '100%', height: '100%' }} />
+              </div>
+            </div>
+          )}
+
+          {/* Aura border */}
+          {item.auraConfig && (
+            <>
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: size * 0.75, height: size * 0.75, borderRadius: '50%',
+                transform: 'translate(-50%, -50%)',
+                border: `3px solid ${item.auraConfig.colors[0]}CC`,
+                boxShadow: [
+                  `0 0 10px 4px ${item.auraConfig.colors[0]}AA`,
+                  `0 0 20px 8px ${item.auraConfig.colors[0]}70`,
+                  `0 0 40px 12px ${item.auraConfig.colors[1]}50`,
+                ].join(', '),
+                animation: item.auraConfig.animated ? 'aura-rotate 8s linear infinite' : undefined,
+                zIndex: 2,
+              }} />
+            </>
+          )}
+        </div>
+
+        {/* Description */}
+        <div style={{
+          fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 28,
+          maxWidth: 260, margin: '28px auto 0', lineHeight: 1.4,
+        }}>
+          {item.description}
+        </div>
+
+        {/* Close button */}
+        <button onClick={onClose} style={{
+          marginTop: 32, padding: '10px 36px', borderRadius: 12,
+          background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+          color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          transition: 'all 0.2s',
+        }}>
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════
+   Theme Preview Modal — Home & Workout mockups
+   ═══════════════════════════════════ */
+function ThemePreviewModal({ item, onClose }: { item: StoreItem; onClose: () => void }) {
+  const tv = item.themeVars;
+  if (!tv) return null;
+
+  const primary = tv['--primary'] || '#C8A84E';
+  const surface = tv['--surface'] || '#12141a';
+  const bg = tv['--bg'] || '#0a0a0f';
+  const border = tv['--border'] || 'rgba(200,168,78,0.08)';
+
+  const mockCardStyle: CSSProperties = {
+    background: surface,
+    borderRadius: 12,
+    padding: '12px 14px',
+    border: `1px solid ${border}`,
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.92)', zIndex: 9999,
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      overflow: 'auto', paddingTop: 40, paddingBottom: 60,
+      animation: 'fadeIn 0.25s ease-out',
+      backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: 360 }}>
+        {/* Title */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>{item.name}</div>
+          <div style={{ fontSize: 12, color: primary, fontWeight: 700, opacity: 0.8, marginTop: 2 }}>
+            {item.tier} Theme Preview
+          </div>
+        </div>
+
+        {/* HOME PAGE mockup */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: primary, letterSpacing: 1.5, marginBottom: 8 }}>HOME</div>
+          <div style={{
+            background: bg, borderRadius: 16, padding: 16,
+            border: `1px solid ${border}`, overflow: 'hidden',
+          }}>
+            {/* Score circle mockup */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%',
+                border: `3px solid ${primary}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: `0 0 12px ${primary}40`,
+              }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>82</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>Overall Score</div>
+                <div style={{ fontSize: 10, color: primary, fontWeight: 600 }}>Top 15% — Above Average</div>
+              </div>
+            </div>
+
+            {/* Feature scores */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {['Jawline', 'Skin', 'Eyes'].map((label, i) => (
+                <div key={label} style={mockCardStyle}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: primary }}>{[78, 85, 90][i]}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginTop: 2 }}>{label.toUpperCase()}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Streak bar */}
+            <div style={{
+              marginTop: 12, background: surface, borderRadius: 10, padding: '10px 14px',
+              border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <Flame size={16} color={primary} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>7 Day Streak</div>
+                <div style={{
+                  height: 4, borderRadius: 2, marginTop: 4,
+                  background: `linear-gradient(90deg, ${primary}, ${primary}60)`,
+                  width: '70%',
+                }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* WORKOUT PAGE mockup */}
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: primary, letterSpacing: 1.5, marginBottom: 8 }}>WORKOUT</div>
+          <div style={{
+            background: bg, borderRadius: 16, padding: 16,
+            border: `1px solid ${border}`, overflow: 'hidden',
+          }}>
+            {/* Exercise cards */}
+            {['Mewing Exercise', 'Jaw Flex Routine', 'Neck Posture'].map((name, i) => (
+              <div key={name} style={{
+                ...mockCardStyle,
+                marginBottom: i < 2 ? 8 : 0,
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: `${primary}20`, border: `1px solid ${primary}30`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Zap size={16} color={primary} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#fff' }}>{name}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}>{[3, 5, 4][i]} min · Level {[2, 3, 1][i]}</div>
+                </div>
+                <div style={{
+                  padding: '4px 10px', borderRadius: 6,
+                  background: `${primary}20`, border: `1px solid ${primary}30`,
+                  fontSize: 9, fontWeight: 800, color: primary,
+                }}>
+                  START
+                </div>
+              </div>
+            ))}
+
+            {/* Progress bar */}
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 3, background: surface }}>
+                <div style={{
+                  width: '45%', height: '100%', borderRadius: 3,
+                  background: `linear-gradient(90deg, ${primary}, ${primary}CC)`,
+                  boxShadow: `0 0 8px ${primary}50`,
+                }} />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: primary }}>45%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Close button */}
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <button onClick={onClose} style={{
+            padding: '10px 36px', borderRadius: 12,
+            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+            color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 

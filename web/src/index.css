@@ -128,8 +128,8 @@ html, body, #root {
   height: 56px;
   border-radius: 50%;
   background: #111;
-  border: 2.5px solid rgba(var(--primary-rgb), 0.5);
-  box-shadow: 0 4px 24px rgba(var(--primary-rgb), 0.3), 0 2px 8px rgba(0,0,0,0.4);
+  border: 2.5px solid rgba(200,168,78, 0.5);
+  box-shadow: 0 4px 24px rgba(200,168,78, 0.3), 0 2px 8px rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1331,4 +1331,8 @@ html, body, #root {
 @keyframes border-breathe-simple {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.08); }
+}
+@keyframes border-breathe-centered {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.08); }
 }
