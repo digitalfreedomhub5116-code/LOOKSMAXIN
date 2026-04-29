@@ -8,27 +8,27 @@ import type { Tab } from '../App';
 
 /* ═══ Plan Upgrade Map ═══ */
 const NEXT_PLAN: Record<PlanTier, { next: PlanTier | null; label: string; color: string }> = {
-  free:  { next: 'basic', label: 'Basic',  color: '#60A5FA' },
-  basic: { next: 'pro',   label: 'Pro',    color: '#C8A84E' },
-  pro:   { next: 'ultra', label: 'Ultra',  color: '#F59E0B' },
-  ultra: { next: null,    label: '',       color: '#F59E0B' },
+  free: { next: 'basic', label: 'Basic', color: '#60A5FA' },
+  basic: { next: 'pro', label: 'Pro', color: '#C8A84E' },
+  pro: { next: 'ultra', label: 'Ultra', color: '#F59E0B' },
+  ultra: { next: null, label: '', color: '#F59E0B' },
 };
 
 const PLAN_LABELS: Record<PlanTier, { name: string; color: string; icon: any }> = {
-  free:  { name: 'Free',  color: '#94A3B8', icon: Zap },
+  free: { name: 'Free', color: '#94A3B8', icon: Zap },
   basic: { name: 'Basic', color: '#60A5FA', icon: Zap },
-  pro:   { name: 'Pro',   color: '#C8A84E', icon: Crown },
+  pro: { name: 'Pro', color: '#C8A84E', icon: Crown },
   ultra: { name: 'Ultra', color: '#F59E0B', icon: Crown },
 };
 
 /* ═══ 6 Major Trait Config ═══ */
 const TRAIT_CONFIG = [
-  { key: 'jawline',   label: 'Jawline',   legacyKey: 'jawline' },
-  { key: 'skin',      label: 'Skin',      legacyKey: 'skin_quality' },
-  { key: 'eyes',      label: 'Eyes',      legacyKey: 'eyes' },
-  { key: 'symmetry',  label: 'Symmetry',  legacyKey: 'facial_symmetry' },
-  { key: 'nose',      label: 'Nose',      legacyKey: null },
-  { key: 'cheekbones',label: 'Cheeks',    legacyKey: null },
+  { key: 'jawline', label: 'Jawline', legacyKey: 'jawline' },
+  { key: 'skin', label: 'Skin', legacyKey: 'skin_quality' },
+  { key: 'eyes', label: 'Eyes', legacyKey: 'eyes' },
+  { key: 'symmetry', label: 'Symmetry', legacyKey: 'facial_symmetry' },
+  { key: 'nose', label: 'Nose', legacyKey: null },
+  { key: 'cheekbones', label: 'Cheeks', legacyKey: null },
 ] as const;
 
 /* ═══ Score → Color (gold/amber spectrum) ═══ */
@@ -42,8 +42,8 @@ function scoreColor(score: number): string {
 
 /* ═══ Circular Progress Ring ═══ */
 function TraitRing({ score, label }: { score: number; label: string }) {
-  const size = 72;
-  const stroke = 4;
+  const size = 48;
+  const stroke = 3;
   const radius = (size - stroke * 2) / 2;
   const circ = 2 * Math.PI * radius;
   const pct = Math.max(0, Math.min(100, score));
@@ -51,13 +51,11 @@ function TraitRing({ score, label }: { score: number; label: string }) {
   const color = scoreColor(score);
 
   return (
-    <div style={{ textAlign: 'center', width: size + 8 }}>
-      <div style={{ position: 'relative', width: size, height: size, margin: '0 auto 6px' }}>
+    <div style={{ textAlign: 'center', width: 52 }}>
+      <div style={{ position: 'relative', width: size, height: size, margin: '0 auto 3px' }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          {/* Track */}
           <circle cx={size / 2} cy={size / 2} r={radius}
             fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
-          {/* Fill */}
           <circle cx={size / 2} cy={size / 2} r={radius}
             fill="none" stroke={color} strokeWidth={stroke}
             strokeLinecap="round"
@@ -65,20 +63,19 @@ function TraitRing({ score, label }: { score: number; label: string }) {
             style={{ transition: 'stroke-dashoffset 1s ease-out, stroke 0.3s' }}
           />
         </svg>
-        {/* Center number */}
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <span style={{
-            fontSize: 18, fontWeight: 800, color,
-            textShadow: `0 0 12px ${color}44`,
+            fontSize: 13, fontWeight: 800, color,
+            textShadow: `0 0 10px ${color}44`,
           }}>{score}</span>
         </div>
       </div>
       <div style={{
-        fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.5)',
-        letterSpacing: 1, textTransform: 'uppercase',
+        fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.45)',
+        letterSpacing: 0.8, textTransform: 'uppercase',
       }}>{label}</div>
     </div>
   );
@@ -125,10 +122,10 @@ function LiquidGlassBellCurve({ score }: { score: number }) {
           <stop offset="100%" stopColor="rgba(200,168,78,0.2)" />
         </linearGradient>
         <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
           <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
@@ -175,7 +172,7 @@ function ProfileLottieBorder({ src, glow }: { src: string; glow: string }) {
 
   useEffect(() => {
     if (lottieProfCache[src]) { setData(lottieProfCache[src]); return; }
-    fetch(src).then(r => r.json()).then(d => { lottieProfCache[src] = d; setData(d); }).catch(() => {});
+    fetch(src).then(r => r.json()).then(d => { lottieProfCache[src] = d; setData(d); }).catch(() => { });
   }, [src]);
 
   if (!data) return null;
@@ -264,28 +261,29 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
     <div className="page" style={{ paddingTop: 0, paddingLeft: 0, paddingRight: 0, paddingBottom: 100 }}>
 
       {/* ═══════════════════════════════════════════════════ */}
-      {/* ═══ BANNER + AVATAR + USERNAME ═══ */}
+      {/* ═══ BANNER with overlapping AVATAR ═══ */}
       {/* ═══════════════════════════════════════════════════ */}
-      <div style={{ position: 'relative', marginBottom: 16 }}>
+      <div style={{ position: 'relative', marginBottom: 56 }}>
 
-        {/* Banner */}
+        {/* Banner Image */}
         <div style={{
-          width: '100%', height: 160,
+          width: '100%', height: 170,
           borderRadius: '0 0 20px 20px',
           overflow: 'hidden', position: 'relative',
         }}>
-          <img src="/profile-banner.png" alt="" style={{
+          <img src="/profile-banner.jpg" alt="" style={{
             width: '100%', height: '100%', objectFit: 'cover',
+            objectPosition: 'center 40%',
           }} />
           <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
-            background: 'linear-gradient(transparent, #000)',
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 90,
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
           }} />
         </div>
 
-        {/* Username Badge */}
+        {/* Username Badge — centered on banner, above avatar */}
         <div style={{
-          position: 'absolute', top: 56, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
+          position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 6,
         }}>
           <div style={{
             padding: '5px 18px', borderRadius: 20,
@@ -299,9 +297,9 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           </div>
         </div>
 
-        {/* Avatar */}
+        {/* Avatar — centered, overlapping banner bottom */}
         <div style={{
-          position: 'absolute', bottom: -48, left: '50%', transform: 'translateX(-50%)', zIndex: 4,
+          position: 'absolute', bottom: -44, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
         }}>
           <div style={{ position: 'relative', width: 96, height: 96 }}>
             <div style={{
@@ -342,52 +340,25 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
         </div>
       </div>
 
-      {/* Spacer */}
-      <div style={{ height: 56 }} />
+      {/* ═══════════════════════════════════════════════════ */}
+      {/* ═══ TRAIT RINGS — Horizontal row flanking avatar ═══ */}
+      {/* ═══════════════════════════════════════════════════ */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 6, padding: '0 8px', marginBottom: 16, marginTop: -38,
+      }}>
+        {TRAIT_CONFIG.slice(0, 3).map(cfg => (
+          <TraitRing key={cfg.key} score={scores ? getTraitScore(cfg) : 0} label={cfg.label} />
+        ))}
 
-      {/* Email */}
-      <div style={{ textAlign: 'center', marginBottom: 20, padding: '0 20px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-          fontSize: 11, color: 'rgba(255,255,255,0.35)',
-        }}>
-          <Mail size={11} /> {userInfo?.email || '...'}
-        </div>
+        <div style={{ width: 80, flexShrink: 0 }} />
+
+        {TRAIT_CONFIG.slice(3, 6).map(cfg => (
+          <TraitRing key={cfg.key} score={scores ? getTraitScore(cfg) : 0} label={cfg.label} />
+        ))}
       </div>
 
       <div style={{ padding: '0 16px' }}>
-
-        {/* ═══════════════════════════════════════════════════ */}
-        {/* ═══ 6 TRAIT RINGS — Liquid Glass Card ═══ */}
-        {/* ═══════════════════════════════════════════════════ */}
-        <div style={{ ...liquidGlass, padding: '20px 12px 16px', marginBottom: 14 }}>
-          <div style={{
-            fontSize: 10, fontWeight: 700, color: 'rgba(200,168,78,0.6)',
-            letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 16,
-          }}>
-            Trait Breakdown
-          </div>
-
-          {scores ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '14px 0',
-              justifyItems: 'center',
-            }}>
-              {TRAIT_CONFIG.map(cfg => (
-                <TraitRing key={cfg.key} score={getTraitScore(cfg)} label={cfg.label} />
-              ))}
-            </div>
-          ) : (
-            <div style={{
-              textAlign: 'center', padding: '24px 0',
-              color: 'rgba(255,255,255,0.3)', fontSize: 13,
-            }}>
-              Complete a face scan to see your traits
-            </div>
-          )}
-        </div>
 
         {/* ═══════════════════════════════════════════════════ */}
         {/* ═══ POTENTIAL GRAPH — Liquid Glass Card ═══ */}
