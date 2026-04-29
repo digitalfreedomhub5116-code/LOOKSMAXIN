@@ -138,6 +138,12 @@ const BORDERS: StoreItem[] = [
     imageBorder: '/borders/border-mixed.png',
     borderConfig: { colors: ['#1E90FF', '#FF6347', '#C8A84E'], strokeWidth: 3, animated: false, glowColor: 'rgba(30,144,255,0.4)', glowIntensity: 0.7 },
   },
+  {
+    id: 'border-gold-dragon', name: 'Gold Dragon', category: 'border', tier: 'legendary', price: 900,
+    description: 'An ancient golden dragon coils around your avatar — ultimate power.',
+    imageBorder: '/borders/border-golddragon.png',
+    borderConfig: { colors: ['#C8A84E', '#F59E0B', '#DAA520'], strokeWidth: 3, animated: false, glowColor: 'rgba(200,168,78,0.5)', glowIntensity: 0.8 },
+  },
 ];
 
 
