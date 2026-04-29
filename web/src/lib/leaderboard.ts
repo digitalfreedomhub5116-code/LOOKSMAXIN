@@ -4,8 +4,8 @@
  */
 import { supabase } from './api';
 
-const SUPABASE_URL = 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_g2L0rujZkZS_mpbC3BhSQA_-Kns1bc0';
+const SUPABASE_URL = 'https://mxcvwkdkjsailyoestlv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Xwc0XCQFr1AIpTcgv9X0tw_TphzEYaf';
 const TABLE = 'leaderboard';
 const CACHE_TTL_MS = 60_000;
 const LS_LAST_PUSHED = 'lynx_lb_last_push';
@@ -135,7 +135,7 @@ export function getUserRank(userId: string): number {
 export async function syncBorderToLeaderboard(borderId: string | null): Promise<void> {
   try {
     // Read auth token directly from localStorage (supabase JS client hangs)
-    const storageKey = `sb-jtcqyxrbvxzhzzgrmsom-auth-token`;
+    const storageKey = `sb-mxcvwkdkjsailyoestlv-auth-token`;
     const raw = localStorage.getItem(storageKey);
     if (!raw) { console.warn('[LB] No auth token in localStorage'); return; }
 

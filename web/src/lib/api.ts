@@ -3,8 +3,8 @@ import { pushToCloud, pushField } from './sync';
 import { compressImage, base64ToBlob } from './imageUtils';
 
 // Public client keys — safe for browser
-const url = import.meta.env.VITE_SUPABASE_URL || 'https://jtcqyxrbvxzhzzgrmsom.supabase.co';
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_g2L0rujZkZS_mpbC3BhSQA_-Kns1bc0';
+const url = import.meta.env.VITE_SUPABASE_URL || 'https://mxcvwkdkjsailyoestlv.supabase.co';
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Xwc0XCQFr1AIpTcgv9X0tw_TphzEYaf';
 
 export const supabase = createClient(url, key, {
   auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
