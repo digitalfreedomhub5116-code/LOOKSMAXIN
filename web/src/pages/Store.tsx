@@ -841,6 +841,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     position: 'absolute', top: '50%', left: '50%',
                     width: `${(item.imageScale || 1) * 100}%`,
                     height: `${(item.imageScale || 1) * 100}%`,
+                    transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
                     zIndex: 2, pointerEvents: 'none',
                     animation: 'border-breathe-centered 3s ease-in-out infinite',
                   }}>
@@ -849,14 +850,18 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     }} />
                   </div>
                 ) : (
-                  <img src={item.imageBorder} alt={item.name} style={{
+                  <div style={{
                     position: 'absolute', top: '50%', left: '50%',
                     width: `${(item.imageScale || 1) * 100}%`,
                     height: `${(item.imageScale || 1) * 100}%`,
                     transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
-                    objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
-                    ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
-                  }} />
+                    zIndex: 2, pointerEvents: 'none',
+                  }}>
+                    <img src={item.imageBorder} alt={item.name} style={{
+                      width: '100%', height: '100%', objectFit: 'contain',
+                      ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
+                    }} />
+                  </div>
                 )}
               </div>
             ) : item.category === 'border' && item.auraConfig ? (
@@ -1080,6 +1085,7 @@ function BorderPreviewModal({ item, avatarUrl, onClose }: { item: StoreItem; ava
                 position: 'absolute', top: '50%', left: '50%',
                 width: `${(item.imageScale || 1) * 100}%`,
                 height: `${(item.imageScale || 1) * 100}%`,
+                transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
                 zIndex: 2, pointerEvents: 'none',
                 animation: 'border-breathe-centered 3s ease-in-out infinite',
               }}>
@@ -1089,15 +1095,19 @@ function BorderPreviewModal({ item, avatarUrl, onClose }: { item: StoreItem; ava
                 }} />
               </div>
             ) : (
-              <img src={item.imageBorder} alt="" style={{
+              <div style={{
                 position: 'absolute', top: '50%', left: '50%',
                 width: `${(item.imageScale || 1) * 100}%`,
                 height: `${(item.imageScale || 1) * 100}%`,
                 transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
-                objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
-                animation: item.imageAnimated ? 'spin-clockwise 10s linear infinite' : 'none',
-                filter: `drop-shadow(0 0 10px ${glow})`,
-              }} />
+                zIndex: 2, pointerEvents: 'none',
+              }}>
+                <img src={item.imageBorder} alt="" style={{
+                  width: '100%', height: '100%', objectFit: 'contain',
+                  animation: item.imageAnimated ? 'spin-clockwise 10s linear infinite' : 'none',
+                  filter: `drop-shadow(0 0 10px ${glow})`,
+                }} />
+              </div>
             )
           )}
 

@@ -71,6 +71,7 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
             position: 'absolute', top: '50%', left: '50%',
             width: outerSize * (borderItem.imageScale || 1),
             height: outerSize * (borderItem.imageScale || 1),
+            transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
             pointerEvents: 'none',
             filter: `drop-shadow(0 0 6px ${glow})`,
             animation: 'border-breathe-centered 3s ease-in-out infinite',
@@ -80,19 +81,19 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
             }} />
           </div>
         ) : hasImage ? (
-          <img
-            src={borderItem.imageBorder}
-            alt=""
-            style={{
-              position: 'absolute', top: '50%', left: '50%',
-              width: outerSize * (borderItem.imageScale || 1),
-              height: outerSize * (borderItem.imageScale || 1),
-              transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
-              objectFit: 'contain', pointerEvents: 'none',
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: outerSize * (borderItem.imageScale || 1),
+            height: outerSize * (borderItem.imageScale || 1),
+            transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
+            pointerEvents: 'none',
+            filter: `drop-shadow(0 0 6px ${glow})`,
+          }}>
+            <img src={borderItem.imageBorder} alt="" style={{
+              width: '100%', height: '100%', objectFit: 'contain',
               animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
-              filter: `drop-shadow(0 0 6px ${glow})`,
-            }}
-          />
+            }} />
+          </div>
         ) : null}
 
         {/* Lottie border overlay */}
