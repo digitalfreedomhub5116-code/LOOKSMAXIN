@@ -132,6 +132,12 @@ const BORDERS: StoreItem[] = [
     lottieBorder: '/borders/lottie-border.json',
     borderConfig: { colors: ['#F59E0B', '#EF4444', '#C8A84E'], strokeWidth: 3, animated: false, glowColor: 'rgba(245,158,11,0.5)', glowIntensity: 0.8 },
   },
+  {
+    id: 'border-elemental-tide', name: 'Elemental Tide', category: 'border', tier: 'legendary', price: 700,
+    description: 'Japanese waves and sacred flames entwine around your avatar.',
+    imageBorder: '/borders/border-mixed.png',
+    borderConfig: { colors: ['#1E90FF', '#FF6347', '#C8A84E'], strokeWidth: 3, animated: false, glowColor: 'rgba(30,144,255,0.4)', glowIntensity: 0.7 },
+  },
 ];
 
 

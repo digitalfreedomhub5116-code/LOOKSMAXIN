@@ -302,25 +302,36 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           position: 'absolute', bottom: -44, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
         }}>
           <div style={{ position: 'relative', width: 96, height: 96 }}>
-            <div style={{
-              position: 'absolute', inset: 0, borderRadius: '50%',
-              background: borderGrad, padding: 3,
-              boxShadow: hasBorder
-                ? `0 0 20px ${borderGlow}, 0 0 40px ${borderGlow}`
-                : '0 0 24px rgba(200,168,78,0.15)',
-              animation: borderConfig?.animated ? 'border-pulse 2s ease-in-out infinite' : 'none',
-            }}>
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#000' }} />
-            </div>
+            {/* Gradient ring — only when NO image border */}
+            {!borderItem?.imageBorder && (
+              <div style={{
+                position: 'absolute', inset: 0, borderRadius: '50%',
+                background: borderGrad, padding: 3,
+                boxShadow: hasBorder
+                  ? `0 0 20px ${borderGlow}, 0 0 40px ${borderGlow}`
+                  : '0 0 24px rgba(200,168,78,0.15)',
+                animation: borderConfig?.animated ? 'border-pulse 2s ease-in-out infinite' : 'none',
+              }}>
+                <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#000' }} />
+              </div>
+            )}
             {userInfo?.avatar ? (
               <img src={userInfo.avatar} alt="" style={{
-                position: 'absolute', top: 5, left: 5,
-                width: 86, height: 86, borderRadius: '50%', objectFit: 'cover',
+                position: 'absolute',
+                top: borderItem?.imageBorder ? 8 : 5,
+                left: borderItem?.imageBorder ? 8 : 5,
+                width: borderItem?.imageBorder ? 80 : 86,
+                height: borderItem?.imageBorder ? 80 : 86,
+                borderRadius: '50%', objectFit: 'cover',
               }} />
             ) : (
               <div style={{
-                position: 'absolute', top: 5, left: 5,
-                width: 86, height: 86, borderRadius: '50%',
+                position: 'absolute',
+                top: borderItem?.imageBorder ? 8 : 5,
+                left: borderItem?.imageBorder ? 8 : 5,
+                width: borderItem?.imageBorder ? 80 : 86,
+                height: borderItem?.imageBorder ? 80 : 86,
+                borderRadius: '50%',
                 background: 'linear-gradient(135deg, #1a1a2e, #0f3460)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
@@ -329,7 +340,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             )}
             {borderItem?.imageBorder && (
               <img src={borderItem.imageBorder} alt="" style={{
-                position: 'absolute', inset: -8, width: 'calc(100% + 16px)', height: 'calc(100% + 16px)',
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
                 pointerEvents: 'none', objectFit: 'contain',
                 animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
                 filter: `drop-shadow(0 0 6px ${borderGlow})`,
