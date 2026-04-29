@@ -372,15 +372,19 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 }} />
               </div>
             ) : borderItem?.imageBorder ? (
-              <img src={borderItem.imageBorder} alt="" style={{
+              <div style={{
                 position: 'absolute', top: '50%', left: '50%',
                 width: `${(borderItem.imageScale || 1) * 100}%`,
                 height: `${(borderItem.imageScale || 1) * 100}%`,
                 transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
-                pointerEvents: 'none', objectFit: 'contain',
-                animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
+                pointerEvents: 'none',
                 filter: `drop-shadow(0 0 6px ${borderGlow})`,
-              }} />
+              }}>
+                <img src={borderItem.imageBorder} alt="" style={{
+                  width: '100%', height: '100%', objectFit: 'contain',
+                  animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
+                }} />
+              </div>
             ) : null}
             {borderItem?.lottieBorder && <ProfileLottieBorder src={borderItem.lottieBorder} glow={borderGlow} />}
           </div>

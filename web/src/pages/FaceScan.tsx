@@ -27,6 +27,7 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [sideImage, setSideImage] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [cameraReady, setCameraReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -67,6 +68,7 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
 
   const startCamera = useCallback(async () => {
     setError('');
+    setCameraReady(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -93,7 +95,13 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
           videoRef.current.srcObject = stream;
           videoRef.current.setAttribute('playsinline', 'true');
           videoRef.current.setAttribute('autoplay', 'true');
-          videoRef.current.play().catch(() => {});
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().then(() => setCameraReady(true)).catch(() => {});
+          };
+          // Fallback if already loaded
+          if (videoRef.current.readyState >= 2) {
+            videoRef.current.play().then(() => setCameraReady(true)).catch(() => {});
+          }
         } else {
           // Retry after a tick — video element not mounted yet
           setTimeout(attachStream, 50);
@@ -653,7 +661,28 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
   // Camera mode — show viewfinder
   return (
     <div className="scanner-view">
-      <video ref={videoRef} className="scanner-video" autoPlay playsInline muted />
+      {/* Hide video until camera stream is actually playing */}
+      <video
+        ref={videoRef}
+        className="scanner-video"
+        autoPlay playsInline muted
+        style={{ opacity: cameraReady ? 1 : 0 }}
+      />
+      {!cameraReady && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#0a0a0f',
+        }}>
+          <div style={{
+            width: 40, height: 40,
+            border: '3px solid rgba(200,168,78,0.2)',
+            borderTopColor: 'var(--primary, #C8A84E)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }} />
+        </div>
+      )}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
       <button className="close-btn" onClick={handleClose}><X size={20} /></button>
 

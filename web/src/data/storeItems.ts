@@ -75,12 +75,14 @@ const BORDERS: StoreItem[] = [
     description: 'Frozen crystalline frost wrapping your avatar.',
     imageBorder: '/borders/ice-transparent.webp',
     imageAnimated: true,
+    imageScale: 1.15,
     borderConfig: { colors: ['#00BFFF', '#E0FFFF'], strokeWidth: 3, animated: false, glowColor: 'rgba(0,191,255,0.4)', glowIntensity: 0.6 },
   },
   {
     id: 'border-dragon-img', name: 'Dragon Coil', category: 'border', tier: 'legendary', price: 500,
     description: 'A mythic water dragon coils around your profile.',
     imageBorder: '/borders/dragon.webp',
+    imageScale: 1.15,
     borderConfig: { colors: ['#60A5FA', '#93C5FD'], strokeWidth: 3, animated: false, glowColor: 'rgba(96,165,250,0.4)', glowIntensity: 0.7 },
   },
   {
@@ -89,12 +91,14 @@ const BORDERS: StoreItem[] = [
     imageBorder: '/borders/rotate.webp',
     imageAnimated: true,
     imageAnimationType: 'pulse',
+    imageScale: 1.15,
     borderConfig: { colors: ['#E2E8F0', '#94A3B8'], strokeWidth: 3, animated: false, glowColor: 'rgba(226,232,240,0.4)', glowIntensity: 0.5 },
   },
   {
     id: 'border-shadowthrone-img', name: 'Shadow Throne', category: 'border', tier: 'legendary', price: 500,
     description: 'Ornate dark-magic thorns weaving a royal frame.',
     imageBorder: '/borders/purple.webp',
+    imageScale: 1.15,
     borderConfig: { colors: ['#C084FC', '#A855F7'], strokeWidth: 3, animated: false, glowColor: 'rgba(192,132,252,0.4)', glowIntensity: 0.7 },
   },
 
@@ -119,6 +123,7 @@ const BORDERS: StoreItem[] = [
     id: 'border-gold-dragon', name: 'Gold Dragon', category: 'border', tier: 'legendary', price: 900,
     description: 'An ancient golden dragon coils around your avatar — ultimate power.',
     imageBorder: '/borders/border-golddragon.webp',
+    imageScale: 1.15,
     borderConfig: { colors: ['#C8A84E', '#F59E0B', '#DAA520'], strokeWidth: 3, animated: false, glowColor: 'rgba(200,168,78,0.5)', glowIntensity: 0.8 },
   },
   {
