@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Eye, EyeOff, ArrowRight, ChevronLeft, Mail, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/api';
 import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
-import { App as CapApp } from '@capacitor/app';
 
 type Mode = 'splash' | 'login' | 'signup' | 'verify' | 'forgot';
 
@@ -136,19 +134,47 @@ export default function AuthPage({ onAuth }: { onAuth: () => void }) {
     setLoading(true); setError('');
 
     if (Capacitor.isNativePlatform()) {
-      // On mobile: open OAuth in in-app browser, handle deep link return
-      const { data, error: err } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'com.lynxai.app://login',
-          skipBrowserRedirect: true,
-        },
-      });
-      if (err) { setError(err.message); setLoading(false); return; }
-      if (data?.url) {
-        await Browser.open({ url: data.url, windowName: '_self' });
-        // Reset loading after returning from browser (deep link will handle auth)
-        setTimeout(() => setLoading(false), 3000);
+      // Native Google Sign-In using Capgo plugin
+      try {
+        const { SocialLogin } = await import('@capgo/capacitor-social-login');
+
+        // Initialize Google provider
+        await SocialLogin.initialize({
+          google: {
+            webClientId: '20910572316-4d14c6df8bocnkt032m020vt0bavahlo.apps.googleusercontent.com',
+          },
+        });
+
+        // Trigger native Google account picker
+        const result = await SocialLogin.login({
+          provider: 'google',
+          options: {
+            scopes: ['email', 'profile'],
+          },
+        });
+
+        const idToken = result?.result?.idToken;
+        if (!idToken) {
+          setError('Google sign-in failed — no token received');
+          setLoading(false);
+          return;
+        }
+
+        // Use token to sign in to Supabase
+        const { error: sbError } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
+
+        if (sbError) {
+          setError(sbError.message);
+          setLoading(false);
+        }
+        // If success, onAuthStateChange in App.tsx will handle the rest
+      } catch (e: any) {
+        console.error('[GoogleAuth] Error:', e);
+        setError(e?.message || 'Google sign-in failed');
+        setLoading(false);
       }
     } else {
       // On web: normal redirect
