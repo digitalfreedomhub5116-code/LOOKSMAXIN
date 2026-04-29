@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import {
   ShoppingBag, Lock, Flame, Zap, ScanLine, Star, ShieldCheck,
   Palette, Frame, Tag, Clock, Check, Crown, BrainCircuit,
-  Infinity, ChevronRight, Sparkles,
+  Infinity, ChevronRight, Sparkles, ImageIcon,
 } from 'lucide-react';
 import Lottie from 'lottie-react';
 import { ALL_STORE_ITEMS, getItemsByCategory, getTodaysDeals, type StoreItem, type StoreCategory } from '../data/storeItems';
@@ -52,10 +52,11 @@ function StoreLottieBorder({ src, avatarUrl, glow }: { src: string; avatarUrl?: 
           width: 110, height: 110, borderRadius: '50%', overflow: 'hidden',
           transform: 'translate(-50%, -50%)', zIndex: 2, pointerEvents: 'none',
           mixBlendMode: 'screen',
+          filter: 'brightness(1.1)',
         }}>
           <div style={{
             position: 'absolute',
-            width: '100%', height: '178%',
+            width: '100%', height: '200%',
             top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           }}>
             <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
@@ -71,6 +72,7 @@ const CAT_COLORS: Record<string, string> = {
   border: '#705820',
   theme: '#8B5CF6',
   deals: '#8d702d',
+  banner: '#06B6D4',
 };
 
 const CONSUMABLE_ICONS: Record<string, typeof Zap> = {
@@ -363,6 +365,7 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
           { id: 'deals' as const, label: 'Deals', icon: Clock },
           { id: 'border' as const, label: 'Borders', icon: Frame },
           { id: 'theme' as const, label: 'Themes', icon: Palette },
+          { id: 'banner' as const, label: 'Banners', icon: ImageIcon },
         ]).map(s => {
           const isActive = shopSection === s.id;
           const color = CAT_COLORS[s.id] || '#C8A84E';
@@ -409,9 +412,9 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
         </>
       )}
 
-      {/* ═══ Category Items ═══ */}
-      {shopSection !== 'deals' && (
-        <div style={{ display: 'grid', gridTemplateColumns: (shopSection === 'border' || shopSection === 'theme') ? '1fr 1fr' : '1fr 1fr', gap: 12 }}>
+      {/* ═══ Category Items (non-banner) ═══ */}
+      {shopSection !== 'deals' && shopSection !== 'banner' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {getItemsByCategory(shopSection).map(item => (
             <GlowCard key={item.id} item={item}
               owned={DEV_UNLOCK_ALL || economy.owned.includes(item.id)}
@@ -422,6 +425,57 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
               avatarUrl={avatarUrl}
             />
           ))}
+        </div>
+      )}
+
+      {/* ═══ Banner Cards — image-only with equip button ═══ */}
+      {shopSection === 'banner' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {getItemsByCategory('banner').map(item => {
+            const isEquipped = economy.equipped.banner === item.id;
+            return (
+              <div key={item.id} style={{ position: 'relative', borderRadius: '16px 16px 24px 24px', overflow: 'hidden' }}>
+                {/* Banner image */}
+                {item.bannerImage && (
+                  <img src={item.bannerImage} alt={item.name} style={{
+                    width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block',
+                  }} />
+                )}
+                {/* Bottom gradient overlay */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+                  pointerEvents: 'none',
+                }} />
+                {/* Name + Equip button */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{item.name}</div>
+                    {item.price > 0 && (
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{item.price} LC</div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleEquip('banner', item.id)}
+                    style={{
+                      padding: '8px 20px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      fontSize: 12, fontWeight: 800, letterSpacing: 0.5,
+                      background: isEquipped
+                        ? 'rgba(255,255,255,0.1)'
+                        : 'linear-gradient(135deg, #06B6D4, #0891B2)',
+                      color: isEquipped ? 'rgba(255,255,255,0.5)' : '#fff',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isEquipped ? '✓ EQUIPPED' : 'EQUIP'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -752,7 +806,6 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
 
             {item.category === 'border' && item.imageBorder ? (
               <div style={{ position: 'relative', width: 100, height: 100, overflow: 'visible' }}>
-                {/* Profile pic — fills to inner edge of border ring */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
                   width: 64, height: 64, borderRadius: '50%',
@@ -770,19 +823,14 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     </svg>
                   )}
                 </div>
-                {/* Border image — scaled per item */}
-                <img
-                  src={item.imageBorder}
-                  alt={item.name}
-                  style={{
-                    position: 'absolute', top: '50%', left: '50%',
-                    width: `${(item.imageScale || 1) * 100}%`,
-                    height: `${(item.imageScale || 1) * 100}%`,
-                    transform: 'translate(-50%, -50%)',
-                    objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
-                    ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
-                  }}
-                />
+                <img src={item.imageBorder} alt={item.name} style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: `${(item.imageScale || 1) * 100}%`,
+                  height: `${(item.imageScale || 1) * 100}%`,
+                  transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
+                  objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
+                  ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
+                }} />
               </div>
             ) : item.category === 'border' && item.auraConfig ? (
               /* CSS Aura Glow Border — vivid neon plasma */
@@ -854,6 +902,17 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
             ) : null}
             {item.category === 'theme' && item.themeVars && (
               <div style={{ width: '90%' }}><ThemeSwatch themeVars={item.themeVars} /></div>
+            )}
+            {item.category === 'banner' && item.bannerImage && (
+              <div style={{
+                width: '90%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden',
+                border: `1px solid ${catColor}30`,
+                boxShadow: `0 0 12px ${catColor}20`,
+              }}>
+                <img src={item.bannerImage} alt={item.name} style={{
+                  width: '100%', height: '100%', objectFit: 'cover',
+                }} />
+              </div>
             )}
             {item.category === 'title' && item.titleConfig && <TitleBadge name={item.name} config={item.titleConfig} />}
             {item.category === 'consumable' && (() => {

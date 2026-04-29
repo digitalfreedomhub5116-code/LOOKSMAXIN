@@ -22,6 +22,8 @@ export interface StoreItem {
   imageBorder?: string;
   /** For borders: scale multiplier for image overlay (default 1.0) */
   imageScale?: number;
+  /** For borders: vertical offset in px (positive = down) */
+  imageOffsetY?: number;
   /** For borders: CSS animation on the image overlay */
   imageAnimated?: boolean;
   /** For borders: Lottie JSON path */
@@ -38,6 +40,8 @@ export interface StoreItem {
   titleConfig?: TitleConfig;
   /** For consumables: effect */
   consumableEffect?: string;
+  /** For banners: image path */
+  bannerImage?: string;
   /** Rank requirement (e.g. "chad", "gigachad") */
   rankRequired?: string;
   /** Is it limited time / seasonal? */
@@ -62,23 +66,6 @@ export interface TitleConfig {
 
 /* ═══ BORDERS ═══ */
 const BORDERS: StoreItem[] = [
-  // SVG Borders
-  {
-    id: 'border-inferno', name: 'Inferno', category: 'border', tier: 'elemental', price: 200,
-    description: 'Blazing fire ring with animated glow.',
-    borderConfig: { colors: ['#FF4500', '#FF8C00'], strokeWidth: 3.5, animated: true, animationType: 'pulse', glowColor: 'rgba(255,69,0,0.3)', glowIntensity: 0.6 },
-  },
-  {
-    id: 'border-diamond', name: 'Diamond Edge', category: 'border', tier: 'rank-gated', price: 300,
-    description: 'Faceted diamond ring — for the above average.',
-    borderConfig: { colors: ['#B9F2FF', '#E0FFFF', '#FFFFFF'], strokeWidth: 3.5, animated: true, animationType: 'shimmer', glowColor: 'rgba(185,242,255,0.3)', glowIntensity: 0.4 },
-    rankRequired: 'Above Average',
-  },
-  {
-    id: 'border-darkmatter', name: 'Dark Matter', category: 'border', tier: 'premium', price: 500,
-    description: 'Void black core with orbiting gold particles.',
-    borderConfig: { colors: ['#000000', '#C8A84E'], strokeWidth: 4, animated: true, animationType: 'dash', glowColor: 'rgba(200,168,78,0.4)', glowIntensity: 0.7 },
-  },
 
   // Image-Based Borders
   {
@@ -107,25 +94,7 @@ const BORDERS: StoreItem[] = [
     borderConfig: { colors: ['#C084FC', '#A855F7'], strokeWidth: 3, animated: false, glowColor: 'rgba(192,132,252,0.4)', glowIntensity: 0.7 },
   },
 
-  // CSS Aura Glow Borders
-  {
-    id: 'border-aura-void', name: 'Void Aura', category: 'border', tier: 'legendary', price: 600,
-    description: 'A swirling void of purple and blue energy radiating from your profile.',
-    auraConfig: { colors: ['#7C3AED', '#3B82F6', '#A855F7', '#6366F1'], blur: 12, spread: 3, animated: true, pulseSpeed: 3 },
-    borderConfig: { colors: ['#7C3AED', '#A855F7'], strokeWidth: 3, animated: false, glowColor: 'rgba(124,58,237,0.5)', glowIntensity: 0.8 },
-  },
-  {
-    id: 'border-aura-solar', name: 'Solar Flare', category: 'border', tier: 'legendary', price: 600,
-    description: 'Blazing golden-orange plasma aura scorching around your avatar.',
-    auraConfig: { colors: ['#F59E0B', '#EF4444', '#F97316', '#FBBF24'], blur: 14, spread: 4, animated: true, pulseSpeed: 2.5 },
-    borderConfig: { colors: ['#F59E0B', '#EF4444'], strokeWidth: 3, animated: false, glowColor: 'rgba(245,158,11,0.5)', glowIntensity: 0.8 },
-  },
-  {
-    id: 'border-aura-toxic', name: 'Toxic Haze', category: 'border', tier: 'premium', price: 450,
-    description: 'Radioactive green mist pulsing with biohazard energy.',
-    auraConfig: { colors: ['#22C55E', '#10B981', '#84CC16', '#34D399'], blur: 10, spread: 3, animated: true, pulseSpeed: 4 },
-    borderConfig: { colors: ['#22C55E', '#10B981'], strokeWidth: 3, animated: false, glowColor: 'rgba(34,197,94,0.5)', glowIntensity: 0.7 },
-  },
+
 
   // Lottie Animated Borders
   {
@@ -134,6 +103,7 @@ const BORDERS: StoreItem[] = [
     lottieBorder: '/borders/lottie-border.json',
     borderConfig: { colors: ['#F59E0B', '#EF4444', '#C8A84E'], strokeWidth: 3, animated: false, glowColor: 'rgba(245,158,11,0.5)', glowIntensity: 0.8 },
   },
+
   {
     id: 'border-elemental-tide', name: 'Elemental Tide', category: 'border', tier: 'legendary', price: 700,
     description: 'Japanese waves and sacred flames entwine around your avatar.',
@@ -153,6 +123,14 @@ const BORDERS: StoreItem[] = [
     imageBorder: '/borders/border-goldlion.png',
     imageScale: 1.5,
     borderConfig: { colors: ['#C8A84E', '#0E8585', '#DAA520'], strokeWidth: 3, animated: false, glowColor: 'rgba(200,168,78,0.45)', glowIntensity: 0.8 },
+  },
+  {
+    id: 'border-gold-eagle', name: 'Golden Eagle', category: 'border', tier: 'legendary', price: 950,
+    description: 'Bronze wings of an apex predator crown your avatar — soar above all.',
+    imageBorder: '/borders/border-eagle.png',
+    imageScale: 1.4,
+    imageOffsetY: 5,
+    borderConfig: { colors: ['#B87333', '#C8A84E', '#DAA520'], strokeWidth: 3, animated: false, glowColor: 'rgba(184,115,51,0.5)', glowIntensity: 0.8 },
   },
 ];
 
@@ -390,12 +368,11 @@ const TITLES: StoreItem[] = [
 
 /* ═══ BANNERS ═══ */
 const BANNERS: StoreItem[] = [
-  { id: 'banner-mountain', name: 'Mountain Summit', category: 'banner', tier: 'basic', price: 150, description: 'Dramatic peak piercing through clouds.' },
-  { id: 'banner-city', name: 'City Night', category: 'banner', tier: 'basic', price: 150, description: 'Skyline lit up after dark.' },
-  { id: 'banner-golden', name: 'Golden Hour', category: 'banner', tier: 'special', price: 200, description: 'Sunset light breaking through clouds.' },
-  { id: 'banner-abstract', name: 'Dark Abstract', category: 'banner', tier: 'special', price: 150, description: 'Black and gold fluid art.' },
-  { id: 'banner-marble', name: 'Marble Luxury', category: 'banner', tier: 'premium', price: 200, description: 'Black marble with gold veins.' },
-  { id: 'banner-gym', name: 'Gym Motivation', category: 'banner', tier: 'basic', price: 150, description: 'Raw iron and determination.' },
+  {
+    id: 'banner-default', name: 'Lynx Default', category: 'banner', tier: 'basic', price: 0,
+    description: 'The official Lynx AI banner — included free for all users.',
+    bannerImage: '/banners/default.jpg',
+  },
 ];
 
 /* ═══ ALL ITEMS ═══ */

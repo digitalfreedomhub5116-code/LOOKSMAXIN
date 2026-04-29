@@ -74,7 +74,7 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
               position: 'absolute', top: '50%', left: '50%',
               width: outerSize * (borderItem.imageScale || 1),
               height: outerSize * (borderItem.imageScale || 1),
-              transform: 'translate(-50%, -50%)',
+              transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
               objectFit: 'contain', pointerEvents: 'none',
               animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
               filter: `drop-shadow(0 0 6px ${glow})`,
@@ -126,12 +126,12 @@ function LottieBorderOverlay({ src, size, glow }: { src: string; size: number; g
       position: 'absolute', inset: '50%', transform: 'translate(-50%, -50%)',
       width: size, height: size, pointerEvents: 'none',
       mixBlendMode: 'screen',
-      filter: `drop-shadow(0 0 6px ${glow})`,
+      filter: `drop-shadow(0 0 6px ${glow}) brightness(1.1)`,
       borderRadius: '50%', overflow: 'hidden',
     }}>
       <div style={{
         position: 'absolute',
-        width: '100%', height: '178%', /* 1280/720 ≈ 1.78 — fills width, overflows height */
+        width: '100%', height: '200%',
         top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
       }}>
         <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />

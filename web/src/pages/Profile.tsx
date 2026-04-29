@@ -182,11 +182,11 @@ function ProfileLottieBorder({ src, glow }: { src: string; glow: string }) {
       position: 'absolute', inset: -12,
       width: 'calc(100% + 24px)', height: 'calc(100% + 24px)',
       pointerEvents: 'none', mixBlendMode: 'screen',
-      filter: `drop-shadow(0 0 8px ${glow})`,
+      filter: `drop-shadow(0 0 8px ${glow}) brightness(1.1)`,
       borderRadius: '50%', overflow: 'hidden',
     }}>
       <div style={{
-        position: 'absolute', width: '100%', height: '178%',
+        position: 'absolute', width: '100%', height: '200%',
         top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
       }}>
         <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
@@ -235,6 +235,10 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
   const borderGlow = borderConfig?.glowColor || 'rgba(200,168,78,0.3)';
   const hasBorder = !!borderConfig && !hasLottie;
 
+  // Banner config
+  const bannerItem = equipped.banner ? getItemById(equipped.banner) : null;
+  const bannerSrc = bannerItem?.bannerImage || '/banners/default.jpg';
+
   const handleUpgrade = () => { if (onNavigate) onNavigate('vault', { showPlans: true }); };
   const handleAdvancedStats = () => { if (plan === 'free' && onNavigate) onNavigate('vault', { showPlans: true }); };
 
@@ -271,7 +275,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           borderRadius: '0 0 20px 20px',
           overflow: 'hidden', position: 'relative',
         }}>
-          <img src="/profile-banner.jpg" alt="" style={{
+          <img src={bannerSrc} alt="" style={{
             width: '100%', height: '100%', objectFit: 'cover',
             objectPosition: 'center 40%',
           }} />
@@ -343,7 +347,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 position: 'absolute', top: '50%', left: '50%',
                 width: `${(borderItem.imageScale || 1) * 100}%`,
                 height: `${(borderItem.imageScale || 1) * 100}%`,
-                transform: 'translate(-50%, -50%)',
+                transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
                 pointerEvents: 'none', objectFit: 'contain',
                 animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
                 filter: `drop-shadow(0 0 6px ${borderGlow})`,
