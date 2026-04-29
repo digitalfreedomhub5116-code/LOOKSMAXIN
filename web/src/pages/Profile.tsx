@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, ChevronRight, BarChart3, Shield, LogOut, Mail, Lock, FileText, Zap, Crown } from 'lucide-react';
+import { User, ChevronRight, BarChart3, Shield, LogOut, FileText, Zap, Crown, Lock } from 'lucide-react';
 import Lottie from 'lottie-react';
 import { getScanCount, loadLatestScores, type FaceScores } from '../lib/api';
 import { getEquipped, getEconomy, type PlanTier } from '../lib/economy';
@@ -20,66 +20,6 @@ const PLAN_LABELS: Record<PlanTier, { name: string; color: string; icon: any }> 
   pro: { name: 'Pro', color: '#C8A84E', icon: Crown },
   ultra: { name: 'Ultra', color: '#F59E0B', icon: Crown },
 };
-
-/* ═══ 6 Major Trait Config ═══ */
-const TRAIT_CONFIG = [
-  { key: 'jawline', label: 'Jawline', legacyKey: 'jawline' },
-  { key: 'skin', label: 'Skin', legacyKey: 'skin_quality' },
-  { key: 'eyes', label: 'Eyes', legacyKey: 'eyes' },
-  { key: 'symmetry', label: 'Symmetry', legacyKey: 'facial_symmetry' },
-  { key: 'nose', label: 'Nose', legacyKey: null },
-  { key: 'cheekbones', label: 'Cheeks', legacyKey: null },
-] as const;
-
-/* ═══ Score → Color (gold/amber spectrum) ═══ */
-function scoreColor(score: number): string {
-  if (score >= 80) return 'var(--primary, #F59E0B)';
-  if (score >= 65) return 'var(--primary, #C8A84E)';
-  if (score >= 50) return 'var(--primary, #D4A843)';
-  if (score >= 35) return 'var(--primary, #B8860B)';
-  return 'var(--primary, #8B6914)';
-}
-
-/* ═══ Circular Progress Ring ═══ */
-function TraitRing({ score, label }: { score: number; label: string }) {
-  const size = 40;
-  const stroke = 2.5;
-  const radius = (size - stroke * 2) / 2;
-  const circ = 2 * Math.PI * radius;
-  const pct = Math.max(0, Math.min(100, score));
-  const offset = circ - (pct / 100) * circ;
-  const color = scoreColor(score);
-
-  return (
-    <div style={{ textAlign: 'center', width: 40, flexShrink: 0 }}>
-      <div style={{ position: 'relative', width: 36, height: 36, margin: '0 auto 3px' }}>
-        <svg width={36} height={36} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={18} cy={18} r={radius}
-            fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
-          <circle cx={18} cy={18} r={radius}
-            fill="none" stroke={color} strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={circ} strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 1s ease-out, stroke 0.3s' }}
-          />
-        </svg>
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span style={{
-            fontSize: 11, fontWeight: 800, color,
-            textShadow: `0 0 10px ${color}44`,
-          }}>{score}</span>
-        </div>
-      </div>
-      <div style={{
-        fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.45)',
-        letterSpacing: 0.8, textTransform: 'uppercase',
-      }}>{label}</div>
-    </div>
-  );
-}
 
 /* ═══ Liquid Glass Bell Curve ═══ */
 function LiquidGlassBellCurve({ score, primary = '#C8A84E' }: { score: number; primary?: string }) {
@@ -107,7 +47,6 @@ function LiquidGlassBellCurve({ score, primary = '#C8A84E' }: { score: number; p
   const scoreGauss = Math.exp(-0.5 * Math.pow((scoreT - 0.5) / 0.17, 2));
   const scoreY = curveH - scoreGauss * (curveH - 16);
 
-  // Convert hex to rgba helper
   const toRgba = (hex: string, a: number) => {
     const c = hex.replace('#', '');
     const r = parseInt(c.substring(0, 2), 16);
@@ -138,27 +77,15 @@ function LiquidGlassBellCurve({ score, primary = '#C8A84E' }: { score: number; p
           </feMerge>
         </filter>
       </defs>
-
-      {/* Fill under curve */}
       <polygon points={fillPoints} fill="url(#lgFill)" />
-
-      {/* Curve line with glow */}
       <polyline points={polyline} fill="none" stroke="url(#lgStroke)" strokeWidth="2.5"
         strokeLinejoin="round" filter="url(#glow)" />
-
-      {/* Vertical marker */}
       <line x1={scoreX} y1={scoreY} x2={scoreX} y2={curveH}
         stroke={primary} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
-
-      {/* Marker dot with glow */}
       <circle cx={scoreX} cy={scoreY} r="6" fill={primary} stroke="#000" strokeWidth="2" filter="url(#glow)" />
       <circle cx={scoreX} cy={scoreY} r="3" fill={primary} />
-
-      {/* "You" label */}
       <text x={scoreX} y={scoreY - 14} textAnchor="middle" fill={primary}
         fontSize="9" fontWeight="800" fontFamily="Inter, sans-serif">YOU</text>
-
-      {/* X-axis labels */}
       <text x={padX} y={canvasH - 8} fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Inter">0</text>
       <text x={canvasW / 2} y={canvasH - 8} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Inter">50</text>
       <text x={canvasW - padX} y={canvasH - 8} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Inter">100</text>
@@ -200,6 +127,29 @@ function ProfileLottieBorder({ src, glow }: { src: string; glow: string }) {
         <Lottie animationData={data} loop autoplay style={{ width: '100%', height: '100%' }} />
       </div>
     </div>
+  );
+}
+
+/* ═══ Reforge-style glass panel ═══ */
+const glassPanel: React.CSSProperties = {
+  background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(8,8,20,0.80) 12%, rgba(4,4,14,0.90) 100%)',
+  borderTop: '1px solid rgba(255,255,255,0.10)',
+  borderLeft: '1px solid rgba(255,255,255,0.07)',
+  borderRight: '1px solid rgba(255,255,255,0.04)',
+  borderBottom: '1px solid rgba(255,255,255,0.03)',
+  borderRadius: 16,
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.4)',
+  position: 'relative',
+  overflow: 'hidden',
+};
+
+/* ═══ Reforge-style card shimmer overlay ═══ */
+function CardShine() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 40%)',
+    }} />
   );
 }
 
@@ -247,71 +197,82 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
   const bannerItem = equipped.banner ? getItemById(equipped.banner) : null;
   const bannerSrc = bannerItem?.bannerImage || '/banners/default.webp';
 
-  // Theme color for SVG elements that can't use CSS vars
+  // Theme color for SVG elements
   const themeItem = equipped.theme ? getItemById(equipped.theme) : null;
   const themeColor = themeItem?.themeVars?.['--primary'] || '#C8A84E';
 
   const handleUpgrade = () => { if (onNavigate) onNavigate('vault', { showPlans: true }); };
   const handleAdvancedStats = () => { if (plan === 'free' && onNavigate) onNavigate('vault', { showPlans: true }); };
 
-  // Extract trait scores — prefer rich traits, fallback to legacy flat fields
-  function getTraitScore(cfg: typeof TRAIT_CONFIG[number]): number {
-    if (scores?.traits?.[cfg.key]) return scores.traits[cfg.key].score;
-    if (cfg.legacyKey && scores) return (scores as any)[cfg.legacyKey] || 0;
-    return 0;
-  }
-
   const potentialScore = scores?.potential || scores?.overall || 0;
 
-  /* ═══ Liquid Glass Shared Style ═══ */
-  const liquidGlass: React.CSSProperties = {
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    border: '1px solid rgba(var(--primary-rgb, 200,168,78),0.12)',
-    borderRadius: 20,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
-  };
-
   return (
-    <div className="page" style={{ paddingTop: 0, paddingLeft: 0, paddingRight: 0, paddingBottom: 100 }}>
+    <div style={{
+      paddingTop: 0, paddingLeft: 0, paddingRight: 0, paddingBottom: 100,
+      fontFamily: "'Inter', sans-serif",
+      background: '#05050a',
+      minHeight: '100vh',
+    }}>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* ═══ BANNER with overlapping AVATAR ═══ */}
-      {/* ═══════════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ HERO: BANNER + AVATAR overlay — Reforge style ═══ */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
       <div style={{ position: 'relative', marginBottom: 56 }}>
 
-        {/* Banner Image */}
+        {/* Banner */}
         <div style={{
-          width: '100%', height: 170,
-          borderRadius: '0 0 20px 20px',
+          width: '100%', height: 200,
+          borderRadius: '0 0 16px 16px',
           overflow: 'hidden', position: 'relative',
+          background: '#000',
         }}>
           <img src={bannerSrc} alt="" style={{
             width: '100%', height: '100%', objectFit: 'cover',
             objectPosition: 'center 40%',
           }} />
+          {/* Bottom gradient for text readability */}
           <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 90,
-            background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 120,
+            background: 'linear-gradient(to top, rgba(5,5,10,0.95) 0%, transparent 100%)',
+            pointerEvents: 'none',
           }} />
         </div>
 
-        {/* Username Badge — bottom-left of banner */}
+        {/* Name + Username — bottom-left on banner */}
         <div style={{
-          position: 'absolute', bottom: 50, left: 16, zIndex: 6,
-          whiteSpace: 'nowrap', maxWidth: 'calc(50% - 70px)',
+          position: 'absolute', bottom: 14, left: 16, zIndex: 6,
+          maxWidth: 'calc(50% - 60px)',
         }}>
           <div style={{
-            padding: '4px 14px', borderRadius: 16,
-            background: 'rgba(var(--primary-rgb, 200,168,78),0.12)',
-            border: '1px solid rgba(var(--primary-rgb, 200,168,78),0.35)',
-            backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-            overflow: 'hidden', textOverflow: 'ellipsis',
+            fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.2,
+            textShadow: '0 2px 12px rgba(0,0,0,0.8)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            <span style={{
-              fontSize: 11, fontWeight: 700, color: 'var(--primary, #C8A84E)', letterSpacing: 0.5,
-            }}>@{userInfo?.name || 'Champion'}</span>
+            {userInfo?.name || 'Player'}
+          </div>
+          <div style={{
+            fontSize: 11, fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            color: 'rgba(255,255,255,0.4)', marginTop: 2,
+            textShadow: '0 2px 10px rgba(0,0,0,0.9)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            @{userInfo?.name?.toLowerCase().replace(/\s/g, '') || 'champion'}
+          </div>
+        </div>
+
+        {/* Scan count pill — bottom-right on banner */}
+        <div style={{
+          position: 'absolute', bottom: 14, right: 16, zIndex: 6,
+        }}>
+          <div style={{
+            padding: '4px 10px', borderRadius: 8,
+            background: 'rgba(var(--primary-rgb, 200,168,78),0.10)',
+            border: '1px solid rgba(var(--primary-rgb, 200,168,78),0.25)',
+            fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
+            fontWeight: 700, color: 'var(--primary, #C8A84E)',
+            letterSpacing: '0.1em',
+          }}>
+            {scanCount} SCANS
           </div>
         </div>
 
@@ -357,6 +318,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 <User size={32} color="#fff" />
               </div>
             )}
+            {/* Image border: pulse animation */}
             {borderItem?.imageBorder && borderItem.imageAnimated && borderItem.imageAnimationType === 'pulse' ? (
               <div style={{
                 position: 'absolute', top: '50%', left: '50%',
@@ -391,65 +353,40 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* ═══ TRAIT RINGS — Horizontal row flanking avatar ═══ */}
-      {/* ═══════════════════════════════════════════════════ */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 6, padding: '0 20px', marginBottom: 16, marginTop: -38,
-        overflowX: 'auto', overflowY: 'visible',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-      }}>
-        {TRAIT_CONFIG.slice(0, 3).map(cfg => (
-          <TraitRing key={cfg.key} score={scores ? getTraitScore(cfg) : 0} label={cfg.label} />
-        ))}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* ═══ CONTENT AREA ═══ */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <div style={{ padding: '0 14px' }}>
 
-        <div style={{ width: 72, flexShrink: 0 }} />
+        {/* ── POTENTIAL DISTRIBUTION — Glass Panel ── */}
+        <div style={{ ...glassPanel, padding: '20px 16px 16px', marginBottom: 12 }}>
+          <CardShine />
 
-        {TRAIT_CONFIG.slice(3, 6).map(cfg => (
-          <TraitRing key={cfg.key} score={scores ? getTraitScore(cfg) : 0} label={cfg.label} />
-        ))}
-      </div>
-
-      <div style={{ padding: '0 16px' }}>
-
-        {/* ═══════════════════════════════════════════════════ */}
-        {/* ═══ POTENTIAL GRAPH — Liquid Glass Card ═══ */}
-        {/* ═══════════════════════════════════════════════════ */}
-        <div style={{
-          ...liquidGlass,
-          padding: '20px 16px 16px',
-          marginBottom: 14,
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          {/* Subtle inner glow */}
+          {/* Section header — Reforge mono style */}
           <div style={{
-            position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)',
-            width: 200, height: 100,
-            background: 'radial-gradient(ellipse, rgba(200,168,78,0.08) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }} />
-
-          <div style={{
-            fontSize: 10, fontWeight: 700, color: 'rgba(var(--primary-rgb, 200,168,78),0.5)',
-            letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 4,
+            fontSize: 10, fontWeight: 700,
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            color: 'rgba(var(--primary-rgb, 200,168,78),0.5)',
+            letterSpacing: '0.15em', textTransform: 'uppercase',
+            textAlign: 'center', marginBottom: 6,
           }}>
-            Potential Distribution
+            POTENTIAL DISTRIBUTION
           </div>
 
           {scores ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{
-                fontSize: 44, fontWeight: 900, color: 'var(--primary, #C8A84E)', lineHeight: 1,
+                fontSize: 48, fontWeight: 900, color: 'var(--primary, #C8A84E)', lineHeight: 1,
                 textShadow: '0 0 20px rgba(var(--primary-rgb, 200,168,78),0.3)',
+                fontFamily: "'Inter', sans-serif",
+                letterSpacing: '-0.03em',
               }}>
                 {potentialScore}
               </div>
               <div style={{
-                fontSize: 9, color: 'rgba(var(--primary-rgb, 200,168,78),0.4)', marginBottom: 10,
-                letterSpacing: 2, fontWeight: 700,
+                fontSize: 8, color: 'rgba(var(--primary-rgb, 200,168,78),0.35)', marginBottom: 10,
+                letterSpacing: '0.2em', fontWeight: 700,
+                fontFamily: "'JetBrains Mono', monospace",
               }}>
                 POTENTIAL SCORE
               </div>
@@ -457,23 +394,26 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             </div>
           ) : (
             <div style={{
-              padding: 28, color: 'rgba(255,255,255,0.3)', fontSize: 13, textAlign: 'center',
+              padding: 32, color: 'rgba(255,255,255,0.25)', fontSize: 12, textAlign: 'center',
+              fontFamily: "'JetBrains Mono', monospace",
             }}>
               Complete a scan to see your potential curve
             </div>
           )}
         </div>
 
-        {/* ═══ Current Plan + Upgrade ═══ */}
-        <div style={{ ...liquidGlass, marginBottom: 12, overflow: 'hidden' }}
-          onClick={upgrade.next ? handleUpgrade : undefined}>
+        {/* ── CURRENT PLAN + UPGRADE — Glass Panel ── */}
+        <div
+          style={{ ...glassPanel, marginBottom: 10, cursor: upgrade.next ? 'pointer' : 'default' }}
+          onClick={upgrade.next ? handleUpgrade : undefined}
+        >
+          <CardShine />
           <div style={{
             padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
-            cursor: upgrade.next ? 'pointer' : 'default',
           }}>
             <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: `${planInfo.color}18`,
+              width: 40, height: 40, borderRadius: 12,
+              background: `${planInfo.color}12`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <PlanIcon size={20} color={planInfo.color} />
@@ -481,18 +421,22 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 600 }}>
                 <span style={{ color: planInfo.color }}>{planInfo.name}</span>
-                <span style={{ color: 'var(--text-muted)' }}> Plan</span>
+                <span style={{ color: 'rgba(255,255,255,0.4)' }}> Plan</span>
               </div>
               {upgrade.next ? (
                 <div style={{
-                  fontSize: 12, fontWeight: 600, marginTop: 2,
-                  background: `linear-gradient(90deg, ${upgrade.color}, ${upgrade.color}cc)`,
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  fontSize: 11, fontWeight: 700, marginTop: 2,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color: upgrade.color,
+                  letterSpacing: '0.05em',
                 }}>
                   ✨ Upgrade to {upgrade.label}
                 </div>
               ) : (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                <div style={{
+                  fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2,
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>
                   You have the highest plan!
                 </div>
               )}
@@ -501,63 +445,74 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           </div>
         </div>
 
-        {/* ═══ Advanced Stats ═══ */}
-        <div style={{ ...liquidGlass, marginBottom: 6, overflow: 'hidden' }}
-          onClick={handleAdvancedStats}>
+        {/* ── ADVANCED STATS — Glass Panel ── */}
+        <div
+          style={{ ...glassPanel, marginBottom: 10, cursor: plan === 'free' ? 'pointer' : 'default' }}
+          onClick={handleAdvancedStats}
+        >
+          <CardShine />
           <div style={{
             padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
-            cursor: plan === 'free' ? 'pointer' : 'default',
-            opacity: plan === 'free' ? 0.65 : 1,
+            opacity: plan === 'free' ? 0.6 : 1,
           }}>
-            <div style={{ color: 'var(--primary)' }}><BarChart3 size={18} /></div>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: 'rgba(var(--primary-rgb, 200,168,78),0.06)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--primary, #C8A84E)',
+            }}>
+              <BarChart3 size={20} />
+            </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>Advanced Stats</div>
-              <div className="label" style={{ marginTop: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e5e5' }}>Advanced Stats</div>
+              <div style={{
+                fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2,
+                fontFamily: "'JetBrains Mono', monospace",
+              }}>
                 {plan === 'free' ? 'Unlock with Pro plan' : 'Detailed analytics'}
               </div>
             </div>
-            {plan === 'free' ? <Lock size={14} color="var(--text-muted)" /> : <ChevronRight size={16} color="var(--text-disabled)" />}
+            {plan === 'free' ? <Lock size={14} color="rgba(255,255,255,0.25)" /> : <ChevronRight size={16} color="rgba(255,255,255,0.15)" />}
           </div>
         </div>
 
-        {/* ═══ Legal Links ═══ */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
-          <div style={{ ...liquidGlass, overflow: 'hidden', cursor: 'pointer' }}>
-            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ color: 'var(--primary)' }}><Shield size={18} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>Privacy Policy</div>
-                <div className="label" style={{ marginTop: 1 }}>How we handle your data</div>
+        {/* ── LEGAL — Privacy + Terms ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          {[
+            { icon: <Shield size={18} />, title: 'Privacy Policy', sub: 'How we handle your data' },
+            { icon: <FileText size={18} />, title: 'Terms & Conditions', sub: 'Usage terms and agreement' },
+          ].map((item, i) => (
+            <div key={i} style={{ ...glassPanel, cursor: 'pointer' }}>
+              <CardShine />
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ color: 'var(--primary, #C8A84E)' }}>{item.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e5e5' }}>{item.title}</div>
+                  <div style={{
+                    fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 2,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>{item.sub}</div>
+                </div>
+                <ChevronRight size={16} color="rgba(255,255,255,0.12)" />
               </div>
-              <ChevronRight size={16} color="var(--text-disabled)" />
             </div>
-          </div>
-
-          <div style={{ ...liquidGlass, overflow: 'hidden', cursor: 'pointer' }}>
-            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ color: 'var(--primary)' }}><FileText size={18} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>Terms & Conditions</div>
-                <div className="label" style={{ marginTop: 1 }}>Usage terms and agreement</div>
-              </div>
-              <ChevronRight size={16} color="var(--text-disabled)" />
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* ═══ Sign Out ═══ */}
+        {/* ── SIGN OUT — Reforge red button ── */}
         <button onClick={handleLogout} disabled={loggingOut} style={{
           width: '100%', marginTop: 28, padding: '14px 0',
-          background: 'rgba(239,68,68,0.06)',
+          background: 'rgba(239,68,68,0.05)',
           border: '1px solid rgba(239,68,68,0.12)',
           borderRadius: 14, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          color: '#EF4444', fontSize: 14, fontWeight: 600,
+          color: '#EF4444', fontSize: 13, fontWeight: 700,
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: '0.1em',
           transition: 'all 0.2s',
           opacity: loggingOut ? 0.5 : 1,
-          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
         }}>
-          <LogOut size={16} /> {loggingOut ? 'Signing out...' : 'Sign Out'}
+          <LogOut size={15} /> {loggingOut ? 'SIGNING OUT...' : 'SIGN OUT'}
         </button>
       </div>
     </div>
