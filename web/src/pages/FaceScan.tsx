@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, ArrowLeft, AlertTriangle, RefreshCw, ChevronRight, Camera, RotateCcw, Upload, ImageIcon } from 'lucide-react';
 import { analyzeFace } from '../lib/api';
+import { Capacitor } from '@capacitor/core';
 import type { FaceScores } from '../lib/api';
 
 type Stage = 'choose' | 'front_camera' | 'front_review' | 'side_camera' | 'side_review' | 'analyzing' | 'results' | 'error' | 'no_face';
@@ -31,17 +32,28 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Detect if camera is available
+  // Detect if camera is available (request permission on mobile first)
   useEffect(() => {
     (async () => {
       try {
+        // On mobile, request camera permission first to trigger the system dialog
+        if (Capacitor.isNativePlatform()) {
+          try {
+            await navigator.mediaDevices.getUserMedia({ video: true });
+          } catch {
+            // Permission denied or not available — fall back to gallery
+            setHasCamera(false);
+            setSourceMode('gallery');
+            setStage('front_camera');
+            return;
+          }
+        }
         const devices = await navigator.mediaDevices.enumerateDevices();
         const cams = devices.filter(d => d.kind === 'videoinput');
         setHasCamera(cams.length > 0);
-        // If no camera, skip choose and go straight to gallery for front
         if (cams.length === 0) {
           setSourceMode('gallery');
-          setStage('front_camera'); // reuses the stage name, but will show upload UI
+          setStage('front_camera');
         }
       } catch {
         setHasCamera(false);

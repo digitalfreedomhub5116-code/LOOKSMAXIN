@@ -147,6 +147,8 @@ export default function AuthPage({ onAuth }: { onAuth: () => void }) {
       if (err) { setError(err.message); setLoading(false); return; }
       if (data?.url) {
         await Browser.open({ url: data.url, windowName: '_self' });
+        // Reset loading after returning from browser (deep link will handle auth)
+        setTimeout(() => setLoading(false), 3000);
       }
     } else {
       // On web: normal redirect

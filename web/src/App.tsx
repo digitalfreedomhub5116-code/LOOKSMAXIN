@@ -58,19 +58,37 @@ export default function App() {
     if (!Capacitor.isNativePlatform()) return;
 
     const handleAppUrl = async ({ url }: { url: string }) => {
+      console.log('[DeepLink] Received URL:', url);
+
       // Close the in-app browser
       try { await Browser.close(); } catch {}
 
       // Extract tokens from the callback URL
-      // URL format: com.lynxai.app://login#access_token=...&refresh_token=...
-      if (url.includes('access_token') && url.includes('refresh_token')) {
-        const hashPart = url.split('#')[1];
-        if (hashPart) {
-          const params = new URLSearchParams(hashPart);
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
-          if (accessToken && refreshToken) {
-            await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      // Could be: com.lynxai.app://login#access_token=...&refresh_token=...
+      // Or: com.lynxai.app://login?access_token=...&refresh_token=...
+      let tokenString = '';
+      if (url.includes('#')) {
+        tokenString = url.split('#')[1] || '';
+      } else if (url.includes('?')) {
+        tokenString = url.split('?').slice(1).join('?') || '';
+      }
+
+      if (tokenString) {
+        const params = new URLSearchParams(tokenString);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        console.log('[DeepLink] Has access_token:', !!accessToken, 'Has refresh_token:', !!refreshToken);
+
+        if (accessToken && refreshToken) {
+          try {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (error) console.error('[DeepLink] setSession error:', error.message);
+            else console.log('[DeepLink] Session set successfully');
+          } catch (e) {
+            console.error('[DeepLink] setSession exception:', e);
           }
         }
       }
