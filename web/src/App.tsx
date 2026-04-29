@@ -86,7 +86,8 @@ export default function App() {
           accessTokenRef.current = session.access_token;
           setActiveUserId(session.user.id);
           // Register this device and start session guard
-          await registerDeviceSession();
+          // Reuse existing token on page reload (don't force new)
+          await registerDeviceSession(false);
           startSessionGuard();
           try {
             await pullFromCloud(session.user.id);
@@ -124,8 +125,8 @@ export default function App() {
         setSessionUser(session?.user || null);
         accessTokenRef.current = session?.access_token || null;
         setActiveUserId(session?.user?.id || null);
-        // Register this device as the active one
-        await registerDeviceSession();
+        // Fresh login — force a NEW device token
+        await registerDeviceSession(true);
         startSessionGuard();
         try {
           await pullFromCloud(session?.user?.id);
@@ -196,10 +197,11 @@ export default function App() {
       ]);
     } catch {}
 
-    // Step 2: Sign out GLOBALLY — logs out ALL other devices (single-session enforcement)
+    // Step 2: Sign out this device only (global scope was causing race conditions
+    // with the session guard, leading to premature logouts on other tabs)
     try {
       await Promise.race([
-        supabase.auth.signOut({ scope: 'global' }),
+        supabase.auth.signOut({ scope: 'local' }),
         new Promise(r => setTimeout(r, 2000)),
       ]);
     } catch {}
