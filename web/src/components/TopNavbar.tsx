@@ -55,12 +55,10 @@ export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void })
 
       {/* Right: Streak + Coins */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        {streak.current > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Flame size={22} color="#F59E0B" fill="#F59E0B" />
-            <span style={{ fontSize: 18, fontWeight: 800, color: '#F59E0B' }}>{streak.current}</span>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <Flame size={22} color={streak.current > 0 ? '#F59E0B' : '#555'} fill={streak.current > 0 ? '#F59E0B' : 'none'} />
+          <span style={{ fontSize: 18, fontWeight: 800, color: streak.current > 0 ? '#F59E0B' : '#555' }}>{streak.current}</span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <LynxCoin size={22} />
           <span style={{ fontSize: 18, fontWeight: 800, color: '#C8A84E' }}>{economy.coins}</span>

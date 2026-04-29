@@ -337,8 +337,8 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             {userInfo?.avatar ? (
               <img src={userInfo.avatar} alt="" style={{
                 position: 'absolute',
-                top: borderItem?.imageBorder ? 10 : 5,
-                left: borderItem?.imageBorder ? 10 : 5,
+                top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
                 width: borderItem?.imageBorder ? 76 : 86,
                 height: borderItem?.imageBorder ? 76 : 86,
                 borderRadius: '50%', objectFit: 'cover',
@@ -346,8 +346,8 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             ) : (
               <div style={{
                 position: 'absolute',
-                top: borderItem?.imageBorder ? 10 : 5,
-                left: borderItem?.imageBorder ? 10 : 5,
+                top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
                 width: borderItem?.imageBorder ? 76 : 86,
                 height: borderItem?.imageBorder ? 76 : 86,
                 borderRadius: '50%',
@@ -362,6 +362,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 position: 'absolute', top: '50%', left: '50%',
                 width: `${(borderItem.imageScale || 1) * 100}%`,
                 height: `${(borderItem.imageScale || 1) * 100}%`,
+                transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
                 pointerEvents: 'none',
                 filter: `drop-shadow(0 0 6px ${borderGlow})`,
                 animation: 'border-breathe-centered 3s ease-in-out infinite',
