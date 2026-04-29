@@ -859,7 +859,7 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   }}>
                     <img src={item.imageBorder} alt={item.name} style={{
                       width: '100%', height: '100%', objectFit: 'contain',
-                      ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
+                      ...(item.imageAnimated ? { animation: 'spin 10s linear infinite' } : {}),
                     }} />
                   </div>
                 )}
@@ -1104,7 +1104,7 @@ function BorderPreviewModal({ item, avatarUrl, onClose }: { item: StoreItem; ava
               }}>
                 <img src={item.imageBorder} alt="" style={{
                   width: '100%', height: '100%', objectFit: 'contain',
-                  animation: item.imageAnimated ? 'spin-clockwise 10s linear infinite' : 'none',
+                  animation: item.imageAnimated ? 'spin 10s linear infinite' : 'none',
                   filter: `drop-shadow(0 0 10px ${glow})`,
                 }} />
               </div>
