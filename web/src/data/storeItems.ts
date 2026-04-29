@@ -423,6 +423,11 @@ const BANNERS: StoreItem[] = [
     description: 'Dark anime aesthetic — you already know.',
     bannerImage: '/banners/banner5.jpg',
   },
+  {
+    id: 'banner-chico', name: 'Model of the Year', category: 'banner', tier: 'legendary', price: 400,
+    description: 'Chico Lachowski — the face that broke the internet.',
+    bannerImage: '/banners/banner6.jpg',
+  },
 ];
 
 /* ═══ ALL ITEMS ═══ */
