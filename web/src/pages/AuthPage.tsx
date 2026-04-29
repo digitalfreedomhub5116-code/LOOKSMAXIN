@@ -167,7 +167,7 @@ export default function AuthPage({ onAuth }: { onAuth: () => void }) {
         <div style={{
           display: 'flex', justifyContent: 'center', margin: '-20px 0 -10px',
         }}>
-          <img src="/splash-face.png" alt="" style={{
+          <img src="/splash-face.webp" alt="" style={{
             width: 220, height: 220, objectFit: 'cover', objectPosition: 'top',
             borderRadius: '50%',
             mask: 'radial-gradient(circle, #000 50%, transparent 80%)',

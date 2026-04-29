@@ -337,7 +337,7 @@ export default function Store({ user, initialShowPlans }: { user?: any; initialS
             border: '1.5px solid rgba(200,168,78,0.25)',
           }}>
             {/* Background image */}
-            <img src="/upgrade-banner.png" alt="" style={{
+            <img src="/upgrade-banner.webp" alt="" style={{
               width: '100%', height: 100, objectFit: 'cover', display: 'block',
               filter: 'brightness(0.6)',
             }} />

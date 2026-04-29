@@ -245,7 +245,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
 
   // Banner config
   const bannerItem = equipped.banner ? getItemById(equipped.banner) : null;
-  const bannerSrc = bannerItem?.bannerImage || '/banners/default.jpg';
+  const bannerSrc = bannerItem?.bannerImage || '/banners/default.webp';
 
   // Theme color for SVG elements that can't use CSS vars
   const themeItem = equipped.theme ? getItemById(equipped.theme) : null;
