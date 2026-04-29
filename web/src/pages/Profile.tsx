@@ -33,11 +33,11 @@ const TRAIT_CONFIG = [
 
 /* ═══ Score → Color (gold/amber spectrum) ═══ */
 function scoreColor(score: number): string {
-  if (score >= 80) return '#F59E0B'; // bright amber
-  if (score >= 65) return '#C8A84E'; // gold
-  if (score >= 50) return '#D4A843'; // warm gold
-  if (score >= 35) return '#B8860B'; // dark gold
-  return '#8B6914'; // dim gold
+  if (score >= 80) return 'var(--primary, #F59E0B)';
+  if (score >= 65) return 'var(--primary, #C8A84E)';
+  if (score >= 50) return 'var(--primary, #D4A843)';
+  if (score >= 35) return 'var(--primary, #B8860B)';
+  return 'var(--primary, #8B6914)';
 }
 
 /* ═══ Circular Progress Ring ═══ */
@@ -51,12 +51,12 @@ function TraitRing({ score, label }: { score: number; label: string }) {
   const color = scoreColor(score);
 
   return (
-    <div style={{ textAlign: 'center', width: 52 }}>
-      <div style={{ position: 'relative', width: size, height: size, margin: '0 auto 3px' }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={radius}
+    <div style={{ textAlign: 'center', width: 48, flexShrink: 0 }}>
+      <div style={{ position: 'relative', width: 44, height: 44, margin: '0 auto 3px' }}>
+        <svg width={44} height={44} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={22} cy={22} r={radius}
             fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
-          <circle cx={size / 2} cy={size / 2} r={radius}
+          <circle cx={22} cy={22} r={radius}
             fill="none" stroke={color} strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={circ} strokeDashoffset={offset}
@@ -82,7 +82,7 @@ function TraitRing({ score, label }: { score: number; label: string }) {
 }
 
 /* ═══ Liquid Glass Bell Curve ═══ */
-function LiquidGlassBellCurve({ score }: { score: number }) {
+function LiquidGlassBellCurve({ score, primary = '#C8A84E' }: { score: number; primary?: string }) {
   const canvasW = 300;
   const canvasH = 130;
   const padX = 24;
@@ -107,19 +107,28 @@ function LiquidGlassBellCurve({ score }: { score: number }) {
   const scoreGauss = Math.exp(-0.5 * Math.pow((scoreT - 0.5) / 0.17, 2));
   const scoreY = curveH - scoreGauss * (curveH - 16);
 
+  // Convert hex to rgba helper
+  const toRgba = (hex: string, a: number) => {
+    const c = hex.replace('#', '');
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${a})`;
+  };
+
   return (
     <svg width="100%" viewBox={`0 0 ${canvasW} ${canvasH}`} style={{ display: 'block' }}>
       <defs>
         <linearGradient id="lgFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(200,168,78,0.2)" />
-          <stop offset="100%" stopColor="rgba(200,168,78,0)" />
+          <stop offset="0%" stopColor={toRgba(primary, 0.2)} />
+          <stop offset="100%" stopColor={toRgba(primary, 0)} />
         </linearGradient>
         <linearGradient id="lgStroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgba(200,168,78,0.2)" />
-          <stop offset="30%" stopColor="#C8A84E" />
-          <stop offset="50%" stopColor="#F59E0B" />
-          <stop offset="70%" stopColor="#C8A84E" />
-          <stop offset="100%" stopColor="rgba(200,168,78,0.2)" />
+          <stop offset="0%" stopColor={toRgba(primary, 0.2)} />
+          <stop offset="30%" stopColor={primary} />
+          <stop offset="50%" stopColor={primary} />
+          <stop offset="70%" stopColor={primary} />
+          <stop offset="100%" stopColor={toRgba(primary, 0.2)} />
         </linearGradient>
         <filter id="glow">
           <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -139,16 +148,15 @@ function LiquidGlassBellCurve({ score }: { score: number }) {
 
       {/* Vertical marker */}
       <line x1={scoreX} y1={scoreY} x2={scoreX} y2={curveH}
-        stroke="#C8A84E" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+        stroke={primary} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
 
       {/* Marker dot with glow */}
-      <circle cx={scoreX} cy={scoreY} r="6" fill="#C8A84E" stroke="#000" strokeWidth="2" filter="url(#glow)" />
-      <circle cx={scoreX} cy={scoreY} r="3" fill="#F59E0B" />
+      <circle cx={scoreX} cy={scoreY} r="6" fill={primary} stroke="#000" strokeWidth="2" filter="url(#glow)" />
+      <circle cx={scoreX} cy={scoreY} r="3" fill={primary} />
 
       {/* "You" label */}
-      <text x={scoreX} y={scoreY - 14} textAnchor="middle" fill="#F59E0B"
-        fontSize="9" fontWeight="800" fontFamily="Inter, sans-serif"
-        style={{ textShadow: '0 0 8px rgba(245,158,11,0.5)' }}>YOU</text>
+      <text x={scoreX} y={scoreY - 14} textAnchor="middle" fill={primary}
+        fontSize="9" fontWeight="800" fontFamily="Inter, sans-serif">YOU</text>
 
       {/* X-axis labels */}
       <text x={padX} y={canvasH - 8} fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Inter">0</text>
@@ -239,6 +247,10 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
   const bannerItem = equipped.banner ? getItemById(equipped.banner) : null;
   const bannerSrc = bannerItem?.bannerImage || '/banners/default.jpg';
 
+  // Theme color for SVG elements that can't use CSS vars
+  const themeItem = equipped.theme ? getItemById(equipped.theme) : null;
+  const themeColor = themeItem?.themeVars?.['--primary'] || '#C8A84E';
+
   const handleUpgrade = () => { if (onNavigate) onNavigate('vault', { showPlans: true }); };
   const handleAdvancedStats = () => { if (plan === 'free' && onNavigate) onNavigate('vault', { showPlans: true }); };
 
@@ -256,7 +268,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
     background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',
-    border: '1px solid rgba(200,168,78,0.12)',
+    border: '1px solid rgba(var(--primary-rgb, 200,168,78),0.12)',
     borderRadius: 20,
     boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
   };
@@ -287,17 +299,18 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
 
         {/* Username Badge — bottom-left of banner */}
         <div style={{
-          position: 'absolute', bottom: 12, left: 16, zIndex: 6,
-          whiteSpace: 'nowrap',
+          position: 'absolute', bottom: 50, left: 16, zIndex: 6,
+          whiteSpace: 'nowrap', maxWidth: 'calc(50% - 70px)',
         }}>
           <div style={{
             padding: '4px 14px', borderRadius: 16,
-            background: 'rgba(200,168,78,0.12)',
-            border: '1px solid rgba(200,168,78,0.35)',
+            background: 'rgba(var(--primary-rgb, 200,168,78),0.12)',
+            border: '1px solid rgba(var(--primary-rgb, 200,168,78),0.35)',
             backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+            overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             <span style={{
-              fontSize: 11, fontWeight: 700, color: '#C8A84E', letterSpacing: 0.5,
+              fontSize: 11, fontWeight: 700, color: 'var(--primary, #C8A84E)', letterSpacing: 0.5,
             }}>@{userInfo?.name || 'Champion'}</span>
           </div>
         </div>
@@ -378,13 +391,16 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
       {/* ═══════════════════════════════════════════════════ */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 6, padding: '0 8px', marginBottom: 16, marginTop: -38,
+        gap: 4, padding: '0 12px', marginBottom: 16, marginTop: -38,
+        overflowX: 'auto', overflowY: 'visible',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
       }}>
         {TRAIT_CONFIG.slice(0, 3).map(cfg => (
           <TraitRing key={cfg.key} score={scores ? getTraitScore(cfg) : 0} label={cfg.label} />
         ))}
 
-        <div style={{ width: 80, flexShrink: 0 }} />
+        <div style={{ width: 72, flexShrink: 0 }} />
 
         {TRAIT_CONFIG.slice(3, 6).map(cfg => (
           <TraitRing key={cfg.key} score={scores ? getTraitScore(cfg) : 0} label={cfg.label} />
@@ -412,7 +428,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           }} />
 
           <div style={{
-            fontSize: 10, fontWeight: 700, color: 'rgba(200,168,78,0.5)',
+            fontSize: 10, fontWeight: 700, color: 'rgba(var(--primary-rgb, 200,168,78),0.5)',
             letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 4,
           }}>
             Potential Distribution
@@ -421,18 +437,18 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           {scores ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{
-                fontSize: 44, fontWeight: 900, color: '#C8A84E', lineHeight: 1,
-                textShadow: '0 0 20px rgba(200,168,78,0.3)',
+                fontSize: 44, fontWeight: 900, color: 'var(--primary, #C8A84E)', lineHeight: 1,
+                textShadow: '0 0 20px rgba(var(--primary-rgb, 200,168,78),0.3)',
               }}>
                 {potentialScore}
               </div>
               <div style={{
-                fontSize: 9, color: 'rgba(200,168,78,0.4)', marginBottom: 10,
+                fontSize: 9, color: 'rgba(var(--primary-rgb, 200,168,78),0.4)', marginBottom: 10,
                 letterSpacing: 2, fontWeight: 700,
               }}>
                 POTENTIAL SCORE
               </div>
-              <LiquidGlassBellCurve score={potentialScore} />
+              <LiquidGlassBellCurve score={potentialScore} primary={themeColor} />
             </div>
           ) : (
             <div style={{
