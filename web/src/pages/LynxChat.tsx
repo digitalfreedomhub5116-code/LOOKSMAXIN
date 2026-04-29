@@ -3,6 +3,7 @@ import { Send, Zap, Shield, Brain, RotateCcw } from 'lucide-react';
 import { LynxBubbleIcon } from '../components/TabBar';
 import { supabase, getScanHistory, getScanCount } from '../lib/api';
 import { pushField } from '../lib/sync';
+import { Capacitor } from '@capacitor/core';
 import type { FaceScores } from '../lib/api';
 
 interface Message {
@@ -20,7 +21,10 @@ const SUGGESTIONS = [
   { icon: <Brain size={14} />, text: 'How do I improve my weakest area?' },
 ];
 
-const API = import.meta.env.VITE_API_URL || '';
+const RAILWAY_URL = 'https://www.lynxai.in';
+const API = Capacitor.isNativePlatform()
+  ? RAILWAY_URL
+  : (import.meta.env.VITE_API_URL || '');
 const LS_CHAT = 'lynx_chat_history';
 
 // Load persisted chat

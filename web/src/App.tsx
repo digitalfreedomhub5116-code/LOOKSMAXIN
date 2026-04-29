@@ -18,6 +18,9 @@ import { claimDailyLogin, recordStreakActivity, applyThemeVars, getEquipped, get
 import { getItemById } from './data/storeItems';
 import { registerDeviceSession, startSessionGuard, stopSessionGuard, clearDeviceToken } from './lib/sessionGuard';
 import { pushStreakToLeaderboard } from './lib/leaderboard';
+import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import type { FaceScores } from './lib/api';
 
 export type Tab = 'dashboard' | 'programs' | 'ranks' | 'vault' | 'profile';
@@ -48,6 +51,33 @@ export default function App() {
     const equipped = getEquipped();
     const themeItem = equipped.theme ? getItemById(equipped.theme) : null;
     applyThemeVars(themeItem?.themeVars || null);
+  }, []);
+
+  // ═══ Capacitor: Handle deep link callback from OAuth ═══
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const handleAppUrl = async ({ url }: { url: string }) => {
+      // Close the in-app browser
+      try { await Browser.close(); } catch {}
+
+      // Extract tokens from the callback URL
+      // URL format: com.lynxai.app://login#access_token=...&refresh_token=...
+      if (url.includes('access_token') && url.includes('refresh_token')) {
+        const hashPart = url.split('#')[1];
+        if (hashPart) {
+          const params = new URLSearchParams(hashPart);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          }
+        }
+      }
+    };
+
+    CapApp.addListener('appUrlOpen', handleAppUrl);
+    return () => { CapApp.removeAllListeners(); };
   }, []);
 
   // Flush pending sync data before page unload (tab close, refresh, navigate away)

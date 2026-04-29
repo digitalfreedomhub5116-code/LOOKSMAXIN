@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { pushToCloud, pushField } from './sync';
 import { compressImage, base64ToBlob } from './imageUtils';
+import { Capacitor } from '@capacitor/core';
 
 // Public client keys — safe for browser
 const url = import.meta.env.VITE_SUPABASE_URL || 'https://mxcvwkdkjsailyoestlv.supabase.co';
@@ -10,7 +11,11 @@ export const supabase = createClient(url, key, {
   auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
 });
 
-const API = import.meta.env.VITE_API_URL || '';
+// On mobile (Capacitor), API must point to the deployed server, not localhost
+const RAILWAY_URL = 'https://www.lynxai.in';
+const API = Capacitor.isNativePlatform()
+  ? RAILWAY_URL
+  : (import.meta.env.VITE_API_URL || '');
 
 // ─── Local Storage Keys ───
 const LS_SCORES = 'lynx_latest_scores';

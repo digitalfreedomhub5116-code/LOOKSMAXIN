@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, ArrowRight, ChevronLeft, Mail, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/api';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
+import { App as CapApp } from '@capacitor/app';
 
 type Mode = 'splash' | 'login' | 'signup' | 'verify' | 'forgot';
 
@@ -131,11 +134,28 @@ export default function AuthPage({ onAuth }: { onAuth: () => void }) {
 
   const handleGoogle = async () => {
     setLoading(true); setError('');
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
-    if (err) { setError(err.message); setLoading(false); }
+
+    if (Capacitor.isNativePlatform()) {
+      // On mobile: open OAuth in in-app browser, handle deep link return
+      const { data, error: err } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'com.lynxai.app://login',
+          skipBrowserRedirect: true,
+        },
+      });
+      if (err) { setError(err.message); setLoading(false); return; }
+      if (data?.url) {
+        await Browser.open({ url: data.url, windowName: '_self' });
+      }
+    } else {
+      // On web: normal redirect
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin },
+      });
+      if (err) { setError(err.message); setLoading(false); }
+    }
   };
 
   const handleForgot = async () => {
