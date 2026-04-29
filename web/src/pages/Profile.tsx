@@ -340,7 +340,10 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             )}
             {borderItem?.imageBorder && (
               <img src={borderItem.imageBorder} alt="" style={{
-                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                position: 'absolute', top: '50%', left: '50%',
+                width: `${(borderItem.imageScale || 1) * 100}%`,
+                height: `${(borderItem.imageScale || 1) * 100}%`,
+                transform: 'translate(-50%, -50%)',
                 pointerEvents: 'none', objectFit: 'contain',
                 animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
                 filter: `drop-shadow(0 0 6px ${borderGlow})`,

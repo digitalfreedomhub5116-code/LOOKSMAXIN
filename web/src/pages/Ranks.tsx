@@ -71,8 +71,10 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
             src={borderItem.imageBorder}
             alt=""
             style={{
-              position: 'absolute', inset: -2,
-              width: outerSize + 4, height: outerSize + 4,
+              position: 'absolute', top: '50%', left: '50%',
+              width: outerSize * (borderItem.imageScale || 1),
+              height: outerSize * (borderItem.imageScale || 1),
+              transform: 'translate(-50%, -50%)',
               objectFit: 'contain', pointerEvents: 'none',
               animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
               filter: `drop-shadow(0 0 6px ${glow})`,

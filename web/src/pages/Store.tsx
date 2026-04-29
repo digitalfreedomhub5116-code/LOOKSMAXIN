@@ -751,11 +751,11 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
             }} />
 
             {item.category === 'border' && item.imageBorder ? (
-              <div style={{ position: 'relative', width: 110, height: 110 }}>
+              <div style={{ position: 'relative', width: 100, height: 100, overflow: 'visible' }}>
                 {/* Profile pic — fills to inner edge of border ring */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
-                  width: 80, height: 80, borderRadius: '50%',
+                  width: 64, height: 64, borderRadius: '50%',
                   background: 'radial-gradient(circle, #3a3a4a, #1a1a24)',
                   transform: 'translate(-50%, -50%)', zIndex: 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -764,19 +764,20 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                   ) : (
-                    <svg width="60" height="60" viewBox="0 0 40 40">
+                    <svg width="46" height="46" viewBox="0 0 40 40">
                       <circle cx="20" cy="16" r="7" fill="#555568" />
                       <ellipse cx="20" cy="35" rx="13" ry="10" fill="#4a4a5a" />
                     </svg>
                   )}
                 </div>
-                {/* Border effect overlay */}
+                {/* Border image — scaled per item */}
                 <img
                   src={item.imageBorder}
                   alt={item.name}
                   style={{
                     position: 'absolute', top: '50%', left: '50%',
-                    width: '115%', height: '115%',
+                    width: `${(item.imageScale || 1) * 100}%`,
+                    height: `${(item.imageScale || 1) * 100}%`,
                     transform: 'translate(-50%, -50%)',
                     objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
                     ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),

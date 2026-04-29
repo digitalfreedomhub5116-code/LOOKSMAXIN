@@ -20,6 +20,8 @@ export interface StoreItem {
   borderConfig?: BorderConfig;
   /** For borders: image path (used with mix-blend-mode: screen) */
   imageBorder?: string;
+  /** For borders: scale multiplier for image overlay (default 1.0) */
+  imageScale?: number;
   /** For borders: CSS animation on the image overlay */
   imageAnimated?: boolean;
   /** For borders: Lottie JSON path */
@@ -136,6 +138,7 @@ const BORDERS: StoreItem[] = [
     id: 'border-elemental-tide', name: 'Elemental Tide', category: 'border', tier: 'legendary', price: 700,
     description: 'Japanese waves and sacred flames entwine around your avatar.',
     imageBorder: '/borders/border-mixed.png',
+    imageScale: 0.9,
     borderConfig: { colors: ['#1E90FF', '#FF6347', '#C8A84E'], strokeWidth: 3, animated: false, glowColor: 'rgba(30,144,255,0.4)', glowIntensity: 0.7 },
   },
   {
@@ -143,6 +146,13 @@ const BORDERS: StoreItem[] = [
     description: 'An ancient golden dragon coils around your avatar — ultimate power.',
     imageBorder: '/borders/border-golddragon.png',
     borderConfig: { colors: ['#C8A84E', '#F59E0B', '#DAA520'], strokeWidth: 3, animated: false, glowColor: 'rgba(200,168,78,0.5)', glowIntensity: 0.8 },
+  },
+  {
+    id: 'border-gold-lion', name: 'Gold Lion', category: 'border', tier: 'legendary', price: 850,
+    description: 'A majestic golden lion crowns your avatar — royalty unleashed.',
+    imageBorder: '/borders/border-goldlion.png',
+    imageScale: 1.5,
+    borderConfig: { colors: ['#C8A84E', '#0E8585', '#DAA520'], strokeWidth: 3, animated: false, glowColor: 'rgba(200,168,78,0.45)', glowIntensity: 0.8 },
   },
 ];
 
