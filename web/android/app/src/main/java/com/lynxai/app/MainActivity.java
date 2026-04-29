@@ -1,14 +1,22 @@
 package com.lynxai.app;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+import android.webkit.WebSettings;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.Plugin;
@@ -20,21 +28,31 @@ import ee.forgr.capacitor.social.login.SocialLoginPlugin;
 public class MainActivity extends BridgeActivity {
 
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final int CAMERA_PERMISSION_REQUEST = 1002;
     private ValueCallback<Uri[]> filePathCallback;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Request camera permission at app start
+        requestCameraPermission();
+
         WebView webView = getBridge().getWebView();
+        WebSettings settings = webView.getSettings();
 
-        // Allow camera/video to autoplay without user gesture
-        webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+        // Critical for camera in WebView
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
 
-        // Custom WebChromeClient that handles permissions AND file chooser
+        // Custom WebChromeClient
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
+                Log.d("LynxCamera", "WebView permission request: " + java.util.Arrays.toString(request.getResources()));
                 runOnUiThread(() -> request.grant(request.getResources()));
             }
 
@@ -43,14 +61,13 @@ public class MainActivity extends BridgeActivity {
                     WebView webView,
                     ValueCallback<Uri[]> callback,
                     FileChooserParams fileChooserParams) {
-                // Cancel any existing callback
                 if (filePathCallback != null) {
                     filePathCallback.onReceiveValue(null);
                 }
                 filePathCallback = callback;
 
-                Intent intent = fileChooserParams.createIntent();
                 try {
+                    Intent intent = fileChooserParams.createIntent();
                     startActivityForResult(intent, FILE_CHOOSER_REQUEST);
                 } catch (Exception e) {
                     filePathCallback = null;
@@ -59,6 +76,30 @@ public class MainActivity extends BridgeActivity {
                 return true;
             }
         });
+    }
+
+    private void requestCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                            Manifest.permission.CAMERA
+                    },
+                    CAMERA_PERMISSION_REQUEST);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_REQUEST) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("LynxCamera", "Camera permission granted");
+            } else {
+                Log.w("LynxCamera", "Camera permission denied");
+            }
+        }
     }
 
     @Override

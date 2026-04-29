@@ -39,7 +39,9 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
         // On mobile, request camera permission first to trigger the system dialog
         if (Capacitor.isNativePlatform()) {
           try {
-            await navigator.mediaDevices.getUserMedia({ video: true });
+            const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            // IMPORTANT: Release the test stream immediately so startCamera can use it
+            testStream.getTracks().forEach(t => t.stop());
           } catch {
             // Permission denied or not available — fall back to gallery
             setHasCamera(false);
@@ -71,8 +73,6 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
           facingMode: 'user',
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          zoom: { ideal: 1 },
-          resizeMode: 'none',
         } as MediaTrackConstraints,
         audio: false,
       });
@@ -86,7 +86,20 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
       } catch {}
 
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+
+      // Wait for video element to be available (may not be mounted yet)
+      const attachStream = () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('autoplay', 'true');
+          videoRef.current.play().catch(() => {});
+        } else {
+          // Retry after a tick — video element not mounted yet
+          setTimeout(attachStream, 50);
+        }
+      };
+      attachStream();
     } catch (err: any) {
       console.error('Camera error:', err);
       // Camera failed — fall back to gallery mode
