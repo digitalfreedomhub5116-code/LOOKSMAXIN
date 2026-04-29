@@ -148,9 +148,7 @@ export default function AuthPage({ onAuth }: { onAuth: () => void }) {
         // Trigger native Google account picker
         const result = await SocialLogin.login({
           provider: 'google',
-          options: {
-            scopes: ['email', 'profile'],
-          },
+          options: {},
         });
 
         const idToken = result?.result?.idToken;
