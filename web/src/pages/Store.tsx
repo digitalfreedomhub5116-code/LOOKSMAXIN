@@ -823,14 +823,29 @@ function GlowCard({ item, discount, owned, equipped, canAfford, onBuy, onEquip, 
                     </svg>
                   )}
                 </div>
-                <img src={item.imageBorder} alt={item.name} style={{
-                  position: 'absolute', top: '50%', left: '50%',
-                  width: `${(item.imageScale || 1) * 100}%`,
-                  height: `${(item.imageScale || 1) * 100}%`,
-                  transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
-                  objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
-                  ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
-                }} />
+                {item.imageAnimated && item.imageAnimationType === 'pulse' ? (
+                  <div style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    width: `${(item.imageScale || 1) * 100}%`,
+                    height: `${(item.imageScale || 1) * 100}%`,
+                    transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
+                    zIndex: 2, pointerEvents: 'none',
+                  }}>
+                    <img src={item.imageBorder} alt={item.name} style={{
+                      width: '100%', height: '100%', objectFit: 'contain',
+                      animation: 'border-breathe-simple 3s ease-in-out infinite',
+                    }} />
+                  </div>
+                ) : (
+                  <img src={item.imageBorder} alt={item.name} style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    width: `${(item.imageScale || 1) * 100}%`,
+                    height: `${(item.imageScale || 1) * 100}%`,
+                    transform: `translate(-50%, calc(-50% + ${item.imageOffsetY || 0}px))`,
+                    objectFit: 'contain', zIndex: 2, pointerEvents: 'none',
+                    ...(item.imageAnimated ? { animation: 'spin-clockwise 10s linear infinite' } : {}),
+                  }} />
+                )}
               </div>
             ) : item.category === 'border' && item.auraConfig ? (
               /* CSS Aura Glow Border — vivid neon plasma */

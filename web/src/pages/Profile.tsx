@@ -344,7 +344,21 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 <User size={32} color="#fff" />
               </div>
             )}
-            {borderItem?.imageBorder && (
+            {borderItem?.imageBorder && borderItem.imageAnimated && borderItem.imageAnimationType === 'pulse' ? (
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: `${(borderItem.imageScale || 1) * 100}%`,
+                height: `${(borderItem.imageScale || 1) * 100}%`,
+                transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
+                pointerEvents: 'none',
+                filter: `drop-shadow(0 0 6px ${borderGlow})`,
+              }}>
+                <img src={borderItem.imageBorder} alt="" style={{
+                  width: '100%', height: '100%', objectFit: 'contain',
+                  animation: 'border-breathe-simple 3s ease-in-out infinite',
+                }} />
+              </div>
+            ) : borderItem?.imageBorder ? (
               <img src={borderItem.imageBorder} alt="" style={{
                 position: 'absolute', top: '50%', left: '50%',
                 width: `${(borderItem.imageScale || 1) * 100}%`,
@@ -354,7 +368,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 animation: borderItem.imageAnimated ? 'spin 8s linear infinite' : 'none',
                 filter: `drop-shadow(0 0 6px ${borderGlow})`,
               }} />
-            )}
+            ) : null}
             {borderItem?.lottieBorder && <ProfileLottieBorder src={borderItem.lottieBorder} glow={borderGlow} />}
           </div>
         </div>

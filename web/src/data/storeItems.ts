@@ -26,6 +26,8 @@ export interface StoreItem {
   imageOffsetY?: number;
   /** For borders: CSS animation on the image overlay */
   imageAnimated?: boolean;
+  /** Animation type: 'rotate' (default) or 'pulse' */
+  imageAnimationType?: 'rotate' | 'pulse';
   /** For borders: Lottie JSON path */
   lottieBorder?: string;
   /** For borders: CSS aura glow config (no image needed) */
@@ -72,6 +74,7 @@ const BORDERS: StoreItem[] = [
     id: 'border-ice-img', name: 'Ice Crown', category: 'border', tier: 'elemental', price: 350,
     description: 'Frozen crystalline frost wrapping your avatar.',
     imageBorder: '/borders/ice-transparent.png',
+    imageAnimated: true,
     borderConfig: { colors: ['#00BFFF', '#E0FFFF'], strokeWidth: 3, animated: false, glowColor: 'rgba(0,191,255,0.4)', glowIntensity: 0.6 },
   },
   {
@@ -85,6 +88,7 @@ const BORDERS: StoreItem[] = [
     description: 'Celestial stars orbiting your portrait like a crown.',
     imageBorder: '/borders/rotate.png',
     imageAnimated: true,
+    imageAnimationType: 'pulse',
     borderConfig: { colors: ['#E2E8F0', '#94A3B8'], strokeWidth: 3, animated: false, glowColor: 'rgba(226,232,240,0.4)', glowIntensity: 0.5 },
   },
   {
@@ -138,6 +142,20 @@ const BORDERS: StoreItem[] = [
     imageBorder: '/borders/border-phoenix.png',
     imageScale: 1.05,
     borderConfig: { colors: ['#DAA520', '#FF8C00', '#FFD700'], strokeWidth: 3, animated: false, glowColor: 'rgba(218,165,32,0.5)', glowIntensity: 0.8 },
+  },
+  {
+    id: 'border-stitched-dragon', name: 'Stitched Dragon', category: 'border', tier: 'legendary', price: 850,
+    description: 'A crimson dragon coils in stitched leather and gold — ancient fury.',
+    imageBorder: '/borders/border-stitched-dragon.png',
+    imageScale: 1.08,
+    borderConfig: { colors: ['#8B0000', '#C8A84E', '#FF4500'], strokeWidth: 3, animated: false, glowColor: 'rgba(139,0,0,0.5)', glowIntensity: 0.8 },
+  },
+  {
+    id: 'border-frost-tech', name: 'Frost Tech', category: 'border', tier: 'legendary', price: 800,
+    description: 'Cryo-tech crystals and snowflakes forge a futuristic ice frame.',
+    imageBorder: '/borders/border-frost-tech.png',
+    imageScale: 1.1,
+    borderConfig: { colors: ['#00CED1', '#87CEEB', '#E0FFFF'], strokeWidth: 3, animated: false, glowColor: 'rgba(0,206,209,0.5)', glowIntensity: 0.8 },
   },
 ];
 
@@ -399,6 +417,11 @@ const BANNERS: StoreItem[] = [
     id: 'banner-porsche', name: 'Porsche 911 JDM', category: 'banner', tier: 'premium', price: 350,
     description: 'Porsche 911 meets Japanese waves and cherry blossoms.',
     bannerImage: '/banners/banner4.jpg',
+  },
+  {
+    id: 'banner-fineshyt', name: 'Fine Shyt', category: 'banner', tier: 'premium', price: 300,
+    description: 'Dark anime aesthetic — you already know.',
+    bannerImage: '/banners/banner5.jpg',
   },
 ];
 

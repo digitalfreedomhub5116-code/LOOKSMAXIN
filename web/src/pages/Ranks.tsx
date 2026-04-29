@@ -66,7 +66,21 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
         </div>
 
         {/* Image border overlay (PNG around the avatar) */}
-        {hasImage && (
+        {hasImage && borderItem.imageAnimated && borderItem.imageAnimationType === 'pulse' ? (
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: outerSize * (borderItem.imageScale || 1),
+            height: outerSize * (borderItem.imageScale || 1),
+            transform: `translate(-50%, calc(-50% + ${borderItem.imageOffsetY || 0}px))`,
+            pointerEvents: 'none',
+            filter: `drop-shadow(0 0 6px ${glow})`,
+          }}>
+            <img src={borderItem.imageBorder} alt="" style={{
+              width: '100%', height: '100%', objectFit: 'contain',
+              animation: 'border-breathe-simple 3s ease-in-out infinite',
+            }} />
+          </div>
+        ) : hasImage ? (
           <img
             src={borderItem.imageBorder}
             alt=""
@@ -80,7 +94,7 @@ function AvatarCircle({ url, size = 48, rank, borderItem }: { url?: string | nul
               filter: `drop-shadow(0 0 6px ${glow})`,
             }}
           />
-        )}
+        ) : null}
 
         {/* Lottie border overlay */}
         {hasLottie && <LottieBorderOverlay src={borderItem.lottieBorder!} size={outerSize + 8} glow={glow} />}

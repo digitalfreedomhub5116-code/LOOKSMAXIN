@@ -1324,3 +1324,11 @@ html, body, #root {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+@keyframes border-breathe {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.08; }
+}
+@keyframes border-breathe-simple {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
