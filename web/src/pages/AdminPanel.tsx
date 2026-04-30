@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchAllPlans, fetchAllExercises, updateExerciseFrames, addExercise, deleteExercise, reindexExercises, updateExercise } from '../lib/workoutApi';
+import { fetchAllPlans, fetchAllExercises, updateExerciseFrames, addExercise, deleteExercise, reindexExercises, updateExercise, togglePlanVisibility, updateExerciseName } from '../lib/workoutApi';
 import type { WorkoutPlan, WorkoutExercise, WorkoutFrame } from '../lib/workoutApi';
 
 const ADMIN_ID = 'admin';
@@ -112,27 +112,52 @@ function FrameEditor({ frames, onChange }: { frames: WorkoutFrame[]; onChange: (
 }
 
 /* ═══ Exercise Card (admin) ═══ */
-function ExerciseCard({ ex, onSaveFrames, onDelete }: { ex: WorkoutExercise; onSaveFrames: (id: string, frames: WorkoutFrame[]) => Promise<void>; onDelete: (id: string) => Promise<void> }) {
+function ExerciseCard({ ex, onSaveFrames, onDelete, onSaveName }: { ex: WorkoutExercise; onSaveFrames: (id: string, frames: WorkoutFrame[]) => Promise<void>; onDelete: (id: string) => Promise<void>; onSaveName: (id: string, name: string) => Promise<void> }) {
   const [expanded, setExpanded] = useState(false);
   const [frames, setFrames] = useState<WorkoutFrame[]>(ex.frames);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(ex.name);
+  const [savingName, setSavingName] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync local frames when exercise prop changes (after save/reload)
+  // Sync local state when exercise prop changes
   useEffect(() => { setFrames(ex.frames); }, [ex.frames]);
+  useEffect(() => { setNameValue(ex.name); }, [ex.name]);
+  useEffect(() => { if (editingName && nameInputRef.current) nameInputRef.current.focus(); }, [editingName]);
+
   const dirty = JSON.stringify(frames) !== JSON.stringify(ex.frames);
 
   const save = async () => { setSaving(true); await onSaveFrames(ex.id, frames); setSaving(false); };
   const del = async () => { if (!confirm(`Delete "${ex.name}"?`)) return; setDeleting(true); await onDelete(ex.id); };
+  const saveName = async () => {
+    if (!nameValue.trim() || nameValue === ex.name) { setEditingName(false); setNameValue(ex.name); return; }
+    setSavingName(true);
+    await onSaveName(ex.id, nameValue.trim());
+    setSavingName(false);
+    setEditingName(false);
+  };
 
   return (
     <div style={{ background:'#111', border:'1px solid rgba(255,255,255,0.06)', borderRadius:12, marginBottom:8, overflow:'hidden' }}>
-      <div onClick={() => setExpanded(!expanded)} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', cursor:'pointer' }}>
+      <div onClick={() => !editingName && setExpanded(!expanded)} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', cursor:'pointer' }}>
         <div style={{ width:36, height:36, borderRadius:8, background:'rgba(200,168,78,0.08)', border:'1px solid rgba(200,168,78,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:800, color:'#C8A84E', flexShrink:0 }}>
           {ex.exercise_index + 1}
         </div>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{ex.name}</div>
+          {editingName ? (
+            <div style={{ display:'flex', gap:6, alignItems:'center' }} onClick={e => e.stopPropagation()}>
+              <input ref={nameInputRef} value={nameValue} onChange={e => setNameValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setEditingName(false); setNameValue(ex.name); } }} style={{ flex:1, padding:'4px 8px', background:'transparent', border:'1px solid rgba(200,168,78,0.4)', borderRadius:6, color:'#fff', fontSize:14, fontWeight:700, outline:'none' }} />
+              <button onClick={saveName} disabled={savingName} style={{ padding:'4px 10px', background:'#C8A84E', border:'none', borderRadius:5, color:'#000', fontSize:11, fontWeight:700, cursor:'pointer' }}>{savingName ? '...' : '✓'}</button>
+              <button onClick={() => { setEditingName(false); setNameValue(ex.name); }} style={{ padding:'4px 8px', background:'transparent', border:'1px solid rgba(255,255,255,0.1)', borderRadius:5, color:'#888', fontSize:11, cursor:'pointer' }}>✕</button>
+            </div>
+          ) : (
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{ex.name}</div>
+              <button onClick={e => { e.stopPropagation(); setEditingName(true); }} style={{ background:'none', border:'none', color:'#555', fontSize:12, cursor:'pointer', padding:'2px 4px', flexShrink:0 }} title="Edit name">✏️</button>
+            </div>
+          )}
           <div style={{ fontSize:11, color:'#555', marginTop:2 }}>{ex.sets} sets · {ex.reps > 0 ? `${ex.reps} reps` : `${ex.duration}s hold`} · {'⭐'.repeat(ex.difficulty)} · {ex.frames.length} frames</div>
         </div>
         <FramePreview frames={ex.frames} />
@@ -250,11 +275,23 @@ export default function AdminPanel() {
     await load();
   };
 
+  const handleSaveName = async (exId: string, name: string) => {
+    await updateExerciseName(exId, name);
+    await load();
+  };
+
+  const handleToggleVisibility = async (planId: string, currentActive: boolean) => {
+    await togglePlanVisibility(planId, !currentActive);
+    await load();
+  };
+
   const handleLogout = () => {
     localStorage.removeItem(LS_KEY);
     try { sessionStorage.removeItem(LS_KEY); } catch {}
     setAuthed(false);
   };
+
+  const currentPlan = plans.find(p => p.id === activePlan);
 
   return (
     <div style={{ minHeight:'100vh', background:'#0A0A0F', fontFamily:"'Inter',sans-serif", color:'#fff' }}>
@@ -269,12 +306,21 @@ export default function AdminPanel() {
 
       <div style={{ display:'flex', maxWidth:1200, margin:'0 auto' }}>
         {/* Sidebar — Plan List */}
-        <div style={{ width:240, flexShrink:0, borderRight:'1px solid rgba(255,255,255,0.06)', padding:'16px 0', minHeight:'calc(100vh - 60px)' }}>
+        <div style={{ width:260, flexShrink:0, borderRight:'1px solid rgba(255,255,255,0.06)', padding:'16px 0', minHeight:'calc(100vh - 60px)' }}>
           <div style={{ padding:'0 16px', fontSize:10, fontWeight:700, letterSpacing:1.5, color:'#555', marginBottom:12 }}>PLANS ({plans.length})</div>
           {plans.map(p => (
-            <div key={p.id} onClick={() => setActivePlan(p.id)} style={{ padding:'12px 16px', cursor:'pointer', background: activePlan === p.id ? 'rgba(200,168,78,0.08)' : 'transparent', borderLeft: activePlan === p.id ? '3px solid #C8A84E' : '3px solid transparent', transition:'all 0.15s' }}>
-              <div style={{ fontSize:13, fontWeight:700, color: activePlan === p.id ? '#fff' : '#888' }}>{p.name}</div>
-              <div style={{ fontSize:11, color:'#444', marginTop:2 }}>{exercises.get(p.id)?.length || 0} exercises</div>
+            <div key={p.id} style={{ padding:'10px 16px', cursor:'pointer', background: activePlan === p.id ? 'rgba(200,168,78,0.08)' : 'transparent', borderLeft: activePlan === p.id ? '3px solid #C8A84E' : '3px solid transparent', transition:'all 0.15s', opacity: p.is_active ? 1 : 0.45 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <div onClick={() => setActivePlan(p.id)} style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color: activePlan === p.id ? '#fff' : '#888', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.name}</div>
+                  <div style={{ fontSize:11, color:'#444', marginTop:2 }}>{exercises.get(p.id)?.length || 0} exercises{!p.is_active ? ' · HIDDEN' : ''}</div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleToggleVisibility(p.id, p.is_active); }}
+                  title={p.is_active ? 'Hide from users' : 'Show to users'}
+                  style={{ background: p.is_active ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: p.is_active ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(239,68,68,0.25)', borderRadius:6, padding:'4px 8px', fontSize:13, cursor:'pointer', flexShrink:0, lineHeight:1 }}
+                >{p.is_active ? '👁' : '🚫'}</button>
+              </div>
             </div>
           ))}
         </div>
@@ -287,12 +333,17 @@ export default function AdminPanel() {
             <>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                 <div>
-                  <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{plans.find(p => p.id === activePlan)?.name}</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <span style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{currentPlan?.name}</span>
+                    {currentPlan && !currentPlan.is_active && (
+                      <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, color:'#EF4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:4, padding:'2px 8px' }}>HIDDEN</span>
+                    )}
+                  </div>
                   <div style={{ fontSize:12, color:'#555', marginTop:2 }}>{planExercises.length} exercises · Click to expand & manage frames</div>
                 </div>
               </div>
               {planExercises.map(ex => (
-                <ExerciseCard key={ex.id} ex={ex} onSaveFrames={handleSaveFrames} onDelete={handleDelete} />
+                <ExerciseCard key={ex.id} ex={ex} onSaveFrames={handleSaveFrames} onDelete={handleDelete} onSaveName={handleSaveName} />
               ))}
               <AddExerciseForm planId={activePlan} nextIndex={planExercises.length} onAdd={handleAdd} />
             </>

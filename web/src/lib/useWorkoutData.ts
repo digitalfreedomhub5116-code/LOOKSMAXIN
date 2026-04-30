@@ -1,13 +1,14 @@
 /**
  * useWorkoutData.ts — Hook to load workout exercises from Supabase
- * Merges DB frames/exercises into the local PLANS structure so the
+ * Merges DB frames/exercises into the plan structure so the
  * frontend always shows the latest admin panel changes.
+ * Hidden plans (is_active=false) are filtered out automatically.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { PLANS } from '../data/exercisePlans';
 import type { ExercisePlan, ExerciseItem, FrameTiming } from '../data/exercisePlans';
-import { fetchExercises } from '../lib/workoutApi';
-import type { WorkoutExercise } from '../lib/workoutApi';
+import { fetchExercises, fetchPlans } from '../lib/workoutApi';
+import type { WorkoutExercise, WorkoutPlan } from '../lib/workoutApi';
 
 /** Build an enriched ExerciseItem from a DB row */
 function dbToExerciseItem(dbEx: WorkoutExercise, planId: string, dayNum: number, exIdx: number): ExerciseItem {
@@ -34,12 +35,9 @@ function dbToExerciseItem(dbEx: WorkoutExercise, planId: string, dayNum: number,
 
 /**
  * Rebuild plan days using DB exercises instead of local static data.
- * Uses the same rotation algorithm as the original buildDays() but
- * sources exercises from Supabase.
  */
 function buildDaysFromDB(planId: string, exercises: WorkoutExercise[]): ExercisePlan['days'] {
-  const localPlan = PLANS.find(p => p.id === planId);
-  if (!localPlan || exercises.length === 0) return localPlan?.days || [];
+  if (exercises.length === 0) return [];
 
   const days: ExercisePlan['days'] = [];
   for (let d = 1; d <= 30; d++) {
@@ -51,7 +49,6 @@ function buildDaysFromDB(planId: string, exercises: WorkoutExercise[]): Exercise
       const idx = ((d - 1) * count + e) % exercises.length;
       const dbEx = exercises[idx];
       const item = dbToExerciseItem(dbEx, planId, d, e);
-      // Scale difficulty with phase
       if (phase === 'Mastery') item.sets = dbEx.sets + 1;
       dayExercises.push(item);
     }
@@ -65,6 +62,18 @@ function buildDaysFromDB(planId: string, exercises: WorkoutExercise[]): Exercise
   return days;
 }
 
+/** Convert a WorkoutPlan DB row + local fallback into an ExercisePlan */
+function dbPlanToExercisePlan(dbPlan: WorkoutPlan): ExercisePlan {
+  const localPlan = PLANS.find(p => p.id === dbPlan.id);
+  return {
+    id: dbPlan.id,
+    name: dbPlan.name,
+    description: dbPlan.description,
+    image: dbPlan.image,
+    days: localPlan?.days || [], // will be overridden when exercises are loaded
+  };
+}
+
 export interface WorkoutDataState {
   plans: ExercisePlan[];
   loading: boolean;
@@ -72,25 +81,41 @@ export interface WorkoutDataState {
 }
 
 /**
- * useWorkoutData — fetches exercises from Supabase for the active plan
- * and enriches the local PLANS array with DB frame data.
- * Falls back to local data if DB fetch fails.
+ * useWorkoutData — fetches active plans + exercises from Supabase.
+ * Hidden plans (is_active=false) are automatically excluded.
+ * Falls back to local PLANS data if DB fetch fails.
  */
 export function useWorkoutData(activePlanId: string | null): WorkoutDataState {
   const [plans, setPlans] = useState<ExercisePlan[]>(PLANS);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!activePlanId) return;
     setLoading(true);
     try {
-      const dbExercises = await fetchExercises(activePlanId);
-      if (dbExercises.length > 0) {
-        setPlans(prev => prev.map(p => {
-          if (p.id !== activePlanId) return p;
-          return { ...p, days: buildDaysFromDB(activePlanId, dbExercises) };
-        }));
+      // Fetch active plans from Supabase (hidden plans are filtered by is_active=true)
+      const dbPlans = await fetchPlans();
+
+      if (dbPlans.length > 0) {
+        // Build ExercisePlan[] from DB plans
+        const builtPlans = dbPlans.map(dbPlanToExercisePlan);
+
+        // If we have an active plan, also fetch its exercises for day enrichment
+        if (activePlanId) {
+          const dbExercises = await fetchExercises(activePlanId);
+          if (dbExercises.length > 0) {
+            const planIdx = builtPlans.findIndex(p => p.id === activePlanId);
+            if (planIdx >= 0) {
+              builtPlans[planIdx] = {
+                ...builtPlans[planIdx],
+                days: buildDaysFromDB(activePlanId, dbExercises),
+              };
+            }
+          }
+        }
+
+        setPlans(builtPlans);
       }
+      // If DB returned nothing, keep using local PLANS as fallback
     } catch (e) {
       console.warn('[useWorkoutData] DB fetch failed, using local data:', e);
     }

@@ -225,3 +225,33 @@ export async function fetchAllPlans(): Promise<WorkoutPlan[]> {
   }
   return data || [];
 }
+
+// ═══ Admin: Toggle plan visibility (hide/show from frontend) ═══
+export async function togglePlanVisibility(planId: string, isActive: boolean): Promise<boolean> {
+  const { error } = await supabase
+    .from('workout_plans')
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq('id', planId);
+
+  if (error) {
+    console.error('[WorkoutAPI] Failed to toggle plan visibility:', error.message);
+    return false;
+  }
+  invalidateCache();
+  return true;
+}
+
+// ═══ Admin: Update exercise name ═══
+export async function updateExerciseName(exerciseId: string, name: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('workout_exercises')
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq('id', exerciseId);
+
+  if (error) {
+    console.error('[WorkoutAPI] Failed to update exercise name:', error.message);
+    return false;
+  }
+  invalidateCache();
+  return true;
+}
