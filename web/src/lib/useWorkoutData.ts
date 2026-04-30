@@ -5,8 +5,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PLANS } from '../data/exercisePlans';
 import type { ExercisePlan, ExerciseItem, FrameTiming } from '../data/exercisePlans';
-import { fetchExercises, fetchPlans } from '../lib/workoutApi';
-import type { WorkoutExercise, WorkoutPlan } from '../lib/workoutApi';
+import { fetchExercises, fetchPlans } from './workoutApi';
+import type { WorkoutExercise, WorkoutPlan } from './workoutApi';
 
 function dbToExerciseItem(dbEx: WorkoutExercise, planId: string, dayNum: number, exIdx: number): ExerciseItem {
   const frames = dbEx.frames.filter(f => f.url?.trim()).map(f => f.url);
