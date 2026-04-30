@@ -117,12 +117,11 @@ function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
     scores.hair_quality ?? 0,
   ];
 
-  const svgSize = 160;
+  const svgSize = 180;
   const center = svgSize / 2;
-  const ringCount = traitValues.length;
-  const ringWidth = 3.5;
-  const ringGap = 1.5;
-  const outerRadius = 72;
+  const ringWidth = 5;
+  const ringGap = 2;
+  const outerRadius = 84;
 
   return (
     <svg
@@ -134,23 +133,29 @@ function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
         top: '50%', left: '50%',
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'none',
-        filter: 'drop-shadow(0 0 4px rgba(200,168,78,0.15))',
+        zIndex: 2,
       }}
     >
       <defs>
         {TRAIT_RING_COLORS.map((color, i) => (
           <linearGradient key={`tg-${i}`} id={`trait-grad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={color} stopOpacity="1" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.6" />
           </linearGradient>
         ))}
+        <filter id="ringGlow">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
       {traitValues.map((val, i) => {
         const r = outerRadius - i * (ringWidth + ringGap);
         const circumference = 2 * Math.PI * r;
         const arcLen = (val / 100) * circumference;
         const gapLen = circumference - arcLen;
-        /* Each ring is rotated to start from different angles for visual interest */
         const startAngle = -90 + i * 30;
 
         return (
@@ -159,7 +164,7 @@ function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
             <circle
               cx={center} cy={center} r={r}
               fill="none"
-              stroke="rgba(255,255,255,0.06)"
+              stroke="rgba(255,255,255,0.08)"
               strokeWidth={ringWidth}
             />
             {/* Filled arc */}
@@ -171,9 +176,9 @@ function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
               strokeLinecap="round"
               strokeDasharray={`${arcLen} ${gapLen}`}
               transform={`rotate(${startAngle} ${center} ${center})`}
+              filter="url(#ringGlow)"
               style={{
                 transition: 'stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                filter: `drop-shadow(0 0 3px ${TRAIT_RING_COLORS[i]}55)`,
               }}
             />
             {/* Score dot at end of arc */}
@@ -183,8 +188,8 @@ function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
               const dotX = center + r * Math.cos(rad);
               const dotY = center + r * Math.sin(rad);
               return (
-                <circle cx={dotX} cy={dotY} r={2.5} fill={TRAIT_RING_COLORS[i]}
-                  style={{ filter: `drop-shadow(0 0 4px ${TRAIT_RING_COLORS[i]})` }} />
+                <circle cx={dotX} cy={dotY} r={3} fill={TRAIT_RING_COLORS[i]}
+                  style={{ filter: `drop-shadow(0 0 5px ${TRAIT_RING_COLORS[i]})` }} />
               );
             })()}
           </g>
@@ -424,7 +429,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           overflow: 'visible',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div style={{ position: 'relative', width: 130, height: 130, overflow: 'visible' }}>
+          <div style={{ position: 'relative', width: 150, height: 150, overflow: 'visible' }}>
 
             {/* ═══ Circular Trait Progress Rings (outer) ═══ */}
             <CircularTraitRings scores={scores} />
@@ -438,6 +443,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 width: 88, height: 88,
                 borderRadius: '50%',
                 background: borderGrad, padding: 3,
+                zIndex: 1,
                 boxShadow: hasBorder
                   ? `0 0 20px ${borderGlow}, 0 0 40px ${borderGlow}`
                   : '0 0 24px rgba(200,168,78,0.15)',
@@ -454,6 +460,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 width: borderItem?.imageBorder ? 72 : 80,
                 height: borderItem?.imageBorder ? 72 : 80,
                 borderRadius: '50%', objectFit: 'cover',
+                zIndex: 3,
               }} />
             ) : (
               <div style={{
@@ -465,6 +472,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #1a1a2e, #0f3460)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 3,
               }}>
                 <User size={32} color="#fff" />
               </div>
