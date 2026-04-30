@@ -151,7 +151,9 @@ export default function AuthPage({ onAuth }: { onAuth: () => void }) {
           options: {},
         });
 
-        const idToken = result?.result?.idToken;
+        // GoogleLoginResponse is a union: Online (has idToken) | Offline (has serverAuthCode)
+        const googleResult = result?.result as any;
+        const idToken = googleResult?.idToken;
         if (!idToken) {
           setError('Google sign-in failed — no token received');
           setLoading(false);

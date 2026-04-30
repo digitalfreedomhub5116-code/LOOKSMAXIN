@@ -93,6 +93,147 @@ function LiquidGlassBellCurve({ score, primary = '#C8A84E' }: { score: number; p
   );
 }
 
+/* ═══ Circular Trait Progress Rings ═══ */
+const TRAIT_RING_COLORS = [
+  '#C8A84E', // jawline – gold
+  '#60A5FA', // skin – blue
+  '#34D399', // eyes – emerald
+  '#F472B6', // lips – pink
+  '#A78BFA', // symmetry – violet
+  '#FB923C', // hair – orange
+];
+
+const TRAIT_RING_LABELS = ['Jaw', 'Skin', 'Eyes', 'Lips', 'Sym', 'Hair'];
+
+function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
+  if (!scores) return null;
+
+  const traitValues = [
+    scores.jawline ?? 0,
+    scores.skin_quality ?? 0,
+    scores.eyes ?? 0,
+    scores.lips ?? 0,
+    scores.facial_symmetry ?? 0,
+    scores.hair_quality ?? 0,
+  ];
+
+  const svgSize = 160;
+  const center = svgSize / 2;
+  const ringCount = traitValues.length;
+  const ringWidth = 3.5;
+  const ringGap = 1.5;
+  const outerRadius = 72;
+
+  return (
+    <svg
+      width={svgSize}
+      height={svgSize}
+      viewBox={`0 0 ${svgSize} ${svgSize}`}
+      style={{
+        position: 'absolute',
+        top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: 'none',
+        filter: 'drop-shadow(0 0 4px rgba(200,168,78,0.15))',
+      }}
+    >
+      <defs>
+        {TRAIT_RING_COLORS.map((color, i) => (
+          <linearGradient key={`tg-${i}`} id={`trait-grad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity="1" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+          </linearGradient>
+        ))}
+      </defs>
+      {traitValues.map((val, i) => {
+        const r = outerRadius - i * (ringWidth + ringGap);
+        const circumference = 2 * Math.PI * r;
+        const arcLen = (val / 100) * circumference;
+        const gapLen = circumference - arcLen;
+        /* Each ring is rotated to start from different angles for visual interest */
+        const startAngle = -90 + i * 30;
+
+        return (
+          <g key={i}>
+            {/* Background track */}
+            <circle
+              cx={center} cy={center} r={r}
+              fill="none"
+              stroke="rgba(255,255,255,0.06)"
+              strokeWidth={ringWidth}
+            />
+            {/* Filled arc */}
+            <circle
+              cx={center} cy={center} r={r}
+              fill="none"
+              stroke={`url(#trait-grad-${i})`}
+              strokeWidth={ringWidth}
+              strokeLinecap="round"
+              strokeDasharray={`${arcLen} ${gapLen}`}
+              transform={`rotate(${startAngle} ${center} ${center})`}
+              style={{
+                transition: 'stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                filter: `drop-shadow(0 0 3px ${TRAIT_RING_COLORS[i]}55)`,
+              }}
+            />
+            {/* Score dot at end of arc */}
+            {val > 5 && (() => {
+              const endAngle = startAngle + (val / 100) * 360;
+              const rad = (endAngle * Math.PI) / 180;
+              const dotX = center + r * Math.cos(rad);
+              const dotY = center + r * Math.sin(rad);
+              return (
+                <circle cx={dotX} cy={dotY} r={2.5} fill={TRAIT_RING_COLORS[i]}
+                  style={{ filter: `drop-shadow(0 0 4px ${TRAIT_RING_COLORS[i]})` }} />
+              );
+            })()}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* ═══ Trait ring legend — small colored dots below avatar ═══ */
+function TraitRingLegend({ scores }: { scores: FaceScores | null }) {
+  if (!scores) return null;
+
+  const traitValues = [
+    scores.jawline ?? 0,
+    scores.skin_quality ?? 0,
+    scores.eyes ?? 0,
+    scores.lips ?? 0,
+    scores.facial_symmetry ?? 0,
+    scores.hair_quality ?? 0,
+  ];
+
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap',
+      marginTop: 4, padding: '0 8px',
+    }}>
+      {TRAIT_RING_LABELS.map((label, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'center', gap: 3,
+        }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: TRAIT_RING_COLORS[i],
+            boxShadow: `0 0 4px ${TRAIT_RING_COLORS[i]}66`,
+          }} />
+          <span style={{
+            fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.35)',
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: '0.05em',
+          }}>
+            {label} {traitValues[i]}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface Props {
   onLogout: () => void;
   user: any;
@@ -217,7 +358,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* ═══ HERO: BANNER + AVATAR overlay — Reforge style ═══ */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ position: 'relative', marginBottom: 56 }}>
+      <div style={{ position: 'relative', marginBottom: scores ? 86 : 56 }}>
 
         {/* Banner */}
         <div style={{
@@ -241,7 +382,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
         {/* Name + Username — bottom-left on banner */}
         <div style={{
           position: 'absolute', bottom: 14, left: 16, zIndex: 6,
-          maxWidth: 'calc(50% - 60px)',
+          maxWidth: 'calc(50% - 80px)',
         }}>
           <div style={{
             fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.2,
@@ -276,16 +417,26 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           </div>
         </div>
 
-        {/* Avatar — centered, overlapping banner bottom */}
+        {/* Avatar — centered, overlapping banner bottom with trait rings */}
         <div style={{
-          position: 'absolute', bottom: -44, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
+          position: 'absolute', bottom: scores ? -64 : -44,
+          left: '50%', transform: 'translateX(-50%)', zIndex: 5,
           overflow: 'visible',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div style={{ position: 'relative', width: 96, height: 96, overflow: 'visible' }}>
+          <div style={{ position: 'relative', width: 130, height: 130, overflow: 'visible' }}>
+
+            {/* ═══ Circular Trait Progress Rings (outer) ═══ */}
+            <CircularTraitRings scores={scores} />
+
             {/* Gradient ring — only when NO image border */}
             {!borderItem?.imageBorder && (
               <div style={{
-                position: 'absolute', inset: 0, borderRadius: '50%',
+                position: 'absolute',
+                top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 88, height: 88,
+                borderRadius: '50%',
                 background: borderGrad, padding: 3,
                 boxShadow: hasBorder
                   ? `0 0 20px ${borderGlow}, 0 0 40px ${borderGlow}`
@@ -300,8 +451,8 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 position: 'absolute',
                 top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: borderItem?.imageBorder ? 76 : 86,
-                height: borderItem?.imageBorder ? 76 : 86,
+                width: borderItem?.imageBorder ? 72 : 80,
+                height: borderItem?.imageBorder ? 72 : 80,
                 borderRadius: '50%', objectFit: 'cover',
               }} />
             ) : (
@@ -309,8 +460,8 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
                 position: 'absolute',
                 top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: borderItem?.imageBorder ? 76 : 86,
-                height: borderItem?.imageBorder ? 76 : 86,
+                width: borderItem?.imageBorder ? 72 : 80,
+                height: borderItem?.imageBorder ? 72 : 80,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #1a1a2e, #0f3460)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -350,6 +501,13 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             ) : null}
             {borderItem?.lottieBorder && <ProfileLottieBorder src={borderItem.lottieBorder} glow={borderGlow} />}
           </div>
+
+          {/* Trait ring legend — small dots with labels */}
+          {scores && (
+            <div style={{ marginTop: 6 }}>
+              <TraitRingLegend scores={scores} />
+            </div>
+          )}
         </div>
       </div>
 

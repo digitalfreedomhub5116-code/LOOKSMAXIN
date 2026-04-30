@@ -336,7 +336,7 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
         position: 'relative', overflow: 'hidden',
       }}>
         {exercise.frames && exercise.frames.length > 0 ? (
-          <ExerciseAnimation frames={exercise.frames} description={exercise.description} />
+          <ExerciseAnimation frames={exercise.frames} description={exercise.description} frameTiming={(exercise as any).frameTiming} />
         ) : (
           <>
             <Dumbbell size={48} color="rgba(200,168,78,0.25)" />
@@ -467,40 +467,57 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
   );
 }
 
-/* ── Exercise Animation — frame-by-frame GIF-like player ── */
-function ExerciseAnimation({ frames, description }: { frames: string[]; description: string }) {
+/* ── Exercise Animation — frame-by-frame player with admin-managed timing ── */
+function ExerciseAnimation({ frames, description, frameTiming }: { frames: string[]; description: string; frameTiming?: { url: string; duration_ms: number }[] }) {
   const [idx, setIdx] = useState(0);
+  const [loaded, setLoaded] = useState<Set<number>>(new Set());
 
-  // Extract hold time from exercise description (e.g. "Hold 5 seconds" → 5000ms)
-  const holdMs = (() => {
+  // Use admin-managed frameTiming if available, otherwise fall back to old logic
+  const hasAdminFrames = frameTiming && frameTiming.length > 0;
+  const displayFrames = hasAdminFrames ? frameTiming!.map(f => f.url) : frames;
+
+  // Extract hold time from description as fallback
+  const fallbackMs = (() => {
     const match = description.match(/hold\s+(\d+)\s*(?:seconds?|s)/i);
-    return match ? parseInt(match[1]) * 1000 : 3000; // default 3s if not found
+    return match ? parseInt(match[1]) * 1000 : 3000;
   })();
 
   useEffect(() => {
-    if (frames.length <= 1) return;
-    // Frame 0 = start/relaxed position (show briefly 1.5s)
-    // Other frames = engaged/hold position (show for holdMs)
-    const currentMs = idx === 0 ? 1500 : holdMs;
-    const timeout = setTimeout(() => {
-      setIdx(i => (i + 1) % frames.length);
-    }, currentMs);
+    if (displayFrames.length <= 1) return;
+    let ms: number;
+    if (hasAdminFrames) {
+      // Use per-frame timing from admin panel
+      ms = frameTiming![idx % frameTiming!.length]?.duration_ms || 2000;
+    } else {
+      // Legacy: frame 0 = brief, others = hold time
+      ms = idx === 0 ? 1500 : fallbackMs;
+    }
+    const timeout = setTimeout(() => setIdx(i => (i + 1) % displayFrames.length), ms);
     return () => clearTimeout(timeout);
-  }, [idx, frames.length, holdMs]);
+  }, [idx, displayFrames.length, hasAdminFrames, fallbackMs]);
 
   // Preload all frames
   useEffect(() => {
-    frames.forEach(src => {
+    displayFrames.forEach((src, i) => {
       const img = new Image();
+      img.onload = () => setLoaded(prev => new Set(prev).add(i));
       img.src = src;
     });
-  }, [frames]);
+  }, [displayFrames]);
+
+  const currentMs = hasAdminFrames
+    ? (frameTiming![idx % (frameTiming!.length || 1)]?.duration_ms || 2000)
+    : (idx === 0 ? 1500 : fallbackMs);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', background: '#000' }}>
-      {frames.map((src, i) => (
+      {/* Skeleton placeholder while loading */}
+      {loaded.size < displayFrames.length && (
+        <div className="skeleton" style={{ position: 'absolute', width: '75%', height: '75%', borderRadius: 12 }} />
+      )}
+      {displayFrames.map((src, i) => (
         <img
-          key={src}
+          key={src + i}
           src={src}
           alt=""
           style={{
@@ -508,7 +525,7 @@ function ExerciseAnimation({ frames, description }: { frames: string[]; descript
             maxWidth: '85%',
             maxHeight: '85%',
             objectFit: 'contain',
-            opacity: i === idx ? 1 : 0,
+            opacity: i === (idx % displayFrames.length) ? 1 : 0,
             transition: 'opacity 0.4s ease-in-out',
             borderRadius: 12,
             filter: 'brightness(0.82) contrast(1.3) saturate(1.3)',
@@ -516,22 +533,20 @@ function ExerciseAnimation({ frames, description }: { frames: string[]; descript
           }}
         />
       ))}
-      {/* Frame indicator dots + hold timer label */}
-      {frames.length > 1 && (
+      {/* Frame indicator dots + timing label */}
+      {displayFrames.length > 1 && (
         <div style={{
           position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         }}>
-          {idx > 0 && (
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1 }}>
-              HOLD {holdMs / 1000}s
-            </div>
-          )}
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', letterSpacing: 1 }}>
+            {hasAdminFrames ? `${(currentMs / 1000).toFixed(1)}s` : (idx > 0 ? `HOLD ${fallbackMs / 1000}s` : '')}
+          </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            {frames.map((_, i) => (
+            {displayFrames.map((_, i) => (
               <div key={i} style={{
-                width: i === idx ? 18 : 6, height: 6, borderRadius: 3,
-                background: i === idx ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
+                width: i === (idx % displayFrames.length) ? 18 : 6, height: 6, borderRadius: 3,
+                background: i === (idx % displayFrames.length) ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
                 transition: 'all 0.3s',
               }} />
             ))}

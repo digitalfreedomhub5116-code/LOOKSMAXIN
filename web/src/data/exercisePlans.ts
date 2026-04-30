@@ -2,6 +2,11 @@
 //  Face Exercise Plans — 6 Plans × 30 Days
 // ═══════════════════════════════════════════
 
+export interface FrameTiming {
+  url: string;
+  duration_ms: number;
+}
+
 export interface ExerciseItem {
   id: string;
   name: string;
@@ -11,6 +16,7 @@ export interface ExerciseItem {
   difficulty: 1 | 2 | 3;
   description: string;
   frames?: string[];   // animation frames — image paths that play sequentially like a GIF
+  frameTiming?: FrameTiming[]; // per-frame timing from admin panel (overrides frames)
 }
 
 export interface PlanDay {

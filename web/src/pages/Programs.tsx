@@ -4,6 +4,7 @@ import { PLANS } from '../data/exercisePlans';
 import type { ExercisePlan, ExerciseItem, PlanDay } from '../data/exercisePlans';
 import * as progress from '../data/planProgress';
 import { MissionOverview, ExerciseRunner } from './MissionScreens';
+import { useWorkoutData } from '../lib/useWorkoutData';
 
 export default function Programs() {
   const [userProgress, setUserProgress] = useState(progress.getProgress());
@@ -11,7 +12,10 @@ export default function Programs() {
   const [missionDay, setMissionDay] = useState<number | null>(null); // full-screen mission overview
   const [runnerDay, setRunnerDay] = useState<number | null>(null);   // exercise runner mode
 
-  const activePlan = PLANS.find(p => p.id === userProgress.activePlanId) || null;
+  // Load exercises from Supabase (enriched with admin-managed frames)
+  const { plans: enrichedPlans, loading: workoutLoading } = useWorkoutData(userProgress.activePlanId);
+
+  const activePlan = enrichedPlans.find(p => p.id === userProgress.activePlanId) || null;
   const planProgress = activePlan ? userProgress.plans[activePlan.id] : null;
   const currentDay = planProgress?.currentDay || 1;
 
@@ -84,11 +88,20 @@ export default function Programs() {
 
       {/* Plan Carousel */}
       <PlanCarousel
-        plans={PLANS}
+        plans={enrichedPlans}
         activePlanId={userProgress.activePlanId}
         userPlans={userProgress.plans}
         onSelect={activePlan ? handleSwitchPlan : handleStartPlan}
       />
+
+      {/* Skeleton loading while fetching workout data from server */}
+      {workoutLoading && activePlan && (
+        <div style={{ marginTop: 24 }}>
+          {[1,2,3].map(i => (
+            <div key={i} className="skeleton" style={{ height: 72, borderRadius: 14, marginBottom: 8 }} />
+          ))}
+        </div>
+      )}
 
       {/* Journey Map or Empty State */}
       {activePlan && planProgress ? (
