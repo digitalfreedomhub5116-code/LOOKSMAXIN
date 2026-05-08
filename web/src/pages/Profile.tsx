@@ -93,16 +93,89 @@ function LiquidGlassBellCurve({ score, primary = '#C8A84E' }: { score: number; p
   );
 }
 
-/* ═══ Circular Trait Progress Rings ═══ */
-const TRAIT_RING_COLORS = [
-  '#C8A84E', // jawline – gold
-  '#60A5FA', // skin – blue
-  '#34D399', // eyes – emerald
-  '#F472B6', // lips – pink
-  '#A78BFA', // symmetry – violet
-  '#FB923C', // hair – orange
+/* ═══ Overall Score Circle ═══ */
+function OverallScoreCircle({ score }: { score: number }) {
+  return (
+    <div style={{
+      width: 62, height: 62, borderRadius: '50%',
+      border: '2.5px solid rgba(var(--primary-rgb, 200,168,78), 0.5)',
+      background: 'linear-gradient(135deg, rgba(var(--primary-rgb, 200,168,78), 0.10), rgba(var(--primary-rgb, 200,168,78), 0.03))',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 0 24px rgba(var(--primary-rgb, 200,168,78), 0.18), inset 0 0 14px rgba(var(--primary-rgb, 200,168,78), 0.06)',
+    }}>
+      <span style={{
+        fontSize: 24, fontWeight: 900, color: 'var(--primary, #C8A84E)',
+        fontFamily: "'Inter', sans-serif",
+        textShadow: '0 0 14px rgba(var(--primary-rgb, 200,168,78), 0.4)',
+      }}>
+        {score}
+      </span>
+    </div>
+  );
+}
+
+/* ═══ Individual Trait Score Circles ═══ */
+const TRAIT_CIRCLE_DATA = [
+  { key: 'jawline', label: 'JAWLINE' },
+  { key: 'skin', label: 'SKIN' },
+  { key: 'eyes', label: 'EYES' },
+  { key: 'symmetry', label: 'SYMMETRY' },
+  { key: 'lips', label: 'LIPS' },
+  { key: 'hair', label: 'HAIR' },
 ];
 
+function TraitScoreCircles({ scores }: { scores: FaceScores | null }) {
+  if (!scores) return null;
+
+  const traitValues = [
+    scores.jawline ?? 0,
+    scores.skin_quality ?? 0,
+    scores.eyes ?? 0,
+    scores.facial_symmetry ?? 0,
+    scores.lips ?? 0,
+    scores.hair_quality ?? 0,
+  ];
+
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', gap: 8,
+      padding: '0 4px',
+    }}>
+      {TRAIT_CIRCLE_DATA.map((trait, i) => (
+        <div key={trait.key} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: '50%',
+            border: '1.5px solid rgba(var(--primary-rgb, 200,168,78), 0.30)',
+            background: 'rgba(var(--primary-rgb, 200,168,78), 0.04)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{
+              fontSize: 13, fontWeight: 800, color: '#fff',
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              {traitValues[i]}
+            </span>
+          </div>
+          <span style={{
+            fontSize: 7, fontWeight: 700,
+            color: 'rgba(255,255,255,0.35)',
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: '0.04em',
+          }}>
+            {trait.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══ Circular Trait Progress Rings (LEGACY — kept for reference) ═══ */
+const TRAIT_RING_COLORS = [
+  '#C8A84E', '#60A5FA', '#34D399', '#F472B6', '#A78BFA', '#FB923C',
+];
 const TRAIT_RING_LABELS = ['Jaw', 'Skin', 'Eyes', 'Lips', 'Sym', 'Hair'];
 
 function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
@@ -363,7 +436,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* ═══ HERO: BANNER + AVATAR overlay — Reforge style ═══ */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ position: 'relative', marginBottom: scores ? 86 : 56 }}>
+      <div style={{ position: 'relative', marginBottom: scores ? 210 : 56 }}>
 
         {/* Banner */}
         <div style={{
@@ -424,15 +497,14 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
 
         {/* Avatar — centered, overlapping banner bottom with trait rings */}
         <div style={{
-          position: 'absolute', bottom: scores ? -64 : -44,
+          position: 'absolute', bottom: scores ? -180 : -44,
           left: '50%', transform: 'translateX(-50%)', zIndex: 5,
           overflow: 'visible',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
           <div style={{ position: 'relative', width: 150, height: 150, overflow: 'visible' }}>
 
-            {/* ═══ Circular Trait Progress Rings (outer) ═══ */}
-            <CircularTraitRings scores={scores} />
+            {/* Trait rings removed — scores shown as individual circles below */}
 
             {/* Gradient ring — only when NO image border */}
             {!borderItem?.imageBorder && (
@@ -510,10 +582,11 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             {borderItem?.lottieBorder && <ProfileLottieBorder src={borderItem.lottieBorder} glow={borderGlow} />}
           </div>
 
-          {/* Trait ring legend — small dots with labels */}
+          {/* Overall score + Individual trait score circles */}
           {scores && (
-            <div style={{ marginTop: 6 }}>
-              <TraitRingLegend scores={scores} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 8, gap: 12 }}>
+              <OverallScoreCircle score={scores.overall} />
+              <TraitScoreCircles scores={scores} />
             </div>
           )}
         </div>
