@@ -436,7 +436,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* ═══ HERO: BANNER + AVATAR overlay — Reforge style ═══ */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ position: 'relative', marginBottom: scores ? 210 : 56 }}>
+      <div style={{ position: 'relative', marginBottom: scores ? 140 : 56 }}>
 
         {/* Banner */}
         <div style={{
@@ -457,23 +457,18 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           }} />
         </div>
 
-        {/* Name + Username — bottom-left on banner */}
+        {/* Username pill — small tag on left */}
         <div style={{
-          position: 'absolute', bottom: 14, left: 16, zIndex: 6,
-          maxWidth: 'calc(50% - 80px)',
+          position: 'absolute', bottom: 60, left: 16, zIndex: 6,
         }}>
           <div style={{
-            fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.2,
-            textShadow: '0 2px 12px rgba(0,0,0,0.8)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {userInfo?.name || 'Player'}
-          </div>
-          <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            color: 'rgba(255,255,255,0.4)', marginTop: 2,
-            textShadow: '0 2px 10px rgba(0,0,0,0.9)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            padding: '4px 12px', borderRadius: 20,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)',
+            fontFamily: "'JetBrains Mono', monospace",
+            whiteSpace: 'nowrap',
           }}>
             @{userInfo?.name?.toLowerCase().replace(/\s/g, '') || 'champion'}
           </div>
@@ -497,7 +492,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
 
         {/* Avatar — centered, overlapping banner bottom with trait rings */}
         <div style={{
-          position: 'absolute', bottom: scores ? -180 : -44,
+          position: 'absolute', bottom: scores ? -100 : -44,
           left: '50%', transform: 'translateX(-50%)', zIndex: 5,
           overflow: 'visible',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -582,10 +577,9 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
             {borderItem?.lottieBorder && <ProfileLottieBorder src={borderItem.lottieBorder} glow={borderGlow} />}
           </div>
 
-          {/* Overall score + Individual trait score circles */}
+          {/* Individual trait score circles */}
           {scores && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 8, gap: 12 }}>
-              <OverallScoreCircle score={scores.overall} />
+            <div style={{ marginTop: 10 }}>
               <TraitScoreCircles scores={scores} />
             </div>
           )}
