@@ -5,7 +5,7 @@
 import { useState, useEffect, type CSSProperties } from 'react';
 import {
   ShoppingBag, Lock, Flame, Zap, ScanLine, Star, ShieldCheck,
-  Palette, Frame, Tag, Clock, Check, Crown, BrainCircuit,
+  Palette, Frame, Tag, Clock, Check, Crown,
   Infinity, ChevronRight, Sparkles, ImageIcon,
 } from 'lucide-react';
 import Lottie from 'lottie-react';
@@ -638,7 +638,7 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
             background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.12)',
             borderRadius: 8,
           }}>
-            <BrainCircuit size={14} color="#06B6D4" />
+            <img src="/gem-crystal.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
             <span style={{ fontSize: 12, fontWeight: 800, color: '#06B6D4' }}>
               {info.credits === 'unlimited' ? '∞' : info.credits.toLocaleString()} credits
             </span>

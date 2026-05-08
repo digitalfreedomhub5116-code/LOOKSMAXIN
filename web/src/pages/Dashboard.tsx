@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap, BrainCircuit, Crown, Star } from 'lucide-react';
+import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap, Crown, Star } from 'lucide-react';
 import { getEconomy } from '../lib/economy';
 import type { FaceScores } from '../lib/api';
 import { PLANS } from '../data/exercisePlans';
@@ -89,7 +89,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
                 background: 'rgba(6,182,212,0.08)',
                 border: '1px solid rgba(6,182,212,0.2)',
               }}>
-                <BrainCircuit size={13} color="#06B6D4" />
+                <img src="/gem-crystal.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} />
                 <span style={{ fontSize: 11, fontWeight: 800, color: '#06B6D4' }}>{eco.aiCredits}</span>
               </div>
             </div>
