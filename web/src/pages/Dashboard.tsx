@@ -89,7 +89,7 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
                 background: 'rgba(6,182,212,0.08)',
                 border: '1px solid rgba(6,182,212,0.2)',
               }}>
-                <img src="/gem-crystal.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} />
+                <img src="/gem-crystal.webp" alt="" style={{ width: 26, height: 26, objectFit: 'contain', marginRight: -2 }} />
                 <span style={{ fontSize: 11, fontWeight: 800, color: '#06B6D4' }}>{eco.aiCredits}</span>
               </div>
             </div>

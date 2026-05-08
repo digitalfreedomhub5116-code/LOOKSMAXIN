@@ -497,7 +497,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           overflow: 'visible',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div style={{ position: 'relative', width: 150, height: 150, overflow: 'visible' }}>
+          <div style={{ position: 'relative', width: 110, height: 110, overflow: 'visible' }}>
 
             {/* Trait rings removed — scores shown as individual circles below */}
 

@@ -638,7 +638,7 @@ function PlanCard({ tier, billing, currentPlan, discount = 0 }: { tier: PlanTier
             background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.12)',
             borderRadius: 8,
           }}>
-            <img src="/gem-crystal.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
+            <img src="/gem-crystal.webp" alt="" style={{ width: 28, height: 28, objectFit: 'contain', marginRight: -2 }} />
             <span style={{ fontSize: 12, fontWeight: 800, color: '#06B6D4' }}>
               {info.credits === 'unlimited' ? '∞' : info.credits.toLocaleString()} credits
             </span>
