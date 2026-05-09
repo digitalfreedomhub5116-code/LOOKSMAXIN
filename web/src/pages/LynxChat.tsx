@@ -207,6 +207,7 @@ export default function LynxChat({ scores }: LynxChatProps) {
   };
 
   const clearChat = () => {
+    if (!window.confirm('Clear entire chat history?')) return;
     setMessages([]);
     setTypingText('');
     setIsTyping(false);

@@ -27,7 +27,7 @@ export default function TopNavbar({ onPlanClick }: { onPlanClick?: () => void })
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '14px 20px 10px',
+      padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 10px',
       background: 'linear-gradient(180deg, rgba(10,10,15,0.95) 0%, transparent 100%)',
       position: 'sticky', top: 0, zIndex: 100,
     }}>

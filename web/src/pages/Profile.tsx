@@ -172,145 +172,7 @@ function TraitScoreCircles({ scores }: { scores: FaceScores | null }) {
   );
 }
 
-/* ═══ Circular Trait Progress Rings (LEGACY — kept for reference) ═══ */
-const TRAIT_RING_COLORS = [
-  '#C8A84E', '#60A5FA', '#34D399', '#F472B6', '#A78BFA', '#FB923C',
-];
-const TRAIT_RING_LABELS = ['Jaw', 'Skin', 'Eyes', 'Lips', 'Sym', 'Hair'];
 
-function CircularTraitRings({ scores }: { scores: FaceScores | null }) {
-  if (!scores) return null;
-
-  const traitValues = [
-    scores.jawline ?? 0,
-    scores.skin_quality ?? 0,
-    scores.eyes ?? 0,
-    scores.lips ?? 0,
-    scores.facial_symmetry ?? 0,
-    scores.hair_quality ?? 0,
-  ];
-
-  const svgSize = 180;
-  const center = svgSize / 2;
-  const ringWidth = 5;
-  const ringGap = 2;
-  const outerRadius = 84;
-
-  return (
-    <svg
-      width={svgSize}
-      height={svgSize}
-      viewBox={`0 0 ${svgSize} ${svgSize}`}
-      style={{
-        position: 'absolute',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none',
-        zIndex: 2,
-      }}
-    >
-      <defs>
-        {TRAIT_RING_COLORS.map((color, i) => (
-          <linearGradient key={`tg-${i}`} id={`trait-grad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity="1" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.6" />
-          </linearGradient>
-        ))}
-        <filter id="ringGlow">
-          <feGaussianBlur stdDeviation="2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      {traitValues.map((val, i) => {
-        const r = outerRadius - i * (ringWidth + ringGap);
-        const circumference = 2 * Math.PI * r;
-        const arcLen = (val / 100) * circumference;
-        const gapLen = circumference - arcLen;
-        const startAngle = -90 + i * 30;
-
-        return (
-          <g key={i}>
-            {/* Background track */}
-            <circle
-              cx={center} cy={center} r={r}
-              fill="none"
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth={ringWidth}
-            />
-            {/* Filled arc */}
-            <circle
-              cx={center} cy={center} r={r}
-              fill="none"
-              stroke={`url(#trait-grad-${i})`}
-              strokeWidth={ringWidth}
-              strokeLinecap="round"
-              strokeDasharray={`${arcLen} ${gapLen}`}
-              transform={`rotate(${startAngle} ${center} ${center})`}
-              filter="url(#ringGlow)"
-              style={{
-                transition: 'stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              }}
-            />
-            {/* Score dot at end of arc */}
-            {val > 5 && (() => {
-              const endAngle = startAngle + (val / 100) * 360;
-              const rad = (endAngle * Math.PI) / 180;
-              const dotX = center + r * Math.cos(rad);
-              const dotY = center + r * Math.sin(rad);
-              return (
-                <circle cx={dotX} cy={dotY} r={3} fill={TRAIT_RING_COLORS[i]}
-                  style={{ filter: `drop-shadow(0 0 5px ${TRAIT_RING_COLORS[i]})` }} />
-              );
-            })()}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-/* ═══ Trait ring legend — small colored dots below avatar ═══ */
-function TraitRingLegend({ scores }: { scores: FaceScores | null }) {
-  if (!scores) return null;
-
-  const traitValues = [
-    scores.jawline ?? 0,
-    scores.skin_quality ?? 0,
-    scores.eyes ?? 0,
-    scores.lips ?? 0,
-    scores.facial_symmetry ?? 0,
-    scores.hair_quality ?? 0,
-  ];
-
-  return (
-    <div style={{
-      display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap',
-      marginTop: 4, padding: '0 8px',
-    }}>
-      {TRAIT_RING_LABELS.map((label, i) => (
-        <div key={i} style={{
-          display: 'flex', alignItems: 'center', gap: 3,
-        }}>
-          <div style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: TRAIT_RING_COLORS[i],
-            boxShadow: `0 0 4px ${TRAIT_RING_COLORS[i]}66`,
-          }} />
-          <span style={{
-            fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.35)',
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: '0.05em',
-          }}>
-            {label} {traitValues[i]}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 interface Props {
   onLogout: () => void;
@@ -391,6 +253,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
   }, [sessionUser]);
 
   const handleLogout = async () => {
+    if (!window.confirm('Are you sure you want to sign out?')) return;
     setLoggingOut(true);
     try { await onLogout(); } catch { localStorage.clear(); window.location.reload(); }
   };
@@ -712,10 +575,10 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
         {/* ── LEGAL — Privacy + Terms ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
           {[
-            { icon: <Shield size={18} />, title: 'Privacy Policy', sub: 'How we handle your data' },
-            { icon: <FileText size={18} />, title: 'Terms & Conditions', sub: 'Usage terms and agreement' },
+            { icon: <Shield size={18} />, title: 'Privacy Policy', sub: 'How we handle your data', url: 'https://www.lynxai.in/privacy' },
+            { icon: <FileText size={18} />, title: 'Terms & Conditions', sub: 'Usage terms and agreement', url: 'https://www.lynxai.in/terms' },
           ].map((item, i) => (
-            <div key={i} style={{ ...glassPanel, cursor: 'pointer' }}>
+            <div key={i} style={{ ...glassPanel, cursor: 'pointer' }} onClick={() => window.open(item.url, '_blank')}>
               <CardShine />
               <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ color: 'var(--primary, #C8A84E)' }}>{item.icon}</div>
