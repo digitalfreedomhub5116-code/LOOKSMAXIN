@@ -19,8 +19,8 @@
 import { supabase } from './api';
 
 const LS_DEVICE_TOKEN = 'lynx_device_token';
-const POLL_INTERVAL_MS = 30_000; // Check every 30 seconds (was 10s — too aggressive)
-const INITIAL_GRACE_MS = 15_000; // Wait 15s after login before starting checks
+const POLL_INTERVAL_MS = 45_000; // Check every 45 seconds (increased from 30s)
+const INITIAL_GRACE_MS = 30_000; // Wait 30s after login before starting checks (increased from 15s)
 
 let guardInterval: ReturnType<typeof setInterval> | null = null;
 let graceTimer: ReturnType<typeof setTimeout> | null = null;
