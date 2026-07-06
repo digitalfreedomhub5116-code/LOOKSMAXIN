@@ -6,7 +6,7 @@ import * as progress from '../data/planProgress';
 import { MissionOverview, ExerciseRunner } from './MissionScreens';
 import { useWorkoutData } from '../lib/useWorkoutData';
 
-export default function Programs() {
+export default function Programs({ onExerciseMode }: { onExerciseMode?: (active: boolean) => void }) {
   const [userProgress, setUserProgress] = useState(progress.getProgress());
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [missionDay, setMissionDay] = useState<number | null>(null); // full-screen mission overview
@@ -47,6 +47,11 @@ export default function Programs() {
     setMissionDay(null);
     setRunnerDay(null);
   };
+
+  // Signal exercise mode to parent (hide tab bar + FAB)
+  useEffect(() => {
+    onExerciseMode?.(runnerDay !== null);
+  }, [runnerDay]);
 
   // Full-screen Exercise Runner
   if (runnerDay !== null && activePlan) {

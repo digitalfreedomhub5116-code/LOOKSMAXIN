@@ -160,6 +160,16 @@ html, body, #root {
   50% { transform: translateY(-6px); }
 }
 
+/* FAB shrink-out when entering exercise mode */
+.lynx-fab-shrink {
+  animation: fabShrinkOut 0.35s cubic-bezier(0.55, 0, 1, 0.45) forwards !important;
+  pointer-events: none;
+}
+@keyframes fabShrinkOut {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
 /* ─── Chat Overlay Panel ─── */
 .chat-overlay {
   position: fixed;

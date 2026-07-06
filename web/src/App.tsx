@@ -40,6 +40,7 @@ export default function App() {
   const [showReports, setShowReports] = useState(false);
   const accessTokenRef = useRef<string | null>(null);
   const [openPlans, setOpenPlans] = useState(false);
+  const [exerciseActive, setExerciseActive] = useState(false);
 
   const handlePlanClick = () => {
     setTab('vault');
@@ -344,7 +345,7 @@ export default function App() {
   const renderPage = () => {
     switch (tab) {
       case 'dashboard': return <Dashboard onScan={() => setScanning(true)} scores={latestScores} faceImage={faceImage} onGoPrograms={() => setTab('programs')} onViewAllRemedies={() => setShowRemedies(true)} onViewAllReports={() => setShowReports(true)} />;
-      case 'programs': return <Programs />;
+      case 'programs': return <Programs onExerciseMode={setExerciseActive} />;
       case 'ranks': return <Ranks userId={sessionUser?.id} />;
       case 'vault': {
         const show = openPlans;
@@ -358,7 +359,7 @@ export default function App() {
 
   return (
     <div className="app">
-      {!scanning && !chatVisible && !showRemedies && !showReports && <TopNavbar onPlanClick={handlePlanClick} />}
+      {!scanning && !chatVisible && !showRemedies && !showReports && !exerciseActive && <TopNavbar onPlanClick={handlePlanClick} />}
       {renderPage()}
 
       {/* ═══ Chat overlay — animated ═══ */}
@@ -369,14 +370,15 @@ export default function App() {
       )}
 
       {/* Tab bar */}
-      {!scanning && <TabBar active={chatVisible ? null : tab} onChange={(t) => { if (chatVisible) closeChat(); setTab(t); }} />}
+      {!scanning && !exerciseActive && <TabBar active={chatVisible ? null : tab} onChange={(t) => { if (chatVisible) closeChat(); setTab(t); }} />}
 
       {/* Floating Lynx AI FAB */}
       {!scanning && (
         <button
-          className={`lynx-fab ${chatVisible ? 'lynx-fab-active' : ''}`}
+          className={`lynx-fab ${chatVisible ? 'lynx-fab-active' : ''} ${exerciseActive ? 'lynx-fab-shrink' : ''}`}
           onClick={() => chatVisible ? closeChat() : openChat()}
           aria-label={chatVisible ? 'Close Lynx AI Chat' : 'Open Lynx AI Chat'}
+          style={exerciseActive ? { pointerEvents: 'none' } : undefined}
         >
           {chatVisible ? (
             <span style={{ fontSize: 18, color: '#fff', lineHeight: 1 }}>✕</span>

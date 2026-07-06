@@ -120,6 +120,7 @@ export function ExerciseRunner({ dayData, completedExIds, onCompleteExercise, on
   const remaining = dayData.exercises.filter(ex => !completedExIds.includes(ex.id));
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showRest, setShowRest] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
   const exercise = remaining[currentIdx];
 
   const handleExerciseDone = () => {
@@ -166,7 +167,53 @@ export function ExerciseRunner({ dayData, completedExIds, onCompleteExercise, on
   }
 
   return (
-    <ExerciseView
+    <>
+      {/* Exit confirmation modal */}
+      {showExitModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.2s ease-out',
+        }}>
+          <div style={{
+            width: '85%', maxWidth: 320, borderRadius: 20, overflow: 'hidden',
+            background: '#1a1a1f', border: '1px solid rgba(200,168,78,0.2)',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.6)',
+            animation: 'fadeIn 0.25s ease-out',
+          }}>
+            <div style={{ padding: '28px 24px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 8 }}>Leave Program?</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Your current progress for this session will be lost. Are you sure?
+              </div>
+            </div>
+            <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <button
+                onClick={() => setShowExitModal(false)}
+                style={{
+                  flex: 1, padding: '16px 0', border: 'none', background: 'none',
+                  color: 'var(--primary)', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                  borderRight: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                No
+              </button>
+              <button
+                onClick={onBack}
+                style={{
+                  flex: 1, padding: '16px 0', border: 'none', background: 'none',
+                  color: '#EF4444', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ExerciseView
       key={exercise.id}
       exercise={exercise}
       exerciseNum={dayData.exercises.indexOf(exercise) + 1}
@@ -176,8 +223,9 @@ export function ExerciseRunner({ dayData, completedExIds, onCompleteExercise, on
         onCompleteExercise(exercise.id);
         if (currentIdx < remaining.length - 1) { setShowRest(true); }
       }}
-      onBack={onBack}
+      onBack={() => setShowExitModal(true)}
     />
+    </>
   );
 }
 
