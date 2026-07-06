@@ -431,3 +431,87 @@ export function claimDailyLogin(): EconomyState | null {
   localStorage.setItem(key, today);
   return earnCoins(EARN_AMOUNTS.DAILY_LOGIN, 'daily_login');
 }
+
+/* ═══ Scan Streak System (separate from login streak) ═══ */
+const SCAN_STREAK_KEY = 'lynx_scan_streak';
+
+export interface ScanStreakData {
+  current: number;
+  longest: number;
+  lastScanDate: string; // ISO date string (YYYY-MM-DD)
+}
+
+function getDefaultScanStreak(): ScanStreakData {
+  return { current: 0, longest: 0, lastScanDate: '' };
+}
+
+function loadScanStreak(): ScanStreakData {
+  try {
+    const raw = localStorage.getItem(SCAN_STREAK_KEY);
+    if (!raw) return getDefaultScanStreak();
+    return { ...getDefaultScanStreak(), ...JSON.parse(raw) };
+  } catch {
+    return getDefaultScanStreak();
+  }
+}
+
+function saveScanStreak(data: ScanStreakData): ScanStreakData {
+  localStorage.setItem(SCAN_STREAK_KEY, JSON.stringify(data));
+  return data;
+}
+
+/**
+ * Call this after a successful face scan.
+ * - If already scanned today, does nothing (max +1 per day).
+ * - If scanned yesterday, increments streak.
+ * - If more than 24hrs gap (no scan yesterday), resets to 1.
+ */
+export function recordScanStreak(): ScanStreakData {
+  const data = loadScanStreak();
+  const today = todayStr();
+
+  // Already scanned today — no change
+  if (data.lastScanDate === today) return data;
+
+  const yesterday = yesterdayStr();
+
+  if (data.lastScanDate === yesterday) {
+    // Consecutive day — increment
+    data.current += 1;
+  } else {
+    // Missed a day or first scan ever — reset to 1
+    data.current = 1;
+  }
+
+  data.lastScanDate = today;
+  if (data.current > data.longest) data.longest = data.current;
+
+  return saveScanStreak(data);
+}
+
+/**
+ * Get current scan streak. Resets to 0 if no scan in last 24hrs (today or yesterday).
+ */
+export function getScanStreak(): ScanStreakData {
+  const data = loadScanStreak();
+  const today = todayStr();
+  const yesterday = yesterdayStr();
+
+  // If last scan was not today and not yesterday, streak is broken
+  if (data.lastScanDate && data.lastScanDate !== today && data.lastScanDate !== yesterday) {
+    if (data.current > 0) {
+      data.current = 0;
+      saveScanStreak(data);
+    }
+  }
+
+  return data;
+}
+
+/**
+ * Check if user already scanned today.
+ */
+export function hasScannedToday(): boolean {
+  const data = loadScanStreak();
+  return data.lastScanDate === todayStr();
+}

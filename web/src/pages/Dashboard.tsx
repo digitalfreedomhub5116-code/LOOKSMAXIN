@@ -276,6 +276,16 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
       {/* ═══ STREAK ═══ */}
       <div style={{ marginBottom: 36 }}>
         <StreakWidget />
+        {/* Full-width Scan Button */}
+        <button onClick={onScan} style={{
+          width: '100%', padding: '16px 0', borderRadius: 14, border: 'none',
+          background: 'var(--primary)', color: '#000', fontSize: 15, fontWeight: 800,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          boxShadow: '0 0 20px rgba(200,168,78,0.25)',
+          marginTop: 12,
+        }}>
+          <ScanLine size={18} /> Scan Your Face
+        </button>
       </div>
 
       {/* ═══ EXERCISES SECTION ═══ */}

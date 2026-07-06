@@ -1,11 +1,11 @@
 /**
- * StreakWidget — Dashboard section showing current streak, weekly dots, and milestone progress.
- * Layout matches the reference: big fire Lottie on right, days count + milestone on left.
+ * StreakWidget — Dashboard section showing scan streak, weekly dots, and milestone progress.
+ * Streak is based on daily face scans (max +1 per day, resets if no scan for 24hrs).
  */
 import { useState, useEffect } from 'react';
 import Lottie from 'lottie-react';
-import { Flame, ShieldCheck } from 'lucide-react';
-import { getStreak, type StreakData } from '../lib/economy';
+import { Flame } from 'lucide-react';
+import { getScanStreak, hasScannedToday, type ScanStreakData } from '../lib/economy';
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const FIRE_LOTTIE_URL = '/flame.json';
@@ -13,7 +13,7 @@ const MILESTONES = [3, 7, 14, 30, 60, 100];
 
 /* ═══ Header Streak Badge (for top-right of app) ═══ */
 export function StreakBadge() {
-  const streak = getStreak();
+  const streak = getScanStreak();
   const [fireData, setFireData] = useState<any>(null);
 
   useEffect(() => {
@@ -61,7 +61,8 @@ export function StreakBadge() {
 
 /* ═══ Full Streak Widget (Dashboard section) ═══ */
 export default function StreakWidget() {
-  const streak = getStreak();
+  const streak = getScanStreak();
+  const scannedToday = hasScannedToday();
   const [fireData, setFireData] = useState<any>(null);
 
   useEffect(() => {
@@ -89,22 +90,21 @@ export default function StreakWidget() {
     <div style={{ marginBottom: 36 }}>
       <div className="glass-card" style={{ padding: '20px 20px 16px', position: 'relative', overflow: 'hidden' }}>
 
-        {/* Top row: ACTIVE STREAK label + shields */}
+        {/* Top row: SCAN STREAK label */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{
             fontSize: 11, fontWeight: 800, color: '#F59E0B',
             letterSpacing: 1.5, textTransform: 'uppercase',
           }}>
-            Active Streak
+            Scan Streak
           </div>
-          {streak.shieldsRemaining > 0 && (
+          {scannedToday && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 4,
               padding: '3px 8px', borderRadius: 8,
-              background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)',
+              background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
             }}>
-              <ShieldCheck size={11} color="#3B82F6" />
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#3B82F6' }}>{streak.shieldsRemaining}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#22C55E' }}>SCANNED TODAY</span>
             </div>
           )}
         </div>
@@ -184,11 +184,13 @@ export default function StreakWidget() {
           fontSize: 12, color: 'rgba(245,158,11,0.85)',
           textAlign: 'center', fontWeight: 600,
         }}>
-          {streak.current >= 30 ? 'Legendary! 30+ day streak!'
-            : streak.current >= 14 ? 'On fire! Keep the momentum!'
-            : streak.current >= 7 ? 'One week strong!'
-            : streak.current >= 3 ? 'Building consistency!'
-            : 'Come back tomorrow to keep your streak!'}
+          {scannedToday
+            ? (streak.current >= 30 ? 'Legendary! 30+ day scan streak!'
+              : streak.current >= 14 ? 'On fire! Keep the momentum!'
+              : streak.current >= 7 ? 'One week strong!'
+              : streak.current >= 3 ? 'Building consistency!'
+              : 'Great job! Come back tomorrow to keep it going!')
+            : 'Scan your face today to keep your streak!'}
         </div>
       </div>
     </div>
