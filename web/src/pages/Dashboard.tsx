@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { ScanLine, ChevronRight, Sparkles, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap, Crown, Star } from 'lucide-react';
+import { ScanLine, ChevronRight, RefreshCw, ChevronDown, ChevronUp, Dumbbell, Play, Zap, Crown, Star } from 'lucide-react';
 import { getEconomy } from '../lib/economy';
 import type { FaceScores } from '../lib/api';
 import { PLANS } from '../data/exercisePlans';
 import * as progress from '../data/planProgress';
 import SkinRemediesSection from './SkinRemedies';
 import RecentReports from './ReportsGrid';
-import AISuggestions from './AISuggestions';
 import StreakWidget, { StreakBadge } from '../components/StreakWidget';
 import { getImageSrc } from '../lib/imageUtils';
 
@@ -270,16 +269,17 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
       )}
 
       {/* ═══ RECENT REPORTS ═══ */}
-      <RecentReports key={`reports-${scanVersion.current}`} onViewAll={onViewAllReports || (() => {})} />
+      <div style={{ marginBottom: 36 }}>
+        <RecentReports key={`reports-${scanVersion.current}`} onViewAll={onViewAllReports || (() => {})} />
+      </div>
 
       {/* ═══ STREAK ═══ */}
-      <StreakWidget />
+      <div style={{ marginBottom: 36 }}>
+        <StreakWidget />
+      </div>
 
       {/* ═══ EXERCISES SECTION ═══ */}
       <ActivePlanCard onGoPrograms={onGoPrograms} />
-
-      {/* ═══ AI SUGGESTIONS ═══ */}
-      {scores && <AISuggestions scores={scores} onGoPrograms={onGoPrograms} />}
 
       {/* ═══ SKIN RITUALS ═══ */}
       <SkinRemediesSection limit={2} onViewAll={onViewAllRemedies} />
