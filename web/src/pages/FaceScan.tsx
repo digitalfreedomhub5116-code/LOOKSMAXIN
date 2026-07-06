@@ -247,11 +247,11 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
       setStage('results');
       if (onResults) onResults(result, frontImage);
     } catch (e: any) {
-      // Refund credits on any failure
-      addAICredits(scanCost);
+      // Refund credits only on network/API failure, NOT on "no face detected"
       if (e.message?.includes('No face detected')) {
         setStage('no_face');
       } else {
+        addAICredits(scanCost);
         setError(e.message || 'Scan failed. Credits restored. Check connection and retry.');
         setStage('error');
       }
