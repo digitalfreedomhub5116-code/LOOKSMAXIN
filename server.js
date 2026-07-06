@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
 
 // Load .env if present (local dev only; Railway uses env vars directly)
 try { require('dotenv').config(); } catch (e) { /* dotenv optional */ }
@@ -11,6 +13,27 @@ const PORT = parseInt(process.env.PORT, 10) || 3000;
 // ─── Middleware ───
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
+
+// ─── Admin authentication secrets ───
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'LYNXAIPASSOWORDSECURED@34';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'secure-lynx-admin-token-2026';
+
+app.post('/api/admin/login', function (req, res) {
+  var body = req.body || {};
+  if (body.username === ADMIN_USERNAME && body.password === ADMIN_PASSWORD) {
+    return res.json({ success: true, token: ADMIN_TOKEN });
+  }
+  res.status(401).json({ error: 'Invalid credentials' });
+});
+
+app.post('/api/admin/verify', function (req, res) {
+  var body = req.body || {};
+  if (body.token === ADMIN_TOKEN) {
+    return res.json({ success: true });
+  }
+  res.status(401).json({ error: 'Invalid token' });
+});
 
 // ─── Server-side secrets ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
@@ -62,6 +85,307 @@ Rules:
 //  API ROUTES
 // ════════════════════════════════════
 
+// ─── JWT Authentication Middleware ───
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mxcvwkdkjsailyoestlv.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_Xwc0XCQFr1AIpTcgv9X0tw_TphzEYaf';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: missing authorization header' });
+  }
+  const token = authHeader.split(' ')[1];
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      return res.status(401).json({ error: 'Unauthorized: invalid token' });
+    }
+    req.user = user;
+    req.userToken = token;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Unauthorized: auth error' });
+  }
+}
+
+function getUserSupabase(token) {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
+  });
+}
+
+// ─── Economy Signature Helpers ───
+const ECONOMY_SIGNING_KEY = process.env.ECONOMY_SIGNING_KEY || 'lynx-secure-signing-key-2026';
+
+function signEconomy(economy) {
+  const dataToSign = {
+    coins: Number(economy.coins) || 0,
+    totalCoinsEarned: Number(economy.totalCoinsEarned) || 0,
+    aiCredits: Number(economy.aiCredits) || 0,
+    plan: economy.plan || 'free',
+    streak: economy.streak || { current: 0, longest: 0, lastActiveDate: '', shieldsRemaining: 0, milestonesClaimed: [] },
+    owned: Array.isArray(economy.owned) ? economy.owned : [],
+    equipped: economy.equipped || { border: null, theme: null, banner: null, title: null },
+    purchaseHistory: Array.isArray(economy.purchaseHistory) ? economy.purchaseHistory : [],
+    freeCreditsGranted: !!economy.freeCreditsGranted
+  };
+
+  const serialized = JSON.stringify(dataToSign);
+  const signature = crypto.createHmac('sha256', ECONOMY_SIGNING_KEY).update(serialized).digest('hex');
+  return { ...dataToSign, signature };
+}
+
+function verifyEconomy(economy) {
+  if (!economy || !economy.signature) return false;
+  const { signature, ...rest } = economy;
+  
+  // Format rest exactly like dataToSign to match serialized hash
+  const formattedRest = {
+    coins: Number(rest.coins) || 0,
+    totalCoinsEarned: Number(rest.totalCoinsEarned) || 0,
+    aiCredits: Number(rest.aiCredits) || 0,
+    plan: rest.plan || 'free',
+    streak: rest.streak || { current: 0, longest: 0, lastActiveDate: '', shieldsRemaining: 0, milestonesClaimed: [] },
+    owned: Array.isArray(rest.owned) ? rest.owned : [],
+    equipped: rest.equipped || { border: null, theme: null, banner: null, title: null },
+    purchaseHistory: Array.isArray(rest.purchaseHistory) ? rest.purchaseHistory : [],
+    freeCreditsGranted: !!rest.freeCreditsGranted
+  };
+
+  const expectedSig = crypto.createHmac('sha256', ECONOMY_SIGNING_KEY).update(JSON.stringify(formattedRest)).digest('hex');
+  return signature === expectedSig;
+}
+
+async function getCloudEconomy(userId, token) {
+  const client = getUserSupabase(token);
+  const { data, error } = await client
+    .from('lynx_user_data')
+    .select('economy')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error || !data || !data.economy || Object.keys(data.economy).length === 0) {
+    return null;
+  }
+  return data.economy;
+}
+
+async function saveCloudEconomy(userId, token, economy) {
+  const client = getUserSupabase(token);
+  const { error } = await client
+    .from('lynx_user_data')
+    .upsert({
+      user_id: userId,
+      economy: economy,
+      updated_at: new Date().toISOString()
+    });
+  if (error) {
+    console.error('Failed to save economy to cloud:', error.message);
+  }
+}
+
+// ─── Economy Endpoints ───
+app.post('/api/economy/sync', authMiddleware, async function (req, res) {
+  try {
+    const { economyState } = req.body || {};
+    const userId = req.user.id;
+    const token = req.userToken;
+
+    let localValid = verifyEconomy(economyState);
+    let dbEconomy = await getCloudEconomy(userId, token);
+
+    if (dbEconomy && verifyEconomy(dbEconomy)) {
+      if (localValid) {
+        const localEarned = economyState.totalCoinsEarned || 0;
+        const dbEarned = dbEconomy.totalCoinsEarned || 0;
+        if (localEarned >= dbEarned) {
+          await saveCloudEconomy(userId, token, economyState);
+          return res.json(economyState);
+        } else {
+          return res.json(dbEconomy);
+        }
+      } else {
+        console.warn(`[Economy] Tamper detected for user ${userId}. Restoring from cloud.`);
+        return res.json(dbEconomy);
+      }
+    } else {
+      if (localValid) {
+        await saveCloudEconomy(userId, token, economyState);
+        return res.json(economyState);
+      } else {
+        const defaultEco = signEconomy({
+          coins: 0,
+          totalCoinsEarned: 0,
+          aiCredits: 200,
+          plan: 'free',
+          streak: { current: 0, longest: 0, lastActiveDate: '', shieldsRemaining: 0, milestonesClaimed: [] },
+          owned: [],
+          equipped: { border: null, theme: null, banner: null, title: null },
+          purchaseHistory: [],
+          freeCreditsGranted: false
+        });
+        await saveCloudEconomy(userId, token, defaultEco);
+        return res.json(defaultEco);
+      }
+    }
+  } catch (err) {
+    console.error('Economy sync error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/economy/earn', authMiddleware, async function (req, res) {
+  try {
+    const { economyState, amount } = req.body || {};
+    const userId = req.user.id;
+    const token = req.userToken;
+
+    let currentEco = verifyEconomy(economyState) ? economyState : await getCloudEconomy(userId, token);
+    if (!currentEco || !verifyEconomy(currentEco)) {
+      currentEco = signEconomy({
+        coins: 0,
+        totalCoinsEarned: 0,
+        aiCredits: 200,
+        plan: 'free',
+        streak: { current: 0, longest: 0, lastActiveDate: '', shieldsRemaining: 0, milestonesClaimed: [] },
+        owned: [],
+        equipped: { border: null, theme: null, banner: null, title: null },
+        purchaseHistory: [],
+        freeCreditsGranted: false
+      });
+    }
+
+    const earnAmount = Number(amount) || 0;
+    if (earnAmount <= 0 || earnAmount > 2000) {
+      return res.status(400).json({ error: 'Invalid earn amount' });
+    }
+
+    const { signature, ...rest } = currentEco;
+    rest.coins = (rest.coins || 0) + earnAmount;
+    rest.totalCoinsEarned = (rest.totalCoinsEarned || 0) + earnAmount;
+
+    const newEco = signEconomy(rest);
+    await saveCloudEconomy(userId, token, newEco);
+    res.json(newEco);
+  } catch (err) {
+    console.error('Economy earn error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/economy/purchase', authMiddleware, async function (req, res) {
+  try {
+    const { economyState, itemId, price } = req.body || {};
+    const userId = req.user.id;
+    const token = req.userToken;
+
+    let currentEco = verifyEconomy(economyState) ? economyState : await getCloudEconomy(userId, token);
+    if (!currentEco || !verifyEconomy(currentEco)) {
+      return res.status(400).json({ error: 'Invalid economy state. Tampering detected.' });
+    }
+
+    const itemPrice = Number(price) || 0;
+    if (currentEco.coins < itemPrice) {
+      return res.status(400).json({ error: 'Insufficient coins' });
+    }
+
+    if (currentEco.owned.includes(itemId)) {
+      return res.json(currentEco);
+    }
+
+    const { signature, ...rest } = currentEco;
+    rest.coins -= itemPrice;
+    rest.owned.push(itemId);
+    rest.purchaseHistory.push({ itemId, price: itemPrice, timestamp: new Date().toISOString() });
+
+    const newEco = signEconomy(rest);
+    await saveCloudEconomy(userId, token, newEco);
+    res.json(newEco);
+  } catch (err) {
+    console.error('Economy purchase error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+const STREAK_MILESTONES = [
+  { days: 3, reward: 15 },
+  { days: 7, reward: 50 },
+  { days: 14, reward: 100 },
+  { days: 30, reward: 250 },
+  { days: 60, reward: 500 },
+  { days: 100, reward: 1000 },
+];
+
+app.post('/api/economy/update-state', authMiddleware, async function (req, res) {
+  try {
+    const { economyState, streak, equipped, plan } = req.body || {};
+    const userId = req.user.id;
+    const token = req.userToken;
+
+    let currentEco = verifyEconomy(economyState) ? economyState : await getCloudEconomy(userId, token);
+    if (!currentEco || !verifyEconomy(currentEco)) {
+      return res.status(400).json({ error: 'Invalid economy state. Tampering detected.' });
+    }
+
+    const { signature, ...rest } = currentEco;
+    
+    // 1. Equip updates (only allow if item is owned)
+    if (equipped) {
+      const slots = ['border', 'theme', 'banner', 'title'];
+      slots.forEach(function(slot) {
+        if (equipped[slot] !== undefined) {
+          const itemId = equipped[slot];
+          if (itemId === null || rest.owned.includes(itemId) || itemId === 'theme-default' || itemId === 'banner-default') {
+            rest.equipped[slot] = itemId;
+          }
+        }
+      });
+    }
+
+    // 2. Plan updates
+    if (plan && ['free', 'basic', 'pro', 'ultra'].includes(plan)) {
+      rest.plan = plan;
+    }
+
+    // 3. Streak updates & milestone rewards
+    if (streak) {
+      const prevMilestones = rest.streak.milestonesClaimed || [];
+      const newMilestones = streak.milestonesClaimed || [];
+      
+      // Find newly claimed milestones
+      const added = newMilestones.filter(function(m) { return !prevMilestones.includes(m); });
+      let bonusCoins = 0;
+      added.forEach(function(days) {
+        const milestone = STREAK_MILESTONES.find(function(sm) { return sm.days === days; });
+        if (milestone) {
+          bonusCoins += milestone.reward;
+        }
+      });
+
+      rest.streak = {
+        current: Number(streak.current) || 0,
+        longest: Number(streak.longest) || 0,
+        lastActiveDate: streak.lastActiveDate || '',
+        shieldsRemaining: Number(streak.shieldsRemaining) || 0,
+        milestonesClaimed: newMilestones
+      };
+
+      if (bonusCoins > 0) {
+        rest.coins += bonusCoins;
+        rest.totalCoinsEarned += bonusCoins;
+      }
+    }
+
+    const newEco = signEconomy(rest);
+    await saveCloudEconomy(userId, token, newEco);
+    res.json(newEco);
+  } catch (err) {
+    console.error('Economy update-state error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Health check
 app.get('/api/health', function (req, res) {
   res.json({
@@ -73,15 +397,47 @@ app.get('/api/health', function (req, res) {
   });
 });
 
+const PLAN_CONFIG = {
+  free:  { scanCost: 80, chatCost: 10, coinMultiplier: 1 },
+  basic: { scanCost: 70, chatCost: 8,  coinMultiplier: 1.5 },
+  pro:   { scanCost: 60, chatCost: 2,  coinMultiplier: 2 },
+  ultra: { scanCost: 40, chatCost: 1,  coinMultiplier: 3 },
+};
+
 // Face analysis endpoint — accepts front + side images
-app.post('/api/analyze-face', async function (req, res) {
+app.post('/api/analyze-face', authMiddleware, async function (req, res) {
   try {
     var body = req.body || {};
     var image = body.image;
     var sideImage = body.sideImage;
     var mimeType = body.mimeType || 'image/jpeg';
+    var clientEco = body.economyState;
+    var userId = req.user.id;
+    var token = req.userToken;
 
-    console.log('Analyze request received. Front:', image ? image.length : 0, 'Side:', sideImage ? sideImage.length : 0, 'Key set:', !!GEMINI_API_KEY);
+    // Verify and fetch valid economy state
+    let currentEco = verifyEconomy(clientEco) ? clientEco : await getCloudEconomy(userId, token);
+    if (!currentEco || !verifyEconomy(currentEco)) {
+      currentEco = signEconomy({
+        coins: 0,
+        totalCoinsEarned: 0,
+        aiCredits: 200,
+        plan: 'free',
+        streak: { current: 0, longest: 0, lastActiveDate: '', shieldsRemaining: 0, milestonesClaimed: [] },
+        owned: [],
+        equipped: { border: null, theme: null, banner: null, title: null },
+        purchaseHistory: [],
+        freeCreditsGranted: false
+      });
+    }
+
+    // Check credits
+    var cost = PLAN_CONFIG[currentEco.plan]?.scanCost || 80;
+    if (currentEco.aiCredits < cost) {
+      return res.status(402).json({ error: 'Insufficient AI credits', code: 'INSUFFICIENT_CREDITS' });
+    }
+
+    console.log('Analyze request received. User:', userId, 'Front:', image ? image.length : 0, 'Side:', sideImage ? sideImage.length : 0, 'Key set:', !!GEMINI_API_KEY);
 
     if (!image) {
       return res.status(400).json({ error: 'No image provided' });
@@ -198,6 +554,20 @@ app.post('/api/analyze-face', async function (req, res) {
       responseData.hair_quality = clamp(scores.hair_quality || 50, 1, 100);
     }
 
+    // Deduct scan cost and earn scan coin reward on server
+    const { signature: _, ...ecoRest } = currentEco;
+    ecoRest.aiCredits = Math.max(0, ecoRest.aiCredits - cost);
+    const mult = PLAN_CONFIG[ecoRest.plan]?.coinMultiplier || 1;
+    const scanReward = Math.round(10 * mult);
+    ecoRest.coins = (ecoRest.coins || 0) + scanReward;
+    ecoRest.totalCoinsEarned = (ecoRest.totalCoinsEarned || 0) + scanReward;
+
+    const newEco = signEconomy(ecoRest);
+    await saveCloudEconomy(userId, token, newEco);
+
+    // Return the new economy state alongside responseData
+    responseData.economyState = newEco;
+
     res.json(responseData);
   } catch (err) {
     console.error('Analysis error:', err);
@@ -230,11 +600,36 @@ Your knowledge covers:
 
 IMPORTANT: You have access to the user's face scan data below. Use it to personalize every response. For example, if their jawline is low, recommend mewing exercises. If skin quality is low, suggest a skincare routine. Always be specific to THEIR data.`;
 
-app.post('/api/chat', async function (req, res) {
+app.post('/api/chat', authMiddleware, async function (req, res) {
   try {
     var prevMessages = req.body.messages || [];
     var userMessage = req.body.message || '';
     var userContext = req.body.userContext || '';
+    var clientEco = req.body.economyState;
+    var userId = req.user.id;
+    var token = req.userToken;
+
+    // Verify and fetch valid economy state
+    let currentEco = verifyEconomy(clientEco) ? clientEco : await getCloudEconomy(userId, token);
+    if (!currentEco || !verifyEconomy(currentEco)) {
+      currentEco = signEconomy({
+        coins: 0,
+        totalCoinsEarned: 0,
+        aiCredits: 200,
+        plan: 'free',
+        streak: { current: 0, longest: 0, lastActiveDate: '', shieldsRemaining: 0, milestonesClaimed: [] },
+        owned: [],
+        equipped: { border: null, theme: null, banner: null, title: null },
+        purchaseHistory: [],
+        freeCreditsGranted: false
+      });
+    }
+
+    // Check credits
+    var cost = PLAN_CONFIG[currentEco.plan]?.chatCost || 10;
+    if (currentEco.aiCredits < cost) {
+      return res.status(402).json({ error: 'Insufficient AI credits', code: 'INSUFFICIENT_CREDITS' });
+    }
 
     if (!userMessage.trim()) {
       return res.status(400).json({ error: 'No message provided' });
@@ -333,7 +728,17 @@ app.post('/api/chat', async function (req, res) {
       return res.status(502).json({ error: 'AI response failed' });
     }
 
-    res.json({ reply: reply.trim() });
+    // Deduct credits on server
+    const { signature: _, ...ecoRest } = currentEco;
+    ecoRest.aiCredits = Math.max(0, ecoRest.aiCredits - cost);
+
+    const newEco = signEconomy(ecoRest);
+    await saveCloudEconomy(userId, token, newEco);
+
+    res.json({
+      reply: reply.trim(),
+      economyState: newEco
+    });
   } catch (err) {
     console.error('Chat error:', err);
     res.status(500).json({ error: 'Internal server error' });

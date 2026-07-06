@@ -2,15 +2,53 @@ import { useState, useEffect, useRef } from 'react';
 import { fetchAllPlans, fetchAllExercises, updateExerciseFrames, addExercise, deleteExercise, reindexExercises, togglePlanVisibility, updateExerciseName, copyExerciseToDay } from '../lib/workoutApi';
 import type { WorkoutPlan, WorkoutExercise, WorkoutFrame } from '../lib/workoutApi';
 
-const ADMIN_ID = 'admin';
-const ADMIN_PW = 'LYNXAIPASSOWORDSECURED@34';
-const LS_KEY = 'lynx_admin_auth';
-function isAdminAuthed(): boolean { try { return localStorage.getItem(LS_KEY) === 'true' || sessionStorage.getItem(LS_KEY) === 'true'; } catch { return false; } }
+const LS_TOKEN_KEY = 'lynx_admin_token';
+const LS_KEY = 'lynx_admin_auth'; // keep compatibility if needed
+
+// Helper to get API URL
+const RAILWAY_URL = 'https://www.lynxai.in';
+const API = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? ''
+  : RAILWAY_URL;
 
 /* ═══ Login ═══ */
-function AdminLogin({ onLogin }: { onLogin: () => void }) {
-  const [id, setId] = useState(''); const [pw, setPw] = useState(''); const [remember, setRemember] = useState(true); const [err, setErr] = useState('');
-  const submit = () => { if (id === ADMIN_ID && pw === ADMIN_PW) { if (remember) localStorage.setItem(LS_KEY, 'true'); else sessionStorage.setItem(LS_KEY, 'true'); onLogin(); } else setErr('Invalid credentials'); };
+function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
+  const [id, setId] = useState('');
+  const [pw, setPw] = useState('');
+  const [remember, setRemember] = useState(true);
+  const [err, setErr] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async () => {
+    if (!id || !pw) return;
+    setSubmitting(true);
+    setErr('');
+    try {
+      const res = await fetch(`${API}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: id, password: pw }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        if (remember) {
+          localStorage.setItem(LS_TOKEN_KEY, data.token);
+          localStorage.setItem(LS_KEY, 'true');
+        } else {
+          sessionStorage.setItem(LS_TOKEN_KEY, data.token);
+          sessionStorage.setItem(LS_KEY, 'true');
+        }
+        onLogin(data.token);
+      } else {
+        setErr(data.error || 'Invalid credentials');
+      }
+    } catch (e) {
+      setErr('Connection error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div style={{ minHeight:'100vh', background:'#0A0A0F', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Inter',sans-serif" }}>
       <div style={{ width:'100%', maxWidth:380, padding:32, background:'#111', borderRadius:16, border:'1px solid rgba(255,255,255,0.08)' }}>
@@ -22,7 +60,7 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
         <label style={{ fontSize:12, fontWeight:600, color:'#888', display:'block', marginBottom:4 }}>Password</label>
         <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" style={{ width:'100%', padding:'12px 14px', background:'transparent', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#fff', fontSize:14, marginBottom:14, outline:'none', boxSizing:'border-box' }} onKeyDown={e=>e.key==='Enter'&&submit()} />
         <label style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20, cursor:'pointer' }}><input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} style={{ accentColor:'#C8A84E' }} /><span style={{ fontSize:13, color:'#888' }}>Remember me</span></label>
-        <button onClick={submit} style={{ width:'100%', padding:'14px', background:'#C8A84E', border:'none', borderRadius:10, fontSize:15, fontWeight:700, color:'#000', cursor:'pointer' }}>Sign In</button>
+        <button onClick={submit} disabled={submitting} style={{ width:'100%', padding:'14px', background:'#C8A84E', border:'none', borderRadius:10, fontSize:15, fontWeight:700, color:'#000', cursor:'pointer', opacity: submitting ? 0.7 : 1 }}>{submitting ? 'Signing In...' : 'Sign In'}</button>
       </div>
     </div>
   );
@@ -162,15 +200,51 @@ function DaySection({ planId, day, exercises, clipboard, onCopy, onPaste, onSave
 
 /* ═══ Main Admin Panel ═══ */
 export default function AdminPanel() {
-  const [authed, setAuthed] = useState(isAdminAuthed());
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [exercises, setExercises] = useState<Map<string, WorkoutExercise[]>>(new Map());
   const [activePlan, setActivePlan] = useState<string|null>(null);
   const [loading, setLoading] = useState(true);
   const [clipboard, setClipboard] = useState<WorkoutExercise|null>(null);
 
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem(LS_TOKEN_KEY) || sessionStorage.getItem(LS_TOKEN_KEY);
+      if (!token) {
+        setAuthed(false);
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${API}/api/admin/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        if (res.ok) {
+          setAuthed(true);
+        } else {
+          localStorage.removeItem(LS_TOKEN_KEY);
+          localStorage.removeItem(LS_KEY);
+          sessionStorage.removeItem(LS_TOKEN_KEY);
+          sessionStorage.removeItem(LS_KEY);
+          setAuthed(false);
+        }
+      } catch {
+        // network issue: trust locally but set loading false
+        setAuthed(true);
+      }
+      setLoading(false);
+    };
+    verifyToken();
+  }, []);
+
   const load = async()=>{ setLoading(true); const [p,e]=await Promise.all([fetchAllPlans(),fetchAllExercises()]); setPlans(p); setExercises(e); if(!activePlan&&p.length>0)setActivePlan(p[0].id); setLoading(false); };
-  useEffect(()=>{ if(authed) load(); },[authed]);
+  useEffect(()=>{ if(authed) load(); }, [authed]);
+
+  if (authed === null || (authed && loading && plans.length === 0)) {
+    return <div style={{ minHeight:'100vh', background:'#0A0A0F', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>Verifying...</div>;
+  }
 
   if(!authed) return <AdminLogin onLogin={()=>setAuthed(true)} />;
 
@@ -186,7 +260,12 @@ export default function AdminPanel() {
   const handleCopy = (ex:WorkoutExercise)=>{ setClipboard(ex); };
   const handlePaste = async(targetPlan:string,targetDay:number,targetIdx:number)=>{ if(!clipboard)return; await copyExerciseToDay(clipboard,targetPlan,targetDay,targetIdx); await load(); };
   const handleToggle = async(id:string,active:boolean)=>{ await togglePlanVisibility(id,!active); await load(); };
-  const handleLogout = ()=>{ localStorage.removeItem(LS_KEY); try{sessionStorage.removeItem(LS_KEY);}catch{}; setAuthed(false); };
+  const handleLogout = ()=>{
+    localStorage.removeItem(LS_TOKEN_KEY);
+    localStorage.removeItem(LS_KEY);
+    try{sessionStorage.removeItem(LS_TOKEN_KEY); sessionStorage.removeItem(LS_KEY);}catch{};
+    setAuthed(false);
+  };
 
   return (
     <div style={{ minHeight:'100vh', background:'#0A0A0F', fontFamily:"'Inter',sans-serif", color:'#fff' }}>

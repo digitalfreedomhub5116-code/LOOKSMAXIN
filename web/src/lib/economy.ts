@@ -3,6 +3,7 @@
  * Manages: Lynx Coins, AI Credits, streak tracking, owned items, equipped cosmetics.
  * Persisted in localStorage + synced to cloud via existing pushToCloud mechanism.
  */
+import { supabase } from './api';
 
 /* ═══ Types ═══ */
 export type PlanTier = 'free' | 'basic' | 'pro' | 'ultra';
@@ -92,6 +93,117 @@ function save(state: EconomyState): EconomyState {
   return state;
 }
 
+// Helper to get API URL
+const RAILWAY_URL = 'https://www.lynxai.in';
+const API = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? ''
+  : RAILWAY_URL;
+
+export async function syncWithServer(state?: EconomyState): Promise<EconomyState> {
+  try {
+    const s = state || getEconomy();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return s;
+    const res = await fetch(`${API}/api/economy/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ economyState: s })
+    });
+    if (res.ok) {
+      const serverState = await res.json();
+      save(serverState);
+      window.dispatchEvent(new Event('economy:change'));
+      return serverState;
+    }
+  } catch (e) {
+    console.warn('[Economy] Server sync failed:', e);
+  }
+  return state || getEconomy();
+}
+
+async function earnCoinsServer(amount: number): Promise<EconomyState | null> {
+  try {
+    const s = getEconomy();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const res = await fetch(`${API}/api/economy/earn`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ economyState: s, amount })
+    });
+    if (res.ok) {
+      const serverState = await res.json();
+      save(serverState);
+      window.dispatchEvent(new Event('economy:change'));
+      return serverState;
+    }
+  } catch (e) {
+    console.warn('[Economy] Server earn failed:', e);
+  }
+  return null;
+}
+
+export async function purchaseItemServer(itemId: string, price: number): Promise<EconomyState | null> {
+  try {
+    const s = getEconomy();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const res = await fetch(`${API}/api/economy/purchase`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ economyState: s, itemId, price })
+    });
+    if (res.ok) {
+      const serverState = await res.json();
+      save(serverState);
+      window.dispatchEvent(new Event('economy:change'));
+      return serverState;
+    }
+  } catch (e) {
+    console.warn('[Economy] Server purchase failed:', e);
+  }
+  return null;
+}
+
+async function updateStateServer(updates: { streak?: StreakData; equipped?: EquippedItems; plan?: PlanTier }): Promise<EconomyState | null> {
+  try {
+    const s = getEconomy();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const res = await fetch(`${API}/api/economy/update-state`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        economyState: s,
+        streak: updates.streak,
+        equipped: updates.equipped,
+        plan: updates.plan
+      })
+    });
+    if (res.ok) {
+      const serverState = await res.json();
+      save(serverState);
+      window.dispatchEvent(new Event('economy:change'));
+      return serverState;
+    }
+  } catch (e) {
+    console.warn('[Economy] Server update-state failed:', e);
+  }
+  return null;
+}
+
 /* ═══ Free Credits Grant ═══ */
 export function grantFreeCredits(): EconomyState {
   const s = getEconomy();
@@ -148,7 +260,9 @@ export function addAICredits(amount: number): EconomyState {
 export function setPlan(tier: PlanTier): EconomyState {
   const s = getEconomy();
   s.plan = tier;
-  return save(s);
+  save(s);
+  updateStateServer({ plan: tier });
+  return s;
 }
 
 export function getPlan(): PlanTier {
@@ -159,9 +273,12 @@ export function getPlan(): PlanTier {
 export function earnCoins(amount: number, _reason?: string): EconomyState {
   const s = getEconomy();
   const mult = PLAN_CONFIG[s.plan].coinMultiplier;
-  s.coins += amount * mult;
-  s.totalCoinsEarned += amount * mult;
-  return save(s);
+  const earned = amount * mult;
+  s.coins += earned;
+  s.totalCoinsEarned += earned;
+  save(s);
+  earnCoinsServer(earned);
+  return s;
 }
 
 export function spendCoins(amount: number): EconomyState | null {
@@ -183,7 +300,9 @@ export function purchaseItem(itemId: string, price: number): EconomyState | null
   s.coins -= price;
   s.owned.push(itemId);
   s.purchaseHistory.push({ itemId, price, timestamp: new Date().toISOString() });
-  return save(s);
+  save(s);
+  purchaseItemServer(itemId, price);
+  return s;
 }
 
 export function ownsItem(itemId: string): boolean {
@@ -194,7 +313,9 @@ export function ownsItem(itemId: string): boolean {
 export function equipItem(slot: keyof EquippedItems, itemId: string | null): EconomyState {
   const s = getEconomy();
   s.equipped[slot] = itemId;
-  return save(s);
+  save(s);
+  updateStateServer({ equipped: s.equipped });
+  return s;
 }
 
 /**
@@ -276,6 +397,7 @@ export function recordStreakActivity(): { state: EconomyState; milestonesHit: nu
   }
 
   save(s);
+  updateStateServer({ streak: s.streak });
   return { state: s, milestonesHit: newMilestones };
 }
 

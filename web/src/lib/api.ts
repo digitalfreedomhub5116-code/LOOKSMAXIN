@@ -55,20 +55,43 @@ export interface ScanRecord {
 
 // ─── Gemini AI analysis ───
 export async function analyzeFace(frontBase64: string, sideBase64: string, mime = 'image/jpeg'): Promise<FaceScores> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+  
+  // Dynamic import or direct read to avoid compile-time issues
+  let eco = null;
+  try {
+    const raw = localStorage.getItem('lynx_economy');
+    if (raw) eco = JSON.parse(raw);
+  } catch {}
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
   const res = await fetch(`${API}/api/analyze-face`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       image: frontBase64,
       sideImage: sideBase64,
       mimeType: mime,
+      economyState: eco,
     }),
   });
   if (!res.ok) {
     const e = await res.json().catch(() => ({ error: 'Unknown error' }));
     throw new Error(e.error || `Server error ${res.status}`);
   }
-  return res.json();
+  
+  const responseData = await res.json();
+  if (responseData.economyState) {
+    localStorage.setItem('lynx_economy', JSON.stringify(responseData.economyState));
+    window.dispatchEvent(new Event('economy:change'));
+  }
+  
+  return responseData;
 }
 
 // ═══════════════════════════════════════

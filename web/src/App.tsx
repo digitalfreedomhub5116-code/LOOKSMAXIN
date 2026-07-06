@@ -14,7 +14,7 @@ import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import TopNavbar from './components/TopNavbar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import { pullFromCloud, pushToCloud, retryPendingUploads, setActiveUserId } from './lib/sync';
-import { claimDailyLogin, recordStreakActivity, applyThemeVars, getEquipped, getStreak } from './lib/economy';
+import { claimDailyLogin, recordStreakActivity, applyThemeVars, getEquipped, getStreak, syncWithServer } from './lib/economy';
 import { getItemById } from './data/storeItems';
 import { registerDeviceSession, startSessionGuard, stopSessionGuard, clearDeviceToken } from './lib/sessionGuard';
 import { pushStreakToLeaderboard } from './lib/leaderboard';
@@ -139,6 +139,7 @@ export default function App() {
           startSessionGuard();
           try {
             await pullFromCloud(session.user.id);
+            await syncWithServer();
             setLatestScores(loadLatestScores());
             setFaceImage(loadFaceImage());
             console.log('[Auth] Post-pull state:', {
@@ -178,6 +179,7 @@ export default function App() {
         startSessionGuard();
         try {
           await pullFromCloud(session?.user?.id);
+          await syncWithServer();
           setLatestScores(loadLatestScores());
           setFaceImage(loadFaceImage());
           console.log('[Auth] Post-pull state (SIGNED_IN):', {

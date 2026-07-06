@@ -35,9 +35,10 @@ const FIELD_LS_MAP: Record<SyncFieldName, string> = {
   plan_progress: 'lynx_plan_progress',
   chat_history: 'lynx_chat_history',
   saved_remedies: 'lynx_saved_remedies',
+  economy: 'lynx_economy',
 };
 
-type SyncFieldName = 'latest_scores' | 'face_url' | 'scan_history' | 'plan_progress' | 'chat_history' | 'saved_remedies';
+type SyncFieldName = 'latest_scores' | 'face_url' | 'scan_history' | 'plan_progress' | 'chat_history' | 'saved_remedies' | 'economy';
 
 // ─── Sync metadata (persisted in localStorage) ───
 interface SyncMeta {
@@ -220,6 +221,7 @@ export async function pullFromCloud(overrideUserId?: string): Promise<boolean> {
     restoredCount += applyCloudField('plan_progress', data.plan_progress, cloudFieldTs, localFieldTs, FIELD_LS_MAP.plan_progress, 'object');
     restoredCount += applyCloudField('chat_history', data.chat_history, cloudFieldTs, localFieldTs, FIELD_LS_MAP.chat_history, 'array');
     restoredCount += applyCloudField('saved_remedies', data.saved_remedies, cloudFieldTs, localFieldTs, FIELD_LS_MAP.saved_remedies, 'array');
+    restoredCount += applyCloudField('economy', data.economy, cloudFieldTs, localFieldTs, FIELD_LS_MAP.economy, 'object');
 
     // Update sync metadata
     meta.lastSyncedAt = new Date().toISOString();

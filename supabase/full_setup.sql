@@ -92,6 +92,7 @@ CREATE TABLE public.lynx_user_data (
   plan_progress JSONB DEFAULT '{}'::jsonb,
   chat_history JSONB DEFAULT '[]'::jsonb,
   saved_remedies JSONB DEFAULT '[]'::jsonb,
+  economy JSONB DEFAULT '{}'::jsonb,
   field_updated_at JSONB DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ DEFAULT now()
 );

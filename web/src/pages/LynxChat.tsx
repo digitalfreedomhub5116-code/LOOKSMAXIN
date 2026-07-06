@@ -175,19 +175,40 @@ export default function LynxChat({ scores }: LynxChatProps) {
     setLoading(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      let eco = null;
+      try {
+        const raw = localStorage.getItem('lynx_economy');
+        if (raw) eco = JSON.parse(raw);
+      } catch {}
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
       const res = await fetch(`${API}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           message: msg,
           messages: messages.slice(-10),
           userContext: userContext,
+          economyState: eco,
         }),
       });
 
       if (!res.ok) throw new Error('Failed');
 
       const data = await res.json();
+      
+      if (data.economyState) {
+        localStorage.setItem('lynx_economy', JSON.stringify(data.economyState));
+        window.dispatchEvent(new Event('economy:change'));
+      }
+
       setLoading(false);
       startTypewriter(data.reply);
     } catch {
