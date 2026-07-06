@@ -280,23 +280,26 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
   exercise: ExerciseItem; exerciseNum: number; totalExercises: number;
   onComplete: () => void; onSkip: () => void; onBack: () => void;
 }) {
-  const isHold = exercise.reps === 0;
   const [currentSet, setCurrentSet] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(isHold ? exercise.duration : 0);
-  const [running, setRunning] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(exercise.duration);
+  const [running, setRunning] = useState(true); // auto-start
   const [resting, setResting] = useState(false);
   const [restTime, setRestTime] = useState(0);
-  const [repCount, setRepCount] = useState(0);
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  // Timer for holds
+  // Countdown timer — auto-starts and counts backwards
   useEffect(() => {
-    if (!running || isHold === false) return;
-    if (timeLeft <= 0) { setRunning(false); return; }
+    if (!running) return;
+    if (timeLeft <= 0) {
+      // Timer done — auto-complete set
+      setRunning(false);
+      handleCompleteSet();
+      return;
+    }
     const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [running, timeLeft, isHold]);
+  }, [running, timeLeft]);
 
   // Rest timer between sets
   useEffect(() => {
@@ -313,21 +316,17 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
     } else {
       // Start rest between sets
       setCurrentSet(s => s + 1);
-      setRepCount(0);
-      if (isHold) setTimeLeft(exercise.duration);
+      setTimeLeft(exercise.duration);
       setRunning(false);
       setRestTime(15);
       setResting(true);
     }
   };
 
-  const handleRepTap = () => {
-    const next = repCount + 1;
-    setRepCount(next);
-    // Auto-complete set when all reps done
-    if (next >= exercise.reps) {
-      setTimeout(() => handleCompleteSet(), 300);
-    }
+  const handleStartNext = () => {
+    // User wants to skip the rest of the timer and move on
+    setRunning(false);
+    handleCompleteSet();
   };
 
   // Rest between sets overlay
@@ -342,7 +341,7 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Set {currentSet} of {exercise.sets} coming up</div>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 24 }}>{exercise.name}</div>
-        <button onClick={() => { setResting(false); setRestTime(0); }} style={{
+        <button onClick={() => { setResting(false); setRestTime(0); setRunning(true); }} style={{
           padding: '10px 28px', borderRadius: 8, border: 'none', background: 'var(--primary)',
           color: '#000', fontSize: 13, fontWeight: 800, cursor: 'pointer',
         }}>SKIP REST</button>
@@ -404,99 +403,45 @@ function ExerciseView({ exercise, exerciseNum, totalExercises, onComplete, onSki
         {/* Badges */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           <Badge>{exercise.sets} SETS</Badge>
-          <Badge>{isHold ? `${fmt(exercise.duration)} HOLD` : `${exercise.reps} REPS`}</Badge>
+          <Badge>{fmt(exercise.duration)}</Badge>
           <Badge>SET {currentSet}/{exercise.sets}</Badge>
         </div>
 
-        {isHold ? (
-          /* ── HOLD MODE ── */
-          <>
-            {/* Timer display */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', marginRight: 16 }}>
-                <div style={{
-                  height: '100%', borderRadius: 3, transition: 'width 1s linear',
-                  background: timeLeft <= 0 ? '#22C55E' : 'var(--primary)',
-                  width: `${((exercise.duration - timeLeft) / exercise.duration) * 100}%`,
-                }} />
-              </div>
-              <div style={{
-                fontSize: 32, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
-                color: timeLeft <= 0 ? '#22C55E' : 'var(--primary)', minWidth: 70, textAlign: 'right',
-              }}>
-                {fmt(timeLeft)}
-              </div>
-            </div>
+        {/* Timer countdown */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', marginRight: 16 }}>
+            <div style={{
+              height: '100%', borderRadius: 3, transition: 'width 1s linear',
+              background: timeLeft <= 0 ? '#22C55E' : 'var(--primary)',
+              width: `${((exercise.duration - timeLeft) / exercise.duration) * 100}%`,
+            }} />
+          </div>
+          <div style={{
+            fontSize: 32, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
+            color: timeLeft <= 0 ? '#22C55E' : 'var(--primary)', minWidth: 70, textAlign: 'right',
+          }}>
+            {fmt(timeLeft)}
+          </div>
+        </div>
 
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setRunning(!running)} style={{
-                width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-                border: '1.5px solid var(--border)', background: 'var(--surface)',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {running ? <Pause size={22} color="var(--primary)" /> : <Play size={22} color="var(--primary)" fill="var(--primary)" />}
-              </button>
-              <button onClick={handleCompleteSet} disabled={timeLeft > 0 && !running} style={{
-                flex: 1, padding: '16px 0', borderRadius: 14, border: 'none',
-                background: timeLeft <= 0 ? 'var(--primary)' : 'rgba(200,168,78,0.2)',
-                color: timeLeft <= 0 ? '#000' : 'var(--primary)', fontSize: 15, fontWeight: 900,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: timeLeft <= 0 ? '0 0 20px rgba(200,168,78,0.3)' : 'none',
-              }}>
-                <Check size={18} strokeWidth={3} />
-                {timeLeft <= 0 ? (currentSet >= exercise.sets ? 'COMPLETE EXERCISE' : 'COMPLETE SET') : 'HOLDING...'}
-              </button>
-            </div>
-          </>
-        ) : (
-          /* ── REPS MODE ── */
-          <>
-            {/* Rep counter */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', marginRight: 16 }}>
-                <div style={{
-                  height: '100%', borderRadius: 3, transition: 'width 0.3s ease',
-                  background: repCount >= exercise.reps ? '#22C55E' : 'var(--primary)',
-                  width: `${(repCount / exercise.reps) * 100}%`,
-                }} />
-              </div>
-              <div style={{
-                fontSize: 32, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
-                color: repCount >= exercise.reps ? '#22C55E' : 'var(--primary)', minWidth: 70, textAlign: 'right',
-              }}>
-                {repCount}/{exercise.reps}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 12 }}>
-              {/* TAP button for counting reps */}
-              <button onClick={handleRepTap} disabled={repCount >= exercise.reps} style={{
-                width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-                border: '2px solid var(--primary)',
-                background: repCount >= exercise.reps ? 'rgba(34,197,94,0.15)' : 'rgba(200,168,78,0.1)',
-                cursor: repCount >= exercise.reps ? 'default' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 800, color: 'var(--primary)',
-              }}>
-                {repCount >= exercise.reps ? <Check size={22} color="#22C55E" /> : '+1'}
-              </button>
-
-              <button onClick={handleCompleteSet} style={{
-                flex: 1, padding: '16px 0', borderRadius: 14, border: 'none',
-                background: repCount >= exercise.reps ? 'var(--primary)' : 'rgba(200,168,78,0.15)',
-                color: repCount >= exercise.reps ? '#000' : 'var(--primary)',
-                fontSize: 15, fontWeight: 900, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: repCount >= exercise.reps ? '0 0 20px rgba(200,168,78,0.3)' : 'none',
-              }}>
-                <Check size={18} strokeWidth={3} />
-                {repCount >= exercise.reps
-                  ? (currentSet >= exercise.sets ? 'COMPLETE EXERCISE' : 'COMPLETE SET')
-                  : `TAP TO COUNT (${repCount}/${exercise.reps})`}
-              </button>
-            </div>
-          </>
-        )}
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button onClick={() => setRunning(!running)} style={{
+            width: 56, height: 56, borderRadius: 14, flexShrink: 0,
+            border: '1.5px solid var(--border)', background: 'var(--surface)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {running ? <Pause size={22} color="var(--primary)" /> : <Play size={22} color="var(--primary)" fill="var(--primary)" />}
+          </button>
+          <button onClick={handleStartNext} style={{
+            flex: 1, padding: '16px 0', borderRadius: 14, border: 'none',
+            background: 'var(--primary)',
+            color: '#000', fontSize: 15, fontWeight: 900,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            boxShadow: '0 0 20px rgba(200,168,78,0.3)',
+          }}>
+            <SkipForward size={18} /> START NEXT
+          </button>
+        </div>
 
         {/* Skip */}
         <button onClick={onSkip} style={{
