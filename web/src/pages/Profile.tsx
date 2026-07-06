@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { User, ChevronRight, BarChart3, Shield, LogOut, FileText, Zap, Crown, Lock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { User, ChevronRight, BarChart3, Shield, LogOut, FileText, Zap, Crown, Lock, Edit2, Check, X, Camera } from 'lucide-react';
 import Lottie from 'lottie-react';
-import { getScanCount, loadLatestScores, type FaceScores } from '../lib/api';
+import { getScanCount, loadLatestScores, supabase, type FaceScores } from '../lib/api';
 import { getEquipped, getEconomy, type PlanTier } from '../lib/economy';
 import { getItemById } from '../data/storeItems';
 import type { Tab } from '../App';
@@ -239,6 +239,7 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
   const [scanCount, setScanCount] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const [scores, setScores] = useState<FaceScores | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (sessionUser) {
@@ -454,6 +455,26 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
       {/* ═══════════════════════════════════════════════════════════════ */}
       <div style={{ padding: '0 14px' }}>
 
+        {/* ── EDIT PROFILE BUTTON ── */}
+        <div style={{ ...glassPanel, marginBottom: 12, cursor: 'pointer' }} onClick={() => setShowEditModal(true)}>
+          <CardShine />
+          <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: 'rgba(var(--primary-rgb, 200,168,78),0.06)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--primary, #C8A84E)',
+            }}>
+              <Edit2 size={20} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e5e5' }}>Edit Profile</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>Change username & profile picture</div>
+            </div>
+            <ChevronRight size={16} color="rgba(255,255,255,0.15)" />
+          </div>
+        </div>
+
         {/* ── POTENTIAL DISTRIBUTION — Glass Panel ── */}
         <div style={{ ...glassPanel, padding: '20px 16px 16px', marginBottom: 12 }}>
           <CardShine />
@@ -609,6 +630,169 @@ export default function Profile({ onLogout, user: sessionUser, onNavigate }: Pro
           opacity: loggingOut ? 0.5 : 1,
         }}>
           <LogOut size={15} /> {loggingOut ? 'SIGNING OUT...' : 'SIGN OUT'}
+        </button>
+      </div>
+
+      {/* ═══ EDIT PROFILE MODAL ═══ */}
+      {showEditModal && (
+        <EditProfileModal
+          currentName={userInfo?.name || ''}
+          currentAvatar={userInfo?.avatar || ''}
+          onClose={() => setShowEditModal(false)}
+          onSave={(name, avatar) => {
+            setUserInfo(prev => prev ? { ...prev, name, avatar: avatar || prev.avatar } : prev);
+            setShowEditModal(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ═══ Edit Profile Modal ═══ */
+const PROFILE_API = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? '' : 'https://www.lynxai.in';
+
+function EditProfileModal({ currentName, currentAvatar, onClose, onSave }: {
+  currentName: string; currentAvatar: string;
+  onClose: () => void; onSave: (name: string, avatar?: string) => void;
+}) {
+  const [username, setUsername] = useState(currentName.toLowerCase().replace(/\s/g, ''));
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [avatarPreview, setAvatarPreview] = useState(currentAvatar);
+  const [avatarFile, setAvatarFile] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const checkTimeout = useRef<number>(0);
+
+  const getToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || '';
+  };
+
+  const handleUsernameChange = (val: string) => {
+    const clean = val.toLowerCase().replace(/[^a-z0-9_.]/g, '');
+    setUsername(clean);
+    setError('');
+    clearTimeout(checkTimeout.current);
+    if (clean.length < 3) { setUsernameStatus(clean.length === 0 ? 'idle' : 'invalid'); return; }
+    if (clean.length > 20) { setUsernameStatus('invalid'); return; }
+    setUsernameStatus('checking');
+    checkTimeout.current = window.setTimeout(async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${PROFILE_API}/api/profile/check-username`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ username: clean }),
+        });
+        const data = await res.json();
+        setUsernameStatus(data.available ? 'available' : 'taken');
+      } catch { setUsernameStatus('idle'); }
+    }, 500);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError('Image too large (max 5MB)'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarFile((reader.result as string).split(',')[1]);
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const origUsername = currentName.toLowerCase().replace(/\s/g, '');
+  const hasChanges = username !== origUsername || !!avatarFile;
+  const canSave = hasChanges && (username === origUsername || usernameStatus === 'available');
+
+  const handleSave = async () => {
+    if (saving || !canSave) return;
+    setSaving(true);
+    setError('');
+    try {
+      const token = await getToken();
+      let newAvatarUrl: string | undefined;
+      if (avatarFile) {
+        const uploadRes = await fetch(`${PROFILE_API}/api/profile/upload-avatar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ image: avatarFile }),
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed');
+        newAvatarUrl = uploadData.url;
+      }
+      const updateBody: any = {};
+      if (username !== origUsername) updateBody.username = username;
+      if (newAvatarUrl) updateBody.avatar_url = newAvatarUrl;
+      if (Object.keys(updateBody).length > 0) {
+        const updateRes = await fetch(`${PROFILE_API}/api/profile/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(updateBody),
+        });
+        const updateData = await updateRes.json();
+        if (!updateRes.ok) throw new Error(updateData.error || 'Update failed');
+      }
+      onSave(username, newAvatarUrl);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.2s ease-out' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '52px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}><X size={22} color="#fff" /></button>
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>Edit Profile</div>
+        <div style={{ width: 22 }} />
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: '24px 20px' }}>
+        {/* Avatar */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 36 }}>
+          <div style={{ position: 'relative', marginBottom: 12 }}>
+            <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', border: '3px solid rgba(200,168,78,0.3)' }}>
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e, #0f3460)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={40} color="#fff" />
+                </div>
+              )}
+            </div>
+            <button onClick={() => fileInputRef.current?.click()} style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)', border: '2px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <Camera size={14} color="#000" />
+            </button>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Tap to change photo</div>
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+        </div>
+        {/* Username */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 8, display: 'block' }}>USERNAME</label>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>@</div>
+            <input type="text" value={username} onChange={(e) => handleUsernameChange(e.target.value)} maxLength={20} placeholder="username" style={{ width: '100%', padding: '14px 44px 14px 32px', background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${usernameStatus === 'available' ? 'rgba(34,197,94,0.5)' : usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }} />
+            <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }}>
+              {usernameStatus === 'checking' && <div className="pulse-ring" style={{ width: 18, height: 18 }} />}
+              {usernameStatus === 'available' && <Check size={18} color="#22C55E" strokeWidth={3} />}
+              {(usernameStatus === 'taken' || usernameStatus === 'invalid') && <X size={18} color="#EF4444" strokeWidth={3} />}
+            </div>
+          </div>
+          <div style={{ fontSize: 11, marginTop: 6, fontWeight: 600 }}>
+            {usernameStatus === 'checking' && <span style={{ color: 'var(--text-muted)' }}>Checking...</span>}
+            {usernameStatus === 'available' && <span style={{ color: '#22C55E' }}>Username available</span>}
+            {usernameStatus === 'taken' && <span style={{ color: '#EF4444' }}>Username already taken</span>}
+            {usernameStatus === 'invalid' && <span style={{ color: '#EF4444' }}>Must be 3-20 chars (letters, numbers, _ .)</span>}
+          </div>
+        </div>
+        {error && <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', marginBottom: 16 }}><span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600 }}>{error}</span></div>}
+        <button onClick={handleSave} disabled={saving || !canSave} style={{ width: '100%', padding: '16px 0', borderRadius: 14, border: 'none', background: canSave ? 'var(--primary)' : 'rgba(255,255,255,0.06)', color: canSave ? '#000' : 'rgba(255,255,255,0.3)', fontSize: 15, fontWeight: 800, cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1, transition: 'all 0.2s' }}>
+          {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
     </div>

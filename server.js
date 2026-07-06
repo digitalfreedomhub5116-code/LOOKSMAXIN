@@ -386,6 +386,175 @@ app.post('/api/economy/update-state', authMiddleware, async function (req, res) 
   }
 });
 
+// ─── Profile Endpoints ───
+
+// Check if a username is available (case-insensitive)
+app.post('/api/profile/check-username', authMiddleware, async function (req, res) {
+  try {
+    const { username } = req.body || {};
+    const userId = req.user.id;
+
+    if (!username || username.length < 3 || username.length > 20) {
+      return res.status(400).json({ available: false, error: 'Username must be 3-20 characters' });
+    }
+
+    // Only allow alphanumeric, underscore, dot
+    if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
+      return res.status(400).json({ available: false, error: 'Only letters, numbers, _ and . allowed' });
+    }
+
+    const client = getUserSupabase(req.userToken);
+    const { data, error } = await client
+      .from('profiles')
+      .select('id')
+      .ilike('username', username)
+      .neq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Username check error:', error.message);
+      return res.status(500).json({ available: false, error: 'Check failed' });
+    }
+
+    res.json({ available: !data });
+  } catch (err) {
+    console.error('Username check error:', err);
+    res.status(500).json({ available: false, error: 'Internal error' });
+  }
+});
+
+// Update profile (username + avatar_url)
+app.post('/api/profile/update', authMiddleware, async function (req, res) {
+  try {
+    const { username, avatar_url } = req.body || {};
+    const userId = req.user.id;
+    const client = getUserSupabase(req.userToken);
+
+    const updates = { updated_at: new Date().toISOString() };
+
+    // Validate and set username if provided
+    if (username !== undefined) {
+      if (!username || username.length < 3 || username.length > 20) {
+        return res.status(400).json({ error: 'Username must be 3-20 characters' });
+      }
+      if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
+        return res.status(400).json({ error: 'Only letters, numbers, _ and . allowed' });
+      }
+
+      // Check uniqueness
+      const { data: existing } = await client
+        .from('profiles')
+        .select('id')
+        .ilike('username', username)
+        .neq('id', userId)
+        .maybeSingle();
+
+      if (existing) {
+        return res.status(409).json({ error: 'Username already taken' });
+      }
+
+      updates.username = username.toLowerCase();
+      updates.display_name = username;
+    }
+
+    // Set avatar if provided
+    if (avatar_url !== undefined) {
+      updates.avatar_url = avatar_url;
+    }
+
+    // Upsert into profiles table
+    const { error: upsertError } = await client
+      .from('profiles')
+      .upsert({ id: userId, ...updates });
+
+    if (upsertError) {
+      console.error('Profile update error:', upsertError.message);
+      return res.status(500).json({ error: 'Failed to update profile' });
+    }
+
+    // Also update Supabase auth user_metadata so session reflects changes
+    const authUpdates = {};
+    if (username !== undefined) authUpdates.display_name = username;
+    if (avatar_url !== undefined) authUpdates.avatar_url = avatar_url;
+
+    if (Object.keys(authUpdates).length > 0) {
+      await supabase.auth.admin.updateUserById(userId, { user_metadata: authUpdates });
+    }
+
+    res.json({ success: true, username: updates.username, avatar_url: updates.avatar_url });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+// Upload profile picture (base64 → Supabase Storage)
+app.post('/api/profile/upload-avatar', authMiddleware, async function (req, res) {
+  try {
+    const { image } = req.body || {};
+    const userId = req.user.id;
+
+    if (!image) {
+      return res.status(400).json({ error: 'No image provided' });
+    }
+
+    // Decode base64
+    const buffer = Buffer.from(image, 'base64');
+    if (buffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Image too large (max 5MB)' });
+    }
+
+    const fileName = `avatars/${userId}_${Date.now()}.jpg`;
+    const client = getUserSupabase(req.userToken);
+
+    // Upload to Supabase Storage (bucket: 'profiles')
+    const { error: uploadError } = await client.storage
+      .from('profiles')
+      .upload(fileName, buffer, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Avatar upload error:', uploadError.message);
+      return res.status(500).json({ error: 'Upload failed: ' + uploadError.message });
+    }
+
+    // Get public URL
+    const { data: urlData } = client.storage.from('profiles').getPublicUrl(fileName);
+    const publicUrl = urlData?.publicUrl;
+
+    if (!publicUrl) {
+      return res.status(500).json({ error: 'Failed to get public URL' });
+    }
+
+    res.json({ url: publicUrl });
+  } catch (err) {
+    console.error('Avatar upload error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+// Get profile (public — for leaderboard/others to see)
+app.get('/api/profile/:userId', async function (req, res) {
+  try {
+    const { userId } = req.params;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 // Health check
 app.get('/api/health', function (req, res) {
   res.json({

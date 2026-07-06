@@ -149,3 +149,14 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
+
+-- ══════════════════════════════════════════════════
+-- ADD USERNAME COLUMN (unique, case-insensitive)
+-- Run this migration after initial schema
+-- ══════════════════════════════════════════════════
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username_lower ON public.profiles (LOWER(username));
+
+-- Allow anyone to read profiles (for leaderboard, public profiles)
+CREATE POLICY "Anyone can view profiles" ON public.profiles
+  FOR SELECT USING (true);
