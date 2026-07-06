@@ -74,15 +74,11 @@ export function MissionOverview({ planName, dayData, completedExIds, onEnterProg
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: done ? 'var(--text-muted)' : '#fff', textDecoration: done ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ex.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase' }}>{isHold ? 'HOLD' : 'REPS'}</span>
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{'⭐'.repeat(ex.difficulty)}</span>
-                </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{ex.sets} SETS</div>
                 <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>
-                  {isHold ? `${Math.floor(ex.duration / 60)}:${(ex.duration % 60).toString().padStart(2, '0')}` : `${ex.reps} reps`}
+                  {isHold ? `${Math.floor(ex.duration / 60)}:${(ex.duration % 60).toString().padStart(2, '0')}` : ''}
                 </div>
               </div>
             </div>
@@ -97,7 +93,7 @@ export function MissionOverview({ planName, dayData, completedExIds, onEnterProg
       </div>
 
       {/* ENTER PROGRAM */}
-      <div style={{ padding: '16px 20px 40px', position: 'sticky', bottom: 0, background: 'linear-gradient(transparent, #000 30%)' }}>
+      <div style={{ padding: '16px 20px 120px' }}>
         <button onClick={onEnterProgram} style={{
           width: '100%', padding: '16px 0', borderRadius: 12, border: 'none',
           background: 'var(--primary)', color: '#000', fontSize: 16, fontWeight: 900, letterSpacing: 1.5,
