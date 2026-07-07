@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, ArrowLeft, AlertTriangle, RefreshCw, ChevronRight, Camera, RotateCcw, Upload, ImageIcon } from 'lucide-react';
 import { analyzeFace } from '../lib/api';
-import { canAffordScan, spendScanCredits, addAICredits, PLAN_CONFIG, getEconomy } from '../lib/economy';
+import { canAffordScan, PLAN_CONFIG, getEconomy } from '../lib/economy';
 import { Capacitor } from '@capacitor/core';
 import type { FaceScores } from '../lib/api';
 
@@ -224,7 +224,7 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
   const startAnalysis = async () => {
     if (!frontImage || !sideImage) return;
 
-    // Check credits
+    // Check if user has enough credits before starting
     if (!canAffordScan()) {
       const eco = getEconomy();
       const cost = PLAN_CONFIG[eco.plan].scanCost;
@@ -232,11 +232,6 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
       setStage('error');
       return;
     }
-
-    // Deduct credits
-    const eco = getEconomy();
-    const scanCost = PLAN_CONFIG[eco.plan].scanCost as number;
-    spendScanCredits();
 
     setStage('analyzing');
     setError('');
@@ -247,12 +242,10 @@ export default function FaceScan({ onClose, onResults }: FaceScanProps) {
       setStage('results');
       if (onResults) onResults(result, frontImage);
     } catch (e: any) {
-      // Refund credits only on network/API failure, NOT on "no face detected"
       if (e.message?.includes('No face detected')) {
         setStage('no_face');
       } else {
-        addAICredits(scanCost);
-        setError(e.message || 'Scan failed. Credits restored. Check connection and retry.');
+        setError(e.message || 'Scan failed. Check connection and retry.');
         setStage('error');
       }
     }
