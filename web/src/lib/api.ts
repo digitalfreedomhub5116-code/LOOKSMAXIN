@@ -55,8 +55,23 @@ export interface ScanRecord {
 
 // ─── Gemini AI analysis ───
 export async function analyzeFace(frontBase64: string, sideBase64: string, mime = 'image/jpeg'): Promise<FaceScores> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const accessToken = session?.access_token;
+  // Get session with timeout to prevent hanging
+  let accessToken: string | undefined;
+  try {
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Session timeout')), 5000));
+    const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+    accessToken = session?.access_token;
+  } catch {
+    // If session fetch hangs, try to get token from localStorage directly
+    try {
+      const raw = localStorage.getItem('sb-mxcvwkdkjsailyoestlv-auth-token');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        accessToken = parsed?.access_token;
+      }
+    } catch {}
+  }
   
   // Dynamic import or direct read to avoid compile-time issues
   let eco = null;
@@ -70,9 +85,13 @@ export async function analyzeFace(frontBase64: string, sideBase64: string, mime 
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
+  const controller = new AbortController();
+  const fetchTimeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
   const res = await fetch(`${API}/api/analyze-face`, {
     method: 'POST',
     headers,
+    signal: controller.signal,
     body: JSON.stringify({
       image: frontBase64,
       sideImage: sideBase64,
@@ -88,6 +107,7 @@ export async function analyzeFace(frontBase64: string, sideBase64: string, mime 
       })(),
     }),
   });
+  clearTimeout(fetchTimeout);
   if (!res.ok) {
     const e = await res.json().catch(() => ({ error: 'Unknown error' }));
     throw new Error(e.error || `Server error ${res.status}`);
