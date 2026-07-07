@@ -37,13 +37,21 @@ app.post('/api/admin/verify', function (req, res) {
 
 // ─── Server-side secrets ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. You will receive TWO photos of the same person:
 1. A FRONT-FACING photo (straight at the camera)
 2. A SIDE PROFILE photo (turned to the side)
+
+CRITICAL VALIDATION — Check BEFORE analyzing:
+1. If EITHER image does NOT contain a clearly visible human face, return ONLY: {"no_face": true}
+2. If the person is a RECOGNIZABLE CELEBRITY, actor, actress, model, public figure, influencer, or well-known person, return ONLY: {"rejected": true, "reason": "Celebrity or public figure detected. Please upload your own photo."}
+3. If the image appears to be AI-GENERATED (too-perfect skin, AI artifacts, uncanny valley look, synthetic lighting, impossibly perfect symmetry, or typical AI face generation tells), return ONLY: {"rejected": true, "reason": "AI-generated image detected. Please upload a real photo."}
+4. If the image appears to be a SCREENSHOT, has visible watermarks, stock photo characteristics, downloaded quality artifacts, or is clearly taken from the internet (not a live photo), return ONLY: {"rejected": true, "reason": "Downloaded or screenshot image detected. Please take a fresh photo."}
+
+Only proceed with analysis if the images pass ALL validation checks above.
 
 Use BOTH angles to provide the most accurate analysis possible. The side profile is critical for:
 - Jawline angle and definition (gonial angle)
@@ -52,9 +60,7 @@ Use BOTH angles to provide the most accurate analysis possible. The side profile
 - Neck posture and forward head position
 - Cheekbone projection from the side
 
-IMPORTANT: If EITHER image does NOT contain a clearly visible human face, return ONLY: {"no_face": true}
-
-If faces ARE visible in both images, return ONLY valid JSON (no markdown):
+If ALL validation checks pass, return ONLY valid JSON (no markdown):
 {
   "overall": <number 1-100>,
   "overall_rating": "<Gigachad|Chad|Above Average|Average|Below Average>",
@@ -680,6 +686,11 @@ app.post('/api/analyze-face', authMiddleware, async function (req, res) {
       return res.status(422).json({ error: 'No face detected', code: 'NO_FACE' });
     }
 
+    // Check if image was rejected (celebrity, AI-generated, downloaded)
+    if (scores.rejected) {
+      return res.status(422).json({ error: scores.reason || 'Image rejected', code: 'IMAGE_REJECTED' });
+    }
+
     function clamp(v, min, max) { return Math.max(min, Math.min(max, Math.round(v))); }
 
     // Build response — support both new rich format and legacy flat format
@@ -851,7 +862,7 @@ app.post('/api/chat', authMiddleware, async function (req, res) {
 
     // ── Fallback to Gemini ──
     if (!reply && GEMINI_API_KEY) {
-      var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY;
+      var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY;
       var contents = [
         { role: 'user', parts: [{ text: systemPrompt }] },
         { role: 'model', parts: [{ text: "Understood! I'm Lynx, your AI glow-up companion. Ready to help! 💪" }] }
