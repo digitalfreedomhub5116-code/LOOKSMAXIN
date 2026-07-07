@@ -134,10 +134,6 @@ export default function App() {
           setSessionUser(session.user);
           accessTokenRef.current = session.access_token;
           setActiveUserId(session.user.id);
-          // Register this device and start session guard
-          // Reuse existing token on page reload (don't force new)
-          await registerDeviceSession(false);
-          startSessionGuard();
           try {
             await pullFromCloud(session.user.id);
             await syncWithServer();
