@@ -14,7 +14,7 @@ import TabBar, { LynxBubbleIcon } from './components/TabBar';
 import TopNavbar from './components/TopNavbar';
 import { supabase, saveScores, loadLatestScores, loadFaceImage } from './lib/api';
 import { pullFromCloud, pushToCloud, retryPendingUploads, setActiveUserId } from './lib/sync';
-import { claimDailyLogin, recordStreakActivity, recordScanStreak, applyThemeVars, getEquipped, getStreak, syncWithServer } from './lib/economy';
+import { claimDailyLogin, recordStreakActivity, recordScanStreak, getScanStreak, applyThemeVars, getEquipped, getStreak, syncWithServer } from './lib/economy';
 import { getItemById } from './data/storeItems';
 import { registerDeviceSession, startSessionGuard, stopSessionGuard, clearDeviceToken } from './lib/sessionGuard';
 import { pushStreakToLeaderboard } from './lib/leaderboard';
@@ -145,12 +145,12 @@ export default function App() {
             });
             retryPendingUploads().catch(() => {});
             claimDailyLogin();
-            // Push streak + equipped border to leaderboard
-            const streak = getStreak();
+            // Push scan streak to leaderboard
+            const scanStreak = getScanStreak();
             const equipped = getEquipped();
             pushStreakToLeaderboard(
               session.user.id,
-              streak.current,
+              scanStreak.current,
               session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Player',
               session.user.user_metadata?.avatar_url,
               equipped.border,
@@ -185,12 +185,12 @@ export default function App() {
           retryPendingUploads().catch(() => {});
           claimDailyLogin();
           recordStreakActivity();
-          const streak = getStreak();
+          const scanStreak2 = getScanStreak();
           const equipped = getEquipped();
           if (session?.user) {
             pushStreakToLeaderboard(
               session.user.id,
-              streak.current,
+              scanStreak2.current,
               session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Player',
               session.user.user_metadata?.avatar_url,
               equipped.border,
@@ -237,14 +237,14 @@ export default function App() {
         if (session) {
           claimDailyLogin();
           recordStreakActivity();
-          const streak = getStreak();
-          const equipped = getEquipped();
+          const scanStreak3 = getScanStreak();
+          const equipped3 = getEquipped();
           pushStreakToLeaderboard(
             session.user.id,
-            streak.current,
+            scanStreak3.current,
             session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Player',
             session.user.user_metadata?.avatar_url,
-            equipped.border,
+            equipped3.border,
           ).catch(() => {});
         }
       }
@@ -262,6 +262,18 @@ export default function App() {
     setLatestScores(scores);
     setFaceImage(base64Image);  // Show immediately with base64
     recordScanStreak(); // Track scan streak (+1 per day max)
+    // Push updated scan streak to leaderboard
+    if (sessionUser) {
+      const scanStreak = getScanStreak();
+      const equipped = getEquipped();
+      pushStreakToLeaderboard(
+        sessionUser.id,
+        scanStreak.current,
+        sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.display_name || sessionUser.email?.split('@')[0] || 'Player',
+        sessionUser.user_metadata?.avatar_url,
+        equipped.border,
+      ).catch(() => {});
+    }
     // Cloud-first: upload image, save to Supabase, then sync
     await saveScores(scores, base64Image, sessionUser?.id, accessTokenRef.current || undefined);
     // Re-read face image — saveScores may have replaced base64 with Supabase URL
