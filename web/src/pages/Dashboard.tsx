@@ -7,6 +7,7 @@ import * as progress from '../data/planProgress';
 import SkinRemediesSection from './SkinRemedies';
 import RecentReports from './ReportsGrid';
 import StreakWidget, { StreakBadge } from '../components/StreakWidget';
+import DailyTodos from '../components/DailyTodos';
 import { getImageSrc } from '../lib/imageUtils';
 
 interface DashboardProps {
@@ -287,6 +288,9 @@ export default function Dashboard({ onScan, scores, faceImage, onGoPrograms, onV
           <ScanLine size={18} /> Scan Your Face
         </button>
       </div>
+
+      {/* ═══ DAILY TO-DO ═══ */}
+      <DailyTodos scores={scores} onGoPrograms={onGoPrograms} onScan={onScan} />
 
       {/* ═══ EXERCISES SECTION ═══ */}
       <ActivePlanCard onGoPrograms={onGoPrograms} />
