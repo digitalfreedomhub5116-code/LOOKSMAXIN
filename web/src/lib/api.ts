@@ -78,6 +78,14 @@ export async function analyzeFace(frontBase64: string, sideBase64: string, mime 
       sideImage: sideBase64,
       mimeType: mime,
       economyState: eco,
+      previousScores: (() => {
+        try {
+          const raw = localStorage.getItem('lynx_latest_scores');
+          if (!raw) return null;
+          const prev = JSON.parse(raw);
+          return { jawline: prev.jawline, skin_quality: prev.skin_quality, eyes: prev.eyes, lips: prev.lips, facial_symmetry: prev.facial_symmetry, hair_quality: prev.hair_quality, overall: prev.overall };
+        } catch { return null; }
+      })(),
     }),
   });
   if (!res.ok) {

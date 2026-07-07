@@ -41,51 +41,126 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemi
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const ANALYSIS_PROMPT = `You are an expert facial aesthetics analyst. You will receive TWO photos of the same person:
-1. A FRONT-FACING photo (straight at the camera)
-2. A SIDE PROFILE photo (turned to the side)
-
-CRITICAL VALIDATION — Check BEFORE analyzing:
-1. If EITHER image does NOT contain a clearly visible human face, return ONLY: {"no_face": true}
-2. If the person is a RECOGNIZABLE CELEBRITY, actor, actress, model, public figure, influencer, or well-known person, return ONLY: {"rejected": true, "reason": "Celebrity or public figure detected. Please upload your own photo."}
-3. If the image appears to be AI-GENERATED (too-perfect skin, AI artifacts, uncanny valley look, synthetic lighting, impossibly perfect symmetry, or typical AI face generation tells), return ONLY: {"rejected": true, "reason": "AI-generated image detected. Please upload a real photo."}
-4. If the image appears to be a SCREENSHOT, has visible watermarks, stock photo characteristics, downloaded quality artifacts, or is clearly taken from the internet (not a live photo), return ONLY: {"rejected": true, "reason": "Downloaded or screenshot image detected. Please take a fresh photo."}
-
-Only proceed with analysis if the images pass ALL validation checks above.
-
-Use BOTH angles to provide the most accurate analysis possible. The side profile is critical for:
-- Jawline angle and definition (gonial angle)
-- Chin projection and recession
-- Nose bridge height, tip projection, and dorsal profile
-- Neck posture and forward head position
-- Cheekbone projection from the side
-
-If ALL validation checks pass, return ONLY valid JSON (no markdown):
-{
-  "overall": <number 1-100>,
-  "overall_rating": "<Gigachad|Chad|Above Average|Average|Below Average>",
-  "description": "<2-3 sentence overall assessment referencing observations from BOTH angles>",
-  "potential": <number 1-100>,
-  "traits": {
-    "jawline": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score — reference side profile observations>", "fix_it": "<actionable improvement tip>" },
-    "skin": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
-    "eyes": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
-    "cheekbones": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score — reference side profile projection>", "fix_it": "<actionable improvement tip>" },
-    "lips": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
-    "hair": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
-    "symmetry": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<what limits this score>", "fix_it": "<actionable improvement tip>" },
-    "nose": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<reference side profile — bridge, tip, projection>", "fix_it": "<actionable improvement tip>" },
-    "chin": { "score": <1-100>, "rating": "<Excellent|Good|Average|Poor>", "holding_back": "<reference side profile — projection, recession>", "fix_it": "<actionable improvement tip>" }
+// ─── Pre-fed advice lookup (score range → rating, holding_back, fix_it) ───
+const TRAIT_ADVICE = {
+  jawline: {
+    poor: { rating: 'Poor', holding_back: 'Weak jaw definition, excess submental fat, or recessed mandible reducing angularity', fix_it: 'Practice mewing (proper tongue posture), chew mastic gum 15min/day each side, reduce body fat below 15%' },
+    average: { rating: 'Average', holding_back: 'Moderate jaw definition but lacking sharp gonial angle or visible masseter', fix_it: 'Consistent mewing, jawline exercises, and lean diet to reveal bone structure' },
+    good: { rating: 'Good', holding_back: 'Well-defined jaw but could improve gonial angle or masseter prominence', fix_it: 'Maintain low body fat, continue mewing, consider targeted masseter training' },
+    excellent: { rating: 'Excellent', holding_back: 'Minor room for improvement in overall angularity', fix_it: 'Maintain current physique and posture habits' },
   },
-  "recommendations": ["<tip1>", "<tip2>", "<tip3>", "<tip4>", "<tip5>"]
+  skin: {
+    poor: { rating: 'Poor', holding_back: 'Visible acne, uneven texture, hyperpigmentation, or dullness', fix_it: 'Start basic routine: gentle cleanser, niacinamide serum, SPF 50 daily. Drink 2-3L water' },
+    average: { rating: 'Average', holding_back: 'Some texture issues, mild scarring, or inconsistent tone', fix_it: 'Add retinol 2x/week, vitamin C serum in AM, and chemical exfoliant 1x/week' },
+    good: { rating: 'Good', holding_back: 'Minor imperfections like occasional breakouts or slight unevenness', fix_it: 'Maintain routine consistency, use sunscreen religiously, consider monthly facials' },
+    excellent: { rating: 'Excellent', holding_back: 'Near-flawless skin with minimal room for improvement', fix_it: 'Keep current routine, focus on prevention and hydration' },
+  },
+  eyes: {
+    poor: { rating: 'Poor', holding_back: 'Dark circles, puffiness, negative canthal tilt, or excessive scleral show', fix_it: 'Prioritize 7-8hr sleep, cold compresses daily, reduce sodium, stay hydrated' },
+    average: { rating: 'Average', holding_back: 'Some periorbital hollowing or mild dark circles reducing eye area appeal', fix_it: 'Sleep on back, apply caffeine eye serum, manage allergies, reduce screen time before bed' },
+    good: { rating: 'Good', holding_back: 'Well-shaped eyes with minor tiredness or slight asymmetry', fix_it: 'Consistent sleep schedule, hydration, and gentle eye cream for maintenance' },
+    excellent: { rating: 'Excellent', holding_back: 'Strong eye area with minimal improvement needed', fix_it: 'Protect from sun damage, maintain sleep quality' },
+  },
+  cheekbones: {
+    poor: { rating: 'Poor', holding_back: 'Flat midface with minimal cheekbone projection or definition', fix_it: 'Reduce facial fat through overall body recomp, mewing pushes maxilla forward over time' },
+    average: { rating: 'Average', holding_back: 'Some cheekbone presence but lacks prominent zygomatic projection', fix_it: 'Lean down to reveal bone structure, proper tongue posture helps midface development' },
+    good: { rating: 'Good', holding_back: 'Visible cheekbones with room for more hollow underneath', fix_it: 'Maintain low body fat percentage, continue facial posture habits' },
+    excellent: { rating: 'Excellent', holding_back: 'Prominent zygomatic arches with great facial contrast', fix_it: 'Maintain current body composition and bone health' },
+  },
+  lips: {
+    poor: { rating: 'Poor', holding_back: 'Very thin lips, significant asymmetry, or poor vermillion show', fix_it: 'Stay hydrated, use lip balm with SPF, gentle lip scrub weekly for fullness' },
+    average: { rating: 'Average', holding_back: 'Moderate lip volume but could benefit from better proportion or definition', fix_it: 'Hydrate consistently, avoid licking lips, consider lip care routine' },
+    good: { rating: 'Good', holding_back: 'Well-proportioned lips with minor asymmetry', fix_it: 'Maintain hydration, protect from sun damage' },
+    excellent: { rating: 'Excellent', holding_back: 'Great proportion and shape with minimal improvement needed', fix_it: 'Keep lips moisturized and protected' },
+  },
+  hair: {
+    poor: { rating: 'Poor', holding_back: 'Thinning, receding, poor texture, or unflattering style', fix_it: 'See a dermatologist for hair loss, consider minoxidil, get a style consultation for your face shape' },
+    average: { rating: 'Average', holding_back: 'Decent hair but lacking volume, style, or health', fix_it: 'Find a hairstyle for your face shape, use sulfate-free shampoo, scalp massage 3min daily' },
+    good: { rating: 'Good', holding_back: 'Healthy hair with room for better styling or volume', fix_it: 'Experiment with styling products, get regular trims, consider a fade or textured cut' },
+    excellent: { rating: 'Excellent', holding_back: 'Great hair with minimal improvement needed', fix_it: 'Maintain current routine, protect from heat damage' },
+  },
+  symmetry: {
+    poor: { rating: 'Poor', holding_back: 'Noticeable facial asymmetry in jaw, eyes, or overall alignment', fix_it: 'Sleep on back, chew evenly on both sides, practice balanced mewing, check posture' },
+    average: { rating: 'Average', holding_back: 'Mild asymmetry visible in certain lighting or angles', fix_it: 'Even chewing habits, balanced sleeping position, facial muscle awareness' },
+    good: { rating: 'Good', holding_back: 'Very minor asymmetry only noticeable on close inspection', fix_it: 'Continue balanced habits, most faces have slight natural asymmetry' },
+    excellent: { rating: 'Excellent', holding_back: 'Near-perfect symmetry across all features', fix_it: 'Maintain balanced facial habits' },
+  },
+  nose: {
+    poor: { rating: 'Poor', holding_back: 'Disproportionate size, prominent dorsal hump, wide alar base, or bulbous tip', fix_it: 'Contouring can help appearance, nose exercises have limited evidence but try pinching bridge 5min daily' },
+    average: { rating: 'Average', holding_back: 'Acceptable nose but slightly wide or lacks definition from side profile', fix_it: 'Lose facial fat to refine appearance, proper posture helps nasal projection perception' },
+    good: { rating: 'Good', holding_back: 'Well-shaped nose with minor width or tip refinement possible', fix_it: 'No major changes needed, maintain overall facial leanness' },
+    excellent: { rating: 'Excellent', holding_back: 'Well-proportioned nose that fits facial harmony', fix_it: 'Protect from sun damage, maintain facial composition' },
+  },
+  chin: {
+    poor: { rating: 'Poor', holding_back: 'Significant recession, weak projection from side profile, or excess fat', fix_it: 'Mewing helps forward chin growth over time, reduce body fat, chin tuck exercises daily' },
+    average: { rating: 'Average', holding_back: 'Moderate chin projection but slightly recessed when viewed from side', fix_it: 'Consistent mewing, proper head posture, tongue on palate at rest' },
+    good: { rating: 'Good', holding_back: 'Good projection with minor room for improvement', fix_it: 'Maintain posture habits, continue mewing for maintenance' },
+    excellent: { rating: 'Excellent', holding_back: 'Strong chin with excellent forward projection', fix_it: 'Maintain current posture and habits' },
+  },
+};
+
+function getAdviceForScore(trait, score) {
+  if (score >= 80) return TRAIT_ADVICE[trait]?.excellent || TRAIT_ADVICE[trait]?.good;
+  if (score >= 60) return TRAIT_ADVICE[trait]?.good || TRAIT_ADVICE[trait]?.average;
+  if (score >= 40) return TRAIT_ADVICE[trait]?.average || TRAIT_ADVICE[trait]?.poor;
+  return TRAIT_ADVICE[trait]?.poor;
+}
+
+// ─── Pre-fed recommendations by overall tier ───
+const TIER_RECOMMENDATIONS = {
+  high: [
+    'Maintain your routine — consistency is what got you here',
+    'Focus on skin protection: SPF 50 daily, antioxidant serum',
+    'Optimize sleep quality for cellular repair',
+    'Track progress monthly with consistent lighting',
+    'Fine-tune your hairstyle with a skilled barber',
+  ],
+  mid: [
+    'Start mewing today — tongue flat on palate, lips sealed',
+    'Build a morning skincare routine: cleanser, vitamin C, SPF',
+    'Sleep 7-8 hours on your back to reduce puffiness',
+    'Cut processed sugar — it directly affects skin clarity',
+    'Get a hairstyle consultation for your face shape',
+  ],
+  low: [
+    'Begin with basics: drink 2-3L water daily for skin health',
+    'Start mewing and proper tongue posture immediately',
+    'Build a skincare routine: gentle cleanser + moisturizer + SPF',
+    'Reduce body fat to reveal your bone structure',
+    'Fix your sleep schedule — 7-8 hours minimum',
+  ],
+};
+
+// ─── Lightweight AI prompt (scores + delta only) ───
+const ANALYSIS_PROMPT = `You are a facial aesthetics scorer. You receive TWO photos (front + side profile).
+
+VALIDATION (check first):
+1. No visible human face → return ONLY: {"no_face": true}
+2. Recognizable celebrity/public figure → return ONLY: {"rejected": true, "reason": "Celebrity or public figure detected. Please upload your own photo."}
+3. AI-generated face → return ONLY: {"rejected": true, "reason": "AI-generated image detected. Please upload a real photo."}
+4. Screenshot/watermark/downloaded image → return ONLY: {"rejected": true, "reason": "Downloaded or screenshot image detected. Please take a fresh photo."}
+
+If valid, return ONLY this JSON (no markdown, no explanation):
+{
+  "overall": <1-100>,
+  "potential": <1-100>,
+  "jawline": <1-100>,
+  "skin": <1-100>,
+  "eyes": <1-100>,
+  "cheekbones": <1-100>,
+  "lips": <1-100>,
+  "hair": <1-100>,
+  "symmetry": <1-100>,
+  "nose": <1-100>,
+  "chin": <1-100>,
+  "delta": "<ONE sentence about what you observe — be specific about THIS person's features>"
 }
 
 Rules:
 - Be realistic: most people score 40-75 overall.
-- overall_rating tiers: 90+ Gigachad, 80-89 Chad, 65-79 Above Average, 50-64 Average, <50 Below Average
-- Each trait needs specific, honest holding_back and fix_it advice.
-- For jawline, cheekbones, nose, and chin: ALWAYS reference what you observe in the side profile.
-- Return ONLY JSON.`;
+- Use side profile to judge jawline, chin, nose projection, cheekbone projection.
+- "delta" should note the most distinctive observation about their face.
+- Return ONLY JSON. No extra text.`;
 
 // ════════════════════════════════════
 //  API ROUTES
@@ -587,6 +662,7 @@ app.post('/api/analyze-face', authMiddleware, async function (req, res) {
     var sideImage = body.sideImage;
     var mimeType = body.mimeType || 'image/jpeg';
     var clientEco = body.economyState;
+    var previousScores = body.previousScores || null;
     var userId = req.user.id;
     var token = req.userToken;
 
@@ -623,8 +699,14 @@ app.post('/api/analyze-face', authMiddleware, async function (req, res) {
     }
 
     // Build parts array — always include front image, optionally side
+    // Build parts array
+    var promptText = ANALYSIS_PROMPT;
+    if (previousScores) {
+      promptText += '\n\nPREVIOUS SCAN SCORES (compare and note changes in delta): ' + JSON.stringify(previousScores);
+    }
+
     var parts = [
-      { text: ANALYSIS_PROMPT },
+      { text: promptText },
       { text: 'FRONT-FACING PHOTO:' },
       { inline_data: { mime_type: mimeType, data: image } },
     ];
@@ -693,46 +775,50 @@ app.post('/api/analyze-face', authMiddleware, async function (req, res) {
 
     function clamp(v, min, max) { return Math.max(min, Math.min(max, Math.round(v))); }
 
-    // Build response — support both new rich format and legacy flat format
-    var responseData = {
-      overall: clamp(scores.overall, 1, 100),
-      overall_rating: scores.overall_rating || 'Average',
-      description: scores.description || '',
-      potential: clamp(scores.potential, 1, 100),
-      traits: {},
-      recommendations: scores.recommendations || scores.tips || [],
-      // Legacy flat fields for backward compat
-      jawline: 0, skin_quality: 0, eyes: 0, lips: 0, facial_symmetry: 0, hair_quality: 0,
-      tips: scores.recommendations || scores.tips || [],
-    };
+    // Build response using AI scores + pre-fed advice
+    var overall = clamp(scores.overall || 50, 1, 100);
+    var potential = clamp(scores.potential || overall + 10, 1, 100);
 
-    if (scores.traits) {
-      var traitNames = ['jawline', 'skin', 'eyes', 'cheekbones', 'lips', 'hair', 'symmetry', 'nose', 'chin'];
-      traitNames.forEach(function(name) {
-        var t = scores.traits[name] || {};
-        responseData.traits[name] = {
-          score: clamp(t.score || 50, 1, 100),
-          rating: t.rating || 'Average',
-          holding_back: t.holding_back || '',
-          fix_it: t.fix_it || '',
-        };
-      });
-      // Fill legacy flat fields
-      responseData.jawline = responseData.traits.jawline?.score || 50;
-      responseData.skin_quality = responseData.traits.skin?.score || 50;
-      responseData.eyes = responseData.traits.eyes?.score || 50;
-      responseData.lips = responseData.traits.lips?.score || 50;
-      responseData.facial_symmetry = responseData.traits.symmetry?.score || 50;
-      responseData.hair_quality = responseData.traits.hair?.score || 50;
-    } else {
-      // Legacy format fallback
-      responseData.jawline = clamp(scores.jawline || 50, 1, 100);
-      responseData.skin_quality = clamp(scores.skin_quality || 50, 1, 100);
-      responseData.eyes = clamp(scores.eyes || 50, 1, 100);
-      responseData.lips = clamp(scores.lips || 50, 1, 100);
-      responseData.facial_symmetry = clamp(scores.facial_symmetry || 50, 1, 100);
-      responseData.hair_quality = clamp(scores.hair_quality || 50, 1, 100);
-    }
+    // Determine overall rating from score
+    var overall_rating = overall >= 90 ? 'Gigachad' : overall >= 80 ? 'Chad' : overall >= 65 ? 'Above Average' : overall >= 50 ? 'Average' : 'Below Average';
+
+    // Build traits with pre-fed advice
+    var traitNames = ['jawline', 'skin', 'eyes', 'cheekbones', 'lips', 'hair', 'symmetry', 'nose', 'chin'];
+    var traits = {};
+    traitNames.forEach(function(name) {
+      var s = clamp(scores[name] || 50, 1, 100);
+      var advice = getAdviceForScore(name, s);
+      traits[name] = {
+        score: s,
+        rating: advice ? advice.rating : 'Average',
+        holding_back: advice ? advice.holding_back : '',
+        fix_it: advice ? advice.fix_it : '',
+      };
+    });
+
+    // Pick recommendations based on tier
+    var tier = overall >= 75 ? 'high' : overall >= 50 ? 'mid' : 'low';
+    var recommendations = TIER_RECOMMENDATIONS[tier];
+
+    // Use AI's delta observation as the description
+    var description = scores.delta || '';
+
+    var responseData = {
+      overall: overall,
+      overall_rating: overall_rating,
+      description: description,
+      potential: potential,
+      traits: traits,
+      recommendations: recommendations,
+      // Legacy flat fields
+      jawline: traits.jawline?.score || 50,
+      skin_quality: traits.skin?.score || 50,
+      eyes: traits.eyes?.score || 50,
+      lips: traits.lips?.score || 50,
+      facial_symmetry: traits.symmetry?.score || 50,
+      hair_quality: traits.hair?.score || 50,
+      tips: recommendations,
+    };
 
     // Deduct scan cost and earn scan coin reward on server
     const { signature: _, ...ecoRest } = currentEco;
